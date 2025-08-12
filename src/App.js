@@ -12,7 +12,6 @@ import {
   CartesianGrid,
 } from "recharts";
 import {
-  Calendar,
   Download,
   Moon,
   Sun,
@@ -23,7 +22,6 @@ import {
 
 // Clés localStorage
 const LOCAL_STORAGE_KEY = "swim_sessions";
-const THEME_KEY = "theme";
 
 // -------------------------
 // Hook LocalStorage
@@ -70,48 +68,30 @@ function downloadCSV(filename, rows) {
 }
 
 // -------------------------
-// Dark mode
+// Dark mode simple
 // -------------------------
 function useTheme() {
-  const [mode, setMode] = useLocalStorage(THEME_KEY, "system");
+  const [isDark, setIsDark] = useLocalStorage("theme_dark", false);
 
   useEffect(() => {
-    const root = document.documentElement;
-    const prefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)"
-    ).matches;
-    const isDark = mode === "dark" || (mode === "system" && prefersDark);
-    root.classList.toggle("dark", isDark);
-  }, [mode]);
+    document.documentElement.classList.toggle("dark", isDark);
+  }, [isDark]);
 
-  return { mode, setMode };
+  const toggleTheme = () => setIsDark(!isDark);
+
+  return { isDark, toggleTheme };
 }
 
 function ThemeToggle() {
-  const { mode, setMode } = useTheme();
-  const options = [
-    { key: "light", icon: <Sun size={16} />, label: "Clair" },
-    { key: "system", icon: <Calendar size={16} />, label: "Système" },
-    { key: "dark", icon: <Moon size={16} />, label: "Sombre" },
-  ];
-
+  const { isDark, toggleTheme } = useTheme();
   return (
-    <div className="inline-flex items-center gap-1 rounded-xl bg-white/60 px-1 py-1 shadow-sm ring-1 ring-black/5 backdrop-blur dark:bg-white/5 dark:ring-white/10">
-      {options.map((o) => (
-        <button
-          key={o.key}
-          onClick={() => setMode(o.key)}
-          className={`flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition ${
-            mode === o.key
-              ? "bg-indigo-600 text-white shadow"
-              : "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-white/10"
-          }`}
-        >
-          {o.icon}
-          {o.label}
-        </button>
-      ))}
-    </div>
+    <button
+      onClick={toggleTheme}
+      className="inline-flex items-center gap-2 rounded-xl bg-slate-200 px-3 py-2 text-sm font-medium text-slate-800 shadow hover:bg-slate-300 dark:bg-white/10 dark:text-slate-100 dark:hover:bg-white/20"
+    >
+      {isDark ? <Sun size={16} /> : <Moon size={16} />}
+      {isDark ? "Clair" : "Sombre"}
+    </button>
   );
 }
 
@@ -135,7 +115,7 @@ function AddSessionForm({ onAdd }) {
   return (
     <form onSubmit={submit} className="grid grid-cols-1 gap-3 md:grid-cols-3">
       <label className="flex flex-col">
-        <span className="text-sm text-slate-600 dark:text-slate-300">
+        <span className="text-sm text-slate-700 dark:text-slate-300">
           Métrage (m)
         </span>
         <input
@@ -143,25 +123,23 @@ function AddSessionForm({ onAdd }) {
           value={distance}
           onChange={(e) => setDistance(e.target.value)}
           placeholder="ex: 1000"
-          className="mt-1 w-full rounded-xl border border-slate-300 bg-white/80 p-2 text-slate-900 shadow-inner outline-none focus:ring-2 focus:ring-indigo-500 dark:border-white/10 dark:bg-white/10 dark:text-slate-50"
+          className="mt-1 w-full rounded-xl border border-slate-300 bg-white/80 p-2 text-slate-900 shadow-inner outline-none focus:ring-2 focus:ring-indigo-500 dark:border-white/10 dark:bg-slate-800 dark:text-slate-100"
         />
       </label>
 
       {useCustomDate && (
         <label className="flex flex-col">
-          <span className="text-sm text-slate-600 dark:text-slate-300">
-            Date
-          </span>
+          <span className="text-sm text-slate-700 dark:text-slate-300">Date</span>
           <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-slate-300 bg-white/80 p-2 text-slate-900 shadow-inner outline-none focus:ring-2 focus:ring-indigo-500 dark:border-white/10 dark:bg-white/10 dark:text-slate-50"
+            className="mt-1 w-full rounded-xl border border-slate-300 bg-white/80 p-2 text-slate-900 shadow-inner outline-none focus:ring-2 focus:ring-indigo-500 dark:border-white/10 dark:bg-slate-800 dark:text-slate-100"
           />
         </label>
       )}
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
         <input
           type="checkbox"
           checked={useCustomDate}
@@ -191,16 +169,33 @@ function SwimChart({ sessions }) {
   }, [sessions]);
 
   if (!data.length)
-    return <p className="text-sm text-slate-500">Aucune donnée encore.</p>;
+    return (
+      <p className="text-sm text-slate-500 dark:text-slate-300">
+        Aucune donnée encore.
+      </p>
+    );
 
   return (
-    <div className="h-72 w-full">
+    <div className="h-72 w-full text-slate-800 dark:text-slate-100">
       <ResponsiveContainer>
         <LineChart data={data}>
           <CartesianGrid strokeOpacity={0.15} strokeDasharray="3 3" />
-          <XAxis dataKey="dateLabel" />
-          <YAxis />
+          <XAxis
+            dataKey="dateLabel"
+            tick={{ fill: "currentColor" }}
+            stroke="currentColor"
+          />
+          <YAxis
+            tick={{ fill: "currentColor" }}
+            stroke="currentColor"
+          />
           <Tooltip
+            contentStyle={{
+              borderRadius: 12,
+              border: "1px solid rgba(0,0,0,.1)",
+              backgroundColor: "rgba(255,255,255,0.9)",
+              color: "#000",
+            }}
             labelFormatter={() => "Séance"}
             formatter={(v, _n, p) => [v + " m", p.payload.date]}
           />
@@ -222,12 +217,28 @@ function SwimChart({ sessions }) {
 // Historique
 // -------------------------
 function History({ sessions, onDelete }) {
+  const [page, setPage] = useState(1);
+  const perPage = 10;
+
   if (!sessions.length) return null;
+
+  // Tri décroissant par date
+  const sorted = [...sessions].sort(
+    (a, b) => new Date(b.date) - new Date(a.date)
+  );
+
+  // Pagination
+  const totalPages = Math.ceil(sorted.length / perPage);
+  const startIndex = (page - 1) * perPage;
+  const currentData = sorted.slice(startIndex, startIndex + perPage);
+
+  const goPrev = () => setPage((p) => Math.max(1, p - 1));
+  const goNext = () => setPage((p) => Math.min(totalPages, p + 1));
 
   return (
     <div className="overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
       <table className="w-full text-left">
-        <thead className="bg-slate-50/70 text-slate-500 dark:bg-white/5 dark:text-slate-300">
+        <thead className="bg-slate-50/70 text-slate-600 dark:bg-white/5 dark:text-slate-300">
           <tr>
             <th className="px-4 py-3">Date</th>
             <th className="px-4 py-3">Métrage (m)</th>
@@ -235,13 +246,17 @@ function History({ sessions, onDelete }) {
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-200/70 dark:divide-white/10">
-          {sessions.map((s) => (
+          {currentData.map((s) => (
             <tr
               key={s.id}
               className="hover:bg-slate-50/60 dark:hover:bg-white/5"
             >
-              <td className="px-4 py-3">{s.date}</td>
-              <td className="px-4 py-3 font-semibold">{s.distance}</td>
+              <td className="px-4 py-3 text-slate-700 dark:text-slate-100">
+                {s.date}
+              </td>
+              <td className="px-4 py-3 font-semibold text-slate-900 dark:text-slate-100">
+                {s.distance}
+              </td>
               <td className="px-4 py-3 text-right">
                 <button
                   onClick={() => onDelete(s.id)}
@@ -254,6 +269,27 @@ function History({ sessions, onDelete }) {
           ))}
         </tbody>
       </table>
+
+      {/* Pagination Controls */}
+      <div className="flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-800">
+        <button
+          onClick={goPrev}
+          disabled={page === 1}
+          className="px-3 py-1 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-100 disabled:opacity-50"
+        >
+          ◀ Précédent
+        </button>
+        <span className="text-sm text-slate-600 dark:text-slate-300">
+          Page {page} sur {totalPages}
+        </span>
+        <button
+          onClick={goNext}
+          disabled={page === totalPages}
+          className="px-3 py-1 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-100 disabled:opacity-50"
+        >
+          Suivant ▶
+        </button>
+      </div>
     </div>
   );
 }
@@ -280,7 +316,7 @@ export default function App() {
       <div className="mx-auto max-w-5xl space-y-6">
         {/* Header */}
         <header className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl text-slate-900 dark:text-slate-100">
             📘 Suivi Natation
           </h1>
           <ThemeToggle />
@@ -291,16 +327,16 @@ export default function App() {
           <AddSessionForm onAdd={addSession} />
           <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <label>Filtrer par date</label>
+              <label className="text-slate-700 dark:text-slate-300">Filtrer par date</label>
               <input
                 type="date"
                 value={filterDate}
                 onChange={(e) => setFilterDate(e.target.value)}
-                className="rounded-xl border border-slate-300 bg-white/80 px-3 py-2 shadow-inner dark:border-white/10 dark:bg-white/10"
+                className="rounded-xl border border-slate-300 bg-white/80 px-3 py-2 shadow-inner dark:border-white/10 dark:bg-slate-800 dark:text-slate-100"
               />
               <button
                 onClick={resetFilter}
-                className="inline-flex items-center gap-2 rounded-xl bg-slate-200/80 px-3 py-2 text-sm font-medium dark:bg-white/10"
+                className="inline-flex items-center gap-2 rounded-xl bg-slate-200/80 px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-300 dark:bg-white/10 dark:text-slate-100 dark:hover:bg-white/20"
               >
                 <RefreshCcw size={16} /> Réinitialiser
               </button>
@@ -321,7 +357,9 @@ export default function App() {
 
         {/* History */}
         <section className="rounded-3xl bg-white/70 p-5 shadow-lg ring-1 ring-black/5 backdrop-blur dark:bg-white/5 dark:ring-white/10">
-          <h2 className="mb-3 text-xl font-semibold">📋 Historique</h2>
+          <h2 className="mb-3 text-xl font-semibold text-slate-900 dark:text-slate-100">
+            📋 Historique
+          </h2>
           <History sessions={filteredSessions} onDelete={deleteSession} />
         </section>
       </div>
