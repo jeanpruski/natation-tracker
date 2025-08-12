@@ -216,8 +216,11 @@ function SwimChart({ sessions }) {
 // -------------------------
 // Historique
 // -------------------------
-function History({ sessions, onDelete }) {
+function History({ sessions, onDelete, onEdit }) {
   const [page, setPage] = useState(1);
+  const [editId, setEditId] = useState(null);
+  const [editDate, setEditDate] = useState("");
+  const [editDistance, setEditDistance] = useState("");
   const perPage = 10;
 
   if (!sessions.length) return null;
@@ -234,6 +237,17 @@ function History({ sessions, onDelete }) {
 
   const goPrev = () => setPage((p) => Math.max(1, p - 1));
   const goNext = () => setPage((p) => Math.min(totalPages, p + 1));
+
+  const startEdit = (session) => {
+    setEditId(session.id);
+    setEditDate(session.date);
+    setEditDistance(session.distance);
+  };
+
+  const saveEdit = () => {
+    onEdit(editId, { date: editDate, distance: Number(editDistance) });
+    setEditId(null);
+  };
 
   return (
     <div className="overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
@@ -252,18 +266,61 @@ function History({ sessions, onDelete }) {
               className="hover:bg-slate-50/60 dark:hover:bg-white/5"
             >
               <td className="px-4 py-3 text-slate-700 dark:text-slate-100">
-                {s.date}
+                {editId === s.id ? (
+                  <input
+                    type="date"
+                    value={editDate}
+                    onChange={(e) => setEditDate(e.target.value)}
+                    className="rounded-lg border border-slate-300 bg-white p-1 text-slate-900 dark:border-white/10 dark:bg-slate-800 dark:text-slate-100"
+                  />
+                ) : (
+                  dayjs(s.date).format("DD-MM-YYYY")
+                )}
               </td>
               <td className="px-4 py-3 font-semibold text-slate-900 dark:text-slate-100">
-                {s.distance}
+                {editId === s.id ? (
+                  <input
+                    type="number"
+                    value={editDistance}
+                    onChange={(e) => setEditDistance(e.target.value)}
+                    className="w-20 rounded-lg border border-slate-300 bg-white p-1 text-slate-900 dark:border-white/10 dark:bg-slate-800 dark:text-slate-100"
+                  />
+                ) : (
+                  s.distance
+                )}
               </td>
-              <td className="px-4 py-3 text-right">
-                <button
-                  onClick={() => onDelete(s.id)}
-                  className="inline-flex items-center gap-2 rounded-lg bg-rose-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-rose-500"
-                >
-                  <Trash2 size={16} /> Supprimer
-                </button>
+              <td className="px-4 py-3 text-right flex justify-end gap-2">
+                {editId === s.id ? (
+                  <>
+                    <button
+                      onClick={saveEdit}
+                      className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-500"
+                    >
+                      Sauver
+                    </button>
+                    <button
+                      onClick={() => setEditId(null)}
+                      className="rounded-lg bg-slate-400 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-500"
+                    >
+                      Annuler
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => startEdit(s)}
+                      className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500"
+                    >
+                      Modifier
+                    </button>
+                    <button
+                      onClick={() => onDelete(s.id)}
+                      className="rounded-lg bg-rose-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-rose-500"
+                    >
+                      Supprimer
+                    </button>
+                  </>
+                )}
               </td>
             </tr>
           ))}
@@ -294,6 +351,7 @@ function History({ sessions, onDelete }) {
   );
 }
 
+
 // -------------------------
 // App principale
 // -------------------------
@@ -310,6 +368,12 @@ export default function App() {
     setSessions((prev) => prev.filter((s) => s.id !== id));
   const resetFilter = () => setFilterDate("");
   const exportCSV = () => downloadCSV("natation_sessions.csv", sessions);
+
+  const editSession = (id, updated) => {
+    setSessions((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, ...updated } : s))
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 via-indigo-50 to-white px-4 py-8 dark:from-[#0b1020] dark:via-[#0a1028] dark:to-[#0b1228]">
@@ -360,7 +424,7 @@ export default function App() {
           <h2 className="mb-3 text-xl font-semibold text-slate-900 dark:text-slate-100">
             📋 Historique
           </h2>
-          <History sessions={filteredSessions} onDelete={deleteSession} />
+          <History sessions={filteredSessions} onDelete={deleteSession} onEdit={editSession} />
         </section>
       </div>
     </div>
