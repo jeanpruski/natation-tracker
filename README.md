@@ -1,70 +1,121 @@
-# Getting Started with Create React App
+# 🏊‍♂️ Suivi Natation – React + Tailwind + Recharts
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Application web responsive pour suivre ses séances de natation, visualiser l’évolution des distances parcourues et obtenir un cumul mensuel.  
+Mode clair/sombre, export CSV, pagination et édition des séances inclus.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## ✨ Fonctionnalités
 
-### `npm start`
+- **Ajout de séances** avec métrage et date (date automatique ou personnalisée)
+- **Visualisation graphique** :
+  - Courbe des séances
+  - Diagramme en barres du cumul mensuel
+- **Historique complet** :
+  - Pagination (5 séances/page)
+  - Modification ou suppression d’une séance
+  - Tri par date (plus récentes en haut)
+- **Mode clair / sombre** (switch manuel)
+- **Export CSV** des données
+- **Données sauvegardées** dans `localStorage` (persistantes entre sessions)
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+---
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## 🖼️ Aperçu de l’interface
 
-### `npm test`
+- **Mobile** : disposition en pile (Options → Graphiques → Historique)
+- **Desktop** :
+  - Colonne gauche : Options + Historique
+  - Colonne droite : Graphiques (courbe + cumul mensuel)
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+---
 
-### `npm run build`
+## 🛠️ Stack technique
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- [React](https://react.dev/) 18
+- [Tailwind CSS](https://tailwindcss.com/) 3.x
+- [Recharts](https://recharts.org/en-US/) pour les graphiques
+- [Lucide React](https://lucide.dev/) pour les icônes
+- [Day.js](https://day.js.org/) pour la gestion des dates
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+---
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## 🚀 Installation
 
-### `npm run eject`
+1. **Cloner le repo**  
+```bash
+git clone https://github.com/toncompte/natation-tracker.git
+cd natation-tracker
+````
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+2. **Installer les dépendances**
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```bash
+npm install
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+3. **Lancer l’application**
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+```bash
+npm start
+  ```
 
-## Learn More
+4. **Accéder dans le navigateur**
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```
+http://localhost:3000
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+---
 
-### Code Splitting
+## ⚙️ Configuration Tailwind CSS
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+L’app utilise Tailwind avec PostCSS et Autoprefixer.
+Fichier `tailwind.config.js` minimal :
 
-### Analyzing the Bundle Size
+```js
+module.exports = {
+  content: ["./src/**/*.{js,jsx,ts,tsx}"],
+  darkMode: "class",
+  theme: { extend: {} },
+  plugins: [],
+};
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+Fichier `src/index.css` :
 
-### Making a Progressive Web App
+```css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+---
 
-### Advanced Configuration
+## 📂 Structure des fichiers
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+```
+src/
+├── App.js               # Composant principal
+├── index.js             # Point d'entrée React
+├── index.css            # Styles Tailwind
+├── components/          # Composants (AddSessionForm, History, SwimChart...)
+└── ...
+```
 
-### Deployment
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## 💾 Sauvegarde des données
 
-### `npm run build` fails to minify
+Toutes les séances sont enregistrées dans le navigateur via **localStorage** avec la clé :
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+```
+swim_sessions
+```
+
+---
+
+## 📜 Licence
+
+Ce projet est libre pour usage personnel.
+Créé avec ❤️ pour le suivi sportif.
