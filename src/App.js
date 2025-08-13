@@ -10,6 +10,9 @@ import {
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
+  // 👇 AJOUT
+  BarChart,
+  Bar,
 } from "recharts";
 import {
   Download,
@@ -159,7 +162,7 @@ function AddSessionForm({ onAdd }) {
 }
 
 // -------------------------
-// Graphique
+// Graphique (courbe)
 // -------------------------
 function SwimChart({ sessions }) {
   const data = useMemo(() => {
@@ -208,6 +211,54 @@ function SwimChart({ sessions }) {
             activeDot={{ r: 5 }}
           />
         </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+// -------------------------
+// 👇 NOUVEAU : Diagramme en barres (cumulatif par mois)
+// -------------------------
+function MonthlyBarChart({ sessions }) {
+  const monthly = useMemo(() => {
+    // Regroupement par mois
+    const map = new Map();
+    sessions.forEach((s) => {
+      const key = dayjs(s.date).format("YYYY-MM");   // clé triable
+      const label = dayjs(s.date).format("MM/YYYY"); // label affiché
+      const prev = map.get(key) || { key, label, total: 0 };
+      prev.total += Number(s.distance) || 0;
+      map.set(key, prev);
+    });
+    // Tri chronologique ascendant
+    return Array.from(map.values()).sort((a, b) => a.key.localeCompare(b.key));
+  }, [sessions]);
+
+  if (!monthly.length)
+    return (
+      <p className="text-sm text-slate-500 dark:text-slate-300">
+        Aucune donnée mensuelle encore.
+      </p>
+    );
+
+  return (
+    <div className="h-72 w-full text-slate-800 dark:text-slate-100">
+      <ResponsiveContainer>
+        <BarChart data={monthly}>
+          <CartesianGrid strokeOpacity={0.15} strokeDasharray="3 3" />
+          <XAxis dataKey="label" tick={{ fill: "currentColor" }} />
+          <YAxis tick={{ fill: "currentColor" }} />
+          <Tooltip
+            contentStyle={{
+              borderRadius: 12,
+              border: "1px solid rgba(0,0,0,.1)",
+              backgroundColor: "rgba(255,255,255,0.9)",
+              color: "#000",
+            }}
+            formatter={(v) => [`${v} m`, "Total"]}
+          />
+          <Bar dataKey="total" fill="rgb(99 102 241)" radius={[8, 8, 0, 0]} />
+        </BarChart>
       </ResponsiveContainer>
     </div>
   );
@@ -386,30 +437,14 @@ export default function App() {
           <ThemeToggle />
         </header>
 
-        {/* Form & Filters */}
+        {/* Form & Options */}
         <section className="rounded-3xl bg-white/70 p-5 shadow-lg ring-1 ring-black/5 backdrop-blur dark:bg-white/5 dark:ring-white/10">
           <h2 className="mb-3 text-xl font-semibold text-slate-900 dark:text-slate-100">
             📘 Options
           </h2>
           <AddSessionForm onAdd={addSession} />
           <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-
-            {/* <div className="flex items-center gap-3">
-              <label className="text-slate-700 dark:text-slate-300">Filtrer par date</label>
-              <input
-                type="date"
-                value={filterDate}
-                onChange={(e) => setFilterDate(e.target.value)}
-                className="rounded-xl border border-slate-300 bg-white/80 px-3 py-2 shadow-inner dark:border-white/10 dark:bg-slate-800 dark:text-slate-100"
-              />
-              <button
-                onClick={resetFilter}
-                className="inline-flex items-center gap-2 rounded-xl bg-slate-200/80 px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-300 dark:bg-white/10 dark:text-slate-100 dark:hover:bg-white/20"
-              >
-                <RefreshCcw size={16} /> Réinitialiser
-              </button>
-            </div> */}
-
+            {/* (Filtre par date commenté chez toi — on ne le réactive pas) */}
             <button
               onClick={exportCSV}
               className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-medium text-white shadow hover:bg-emerald-500"
@@ -419,15 +454,23 @@ export default function App() {
           </div>
         </section>
 
-        {/* Chart */}
+        {/* Courbe */}
         <section className="rounded-3xl bg-white/70 p-5 shadow-lg ring-1 ring-black/5 backdrop-blur dark:bg-white/5 dark:ring-white/10">
-        <h2 className="mb-3 text-xl font-semibold text-slate-900 dark:text-slate-100">
-            📈 Graphique
+          <h2 className="mb-3 text-xl font-semibold text-slate-900 dark:text-slate-100">
+            📈 Graphique (séances)
           </h2>
           <SwimChart sessions={filteredSessions} />
         </section>
 
-        {/* History */}
+        {/* 👇 NOUVELLE SECTION : Barres cumulatives par mois */}
+        <section className="rounded-3xl bg-white/70 p-5 shadow-lg ring-1 ring-black/5 backdrop-blur dark:bg-white/5 dark:ring-white/10">
+          <h2 className="mb-3 text-xl font-semibold text-slate-900 dark:text-slate-100">
+            📊 Cumulatif par mois
+          </h2>
+          <MonthlyBarChart sessions={sessions} />
+        </section>
+
+        {/* Historique */}
         <section className="rounded-3xl bg-white/70 p-5 shadow-lg ring-1 ring-black/5 backdrop-blur dark:bg-white/5 dark:ring-white/10">
           <h2 className="mb-3 text-xl font-semibold text-slate-900 dark:text-slate-100">
             📋 Historique
