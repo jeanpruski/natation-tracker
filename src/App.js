@@ -18,8 +18,6 @@ import {
   Download,
   Moon,
   Sun,
-  Trash2,
-  RefreshCcw,
   Plus,
 } from "lucide-react";
 
@@ -417,7 +415,6 @@ export default function App() {
   const addSession = (payload) => setSessions((prev) => [...prev, payload]);
   const deleteSession = (id) =>
     setSessions((prev) => prev.filter((s) => s.id !== id));
-  const resetFilter = () => setFilterDate("");
   const exportCSV = () => downloadCSV("natation_sessions.csv", sessions);
 
   const editSession = (id, updated) => {
@@ -427,57 +424,70 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-50 via-indigo-50 to-white px-4 py-8 dark:from-[#0b1020] dark:via-[#0a1028] dark:to-[#0b1228]">
-      <div className="mx-auto max-w-5xl space-y-6">
+    <div className="min-h-screen bg-gradient-to-b from-sky-50 via-indigo-50 to-white px-4 lg:px-12 py-8 dark:from-[#0b1020] dark:via-[#0a1028] dark:to-[#0b1228]">
+      <div className="w-full">
         {/* Header */}
-        <header className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <header className="mb-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl text-slate-900 dark:text-slate-100">
             🏊‍♂️ Suivi Natation
           </h1>
           <ThemeToggle />
         </header>
 
-        {/* Form & Options */}
-        <section className="rounded-3xl bg-white/70 p-5 shadow-lg ring-1 ring-black/5 backdrop-blur dark:bg-white/5 dark:ring-white/10">
-          <h2 className="mb-3 text-xl font-semibold text-slate-900 dark:text-slate-100">
-            📘 Options
-          </h2>
-          <AddSessionForm onAdd={addSession} />
-          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            {/* (Filtre par date commenté chez toi — on ne le réactive pas) */}
-            <button
-              onClick={exportCSV}
-              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-medium text-white shadow hover:bg-emerald-500"
-            >
-              <Download size={16} /> Exporter CSV
-            </button>
+        {/* Layout: mobile = stack ; desktop = 2 colonnes */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[35%_1fr]">
+          {/* Colonne gauche : Options + Historique */}
+          <div className="space-y-6">
+            {/* Options */}
+            <section className="rounded-3xl bg-white/70 p-5 shadow-lg ring-1 ring-black/5 backdrop-blur dark:bg-white/5 dark:ring-white/10">
+              <h2 className="mb-3 text-xl font-semibold text-slate-900 dark:text-slate-100">
+                📘 Options
+              </h2>
+              <AddSessionForm onAdd={addSession} />
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <button
+                  onClick={exportCSV}
+                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-medium text-white shadow hover:bg-emerald-500"
+                >
+                  <Download size={16} /> Exporter CSV
+                </button>
+              </div>
+            </section>
+
+            {/* Historique */}
+            <section className="rounded-3xl bg-white/70 p-5 shadow-lg ring-1 ring-black/5 backdrop-blur dark:bg-white/5 dark:ring-white/10">
+              <h2 className="mb-3 text-xl font-semibold text-slate-900 dark:text-slate-100">
+                📋 Historique
+              </h2>
+              <History
+                sessions={filteredSessions}
+                onDelete={deleteSession}
+                onEdit={editSession}
+              />
+            </section>
           </div>
-        </section>
 
-        {/* Courbe */}
-        <section className="rounded-3xl bg-white/70 p-5 shadow-lg ring-1 ring-black/5 backdrop-blur dark:bg-white/5 dark:ring-white/10">
-          <h2 className="mb-3 text-xl font-semibold text-slate-900 dark:text-slate-100">
-            📈 Graphique (séances)
-          </h2>
-          <SwimChart sessions={filteredSessions} />
-        </section>
+          {/* Colonne droite : Graphiques */}
+          <div className="space-y-6">
+            {/* Courbe */}
+            <section className="rounded-3xl bg-white/70 p-5 shadow-lg ring-1 ring-black/5 backdrop-blur dark:bg-white/5 dark:ring-white/10">
+              <h2 className="mb-3 text-xl font-semibold text-slate-900 dark:text-slate-100">
+                📈 Graphique (séances)
+              </h2>
+              <SwimChart sessions={filteredSessions} />
+            </section>
 
-        {/* 👇 NOUVELLE SECTION : Barres cumulatives par mois */}
-        <section className="rounded-3xl bg-white/70 p-5 shadow-lg ring-1 ring-black/5 backdrop-blur dark:bg-white/5 dark:ring-white/10">
-          <h2 className="mb-3 text-xl font-semibold text-slate-900 dark:text-slate-100">
-            📊 Cumulatif par mois
-          </h2>
-          <MonthlyBarChart sessions={sessions} />
-        </section>
-
-        {/* Historique */}
-        <section className="rounded-3xl bg-white/70 p-5 shadow-lg ring-1 ring-black/5 backdrop-blur dark:bg-white/5 dark:ring-white/10">
-          <h2 className="mb-3 text-xl font-semibold text-slate-900 dark:text-slate-100">
-            📋 Historique
-          </h2>
-          <History sessions={filteredSessions} onDelete={deleteSession} onEdit={editSession} />
-        </section>
+            {/* Barres cumulatives par mois */}
+            <section className="rounded-3xl bg-white/70 p-5 shadow-lg ring-1 ring-black/5 backdrop-blur dark:bg-white/5 dark:ring-white/10">
+              <h2 className="mb-3 text-xl font-semibold text-slate-900 dark:text-slate-100">
+                📊 Cumulatif par mois
+              </h2>
+              <MonthlyBarChart sessions={sessions} />
+            </section>
+          </div>
+        </div>
       </div>
     </div>
   );
+
 }
