@@ -221,7 +221,7 @@ function History({ sessions, onDelete, onEdit }) {
   const [editId, setEditId] = useState(null);
   const [editDate, setEditDate] = useState("");
   const [editDistance, setEditDistance] = useState("");
-  const perPage = 10;
+  const perPage = 5;
 
   if (!sessions.length) return null;
 
@@ -381,16 +381,20 @@ export default function App() {
         {/* Header */}
         <header className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl text-slate-900 dark:text-slate-100">
-            📘 Suivi Natation
+            🏊‍♂️ Suivi Natation
           </h1>
           <ThemeToggle />
         </header>
 
         {/* Form & Filters */}
         <section className="rounded-3xl bg-white/70 p-5 shadow-lg ring-1 ring-black/5 backdrop-blur dark:bg-white/5 dark:ring-white/10">
+          <h2 className="mb-3 text-xl font-semibold text-slate-900 dark:text-slate-100">
+            📘 Options
+          </h2>
           <AddSessionForm onAdd={addSession} />
           <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
+
+            {/* <div className="flex items-center gap-3">
               <label className="text-slate-700 dark:text-slate-300">Filtrer par date</label>
               <input
                 type="date"
@@ -404,7 +408,8 @@ export default function App() {
               >
                 <RefreshCcw size={16} /> Réinitialiser
               </button>
-            </div>
+            </div> */}
+
             <button
               onClick={exportCSV}
               className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-medium text-white shadow hover:bg-emerald-500"
@@ -416,6 +421,9 @@ export default function App() {
 
         {/* Chart */}
         <section className="rounded-3xl bg-white/70 p-5 shadow-lg ring-1 ring-black/5 backdrop-blur dark:bg-white/5 dark:ring-white/10">
+        <h2 className="mb-3 text-xl font-semibold text-slate-900 dark:text-slate-100">
+            📈 Graphique
+          </h2>
           <SwimChart sessions={filteredSessions} />
         </section>
 
