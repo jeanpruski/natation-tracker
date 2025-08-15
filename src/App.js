@@ -148,14 +148,12 @@ function AddSessionForm({ onAdd, onExport }) {
             <button
               type="button"
               onClick={() => setUseCustomDate((v) => !v)}
-              className={`relative inline-flex h-7 w-12 items-center rounded-full transition ${
-                useCustomDate ? "bg-indigo-600" : "bg-slate-300 dark:bg-slate-600"
-              }`}
+              className={`relative inline-flex h-7 w-12 items-center rounded-full transition ${useCustomDate ? "bg-indigo-600" : "bg-slate-300 dark:bg-slate-600"
+                }`}
             >
               <span
-                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${
-                  useCustomDate ? "translate-x-6" : "translate-x-1"
-                }`}
+                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${useCustomDate ? "translate-x-6" : "translate-x-1"
+                  }`}
               />
             </button>
           </div>
@@ -309,10 +307,27 @@ function History({ sessions, onDelete, onEdit }) {
             ))}
           </tbody>
         </table>
-        <div className="mt-4 flex items-center justify-between bg-slate-100 px-4 py-3 dark:bg-slate-800">
-          <button onClick={goPrev} disabled={page === 1}>◀ Précédent</button>
-          <span className="text-sm">Page {page} sur {totalPages}</span>
-          <button onClick={goNext} disabled={page === totalPages}>Suivant ▶</button>
+        <div className="mt-4 flex items-center justify-between rounded-xl bg-slate-100 px-3 py-2 text-slate-700 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700">
+          <button
+            onClick={goPrev}
+            disabled={page === 1}
+            className="rounded-lg px-3 py-1 font-medium hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-slate-700/60"
+          >
+            ◀ Précédent
+          </button>
+
+          <span className="text-sm">
+            Page <span className="font-semibold">{page}</span> sur{" "}
+            <span className="font-semibold">{totalPages}</span>
+          </span>
+
+          <button
+            onClick={goNext}
+            disabled={page === totalPages}
+            className="rounded-lg px-3 py-1 font-medium hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-slate-700/60"
+          >
+            Suivant ▶
+          </button>
         </div>
       </div>
     </div>
@@ -353,8 +368,10 @@ export default function App() {
           </div>
           <div className="p-5"><AddSessionForm onAdd={addSession} onExport={exportCSV} /></div>
           <div className="hidden xl:block border-t dark:border-slate-700" />
-          <div className="hidden xl:block px-5 pb-5">
-            <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-slate-100">📋 Historique</h3>
+          <div className="hidden xl:block px-5 pt-5 pb-5">
+            <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-slate-100">
+              📋 Historique
+            </h3>
             <History sessions={sessions} onDelete={deleteSession} onEdit={editSession} />
           </div>
         </section>
