@@ -197,7 +197,7 @@ function SwimChart({ sessions }) {
       [...sessions]
         .sort((a, b) => new Date(a.date) - new Date(b.date))
         .map((s) => ({
-          ...s,                        // garde s.date intact
+          ...s,
           dateLabel: dayjs(s.date).format("DD/MM"),
         })),
     [sessions]
@@ -213,25 +213,25 @@ function SwimChart({ sessions }) {
         <LineChart data={data}>
           <CartesianGrid strokeOpacity={0.12} strokeDasharray="3 3" />
 
-          {/* On n'affiche un tick que si c'est le premier point OU si le mois change vs le précédent */}
+          {/* Ticks : seulement au changement de mois */}
           <XAxis
-  dataKey="dateLabel"
-  interval={0}
-  tickMargin={10}
-  padding={{ right: 20 }}
-  tick={{ fill: "currentColor" }}
-  tickFormatter={(_value, index) => {
-    const d = dayjs(data[index].date);
-    if (index === 0) {
-      const label = d.format("MMM YY");
-      return label.charAt(0).toUpperCase() + label.slice(1);
-    }
-    const prev = dayjs(data[index - 1].date);
-    if (d.isSame(prev, "month")) return "";
-    const label = d.format("MMM YY");
-    return label.charAt(0).toUpperCase() + label.slice(1);
-  }}
-/>
+            dataKey="dateLabel"
+            interval={0}
+            tickMargin={10}
+            padding={{ right: 20 }}
+            tick={{ fill: "currentColor" }}
+            tickFormatter={(_value, index) => {
+              const d = dayjs(data[index].date);
+              if (index === 0) {
+                const label = d.format("MMM YY");
+                return label.charAt(0).toUpperCase() + label.slice(1);
+              }
+              const prev = dayjs(data[index - 1].date);
+              if (d.isSame(prev, "month")) return "";
+              const label = d.format("MMM YY");
+              return label.charAt(0).toUpperCase() + label.slice(1);
+            }}
+          />
 
           <YAxis tick={{ fill: "currentColor" }} />
 
@@ -258,8 +258,7 @@ function SwimChart({ sessions }) {
             }}
             labelClassName="text-xs"
             itemStyle={{ color: isDark ? "#e5e7eb" : "#0f172a" }}
-            // 🔑 ceci supprime la première ligne (le label de l'axe X)
-            labelFormatter={() => ""}
+            labelFormatter={() => ""} // supprime la ligne de label
             formatter={(v, _n, p) => [v + " m", dayjs(p.payload.date).format("DD/MM/YYYY")]}
           />
 
@@ -279,19 +278,22 @@ function SwimChart({ sessions }) {
 
 function MonthlyBarChart({ sessions }) {
   const isDark = useIsDark();
-const monthly = useMemo(() => {
-  const map = new Map();
-  sessions.forEach((s) => {
-    const key = dayjs(s.date).format("YYYY-MM");
-    const rawLabel = dayjs(s.date).format("MMMM YYYY");
-    const prettyLabel = rawLabel.charAt(0).toUpperCase() + rawLabel.slice(1);
-    const prev = map.get(key) || { key, label: prettyLabel, total: 0 };
-    prev.total += Number(s.distance) || 0;
-    map.set(key, prev);
-  });
-  return Array.from(map.values()).sort((a, b) => a.key.localeCompare(b.key));
-}, [sessions]);
+  const monthly = useMemo(() => {
+    const map = new Map();
+    sessions.forEach((s) => {
+      const key = dayjs(s.date).format("YYYY-MM");
+      const rawLabel = dayjs(s.date).format("MMMM YYYY");
+      const prettyLabel = rawLabel.charAt(0).toUpperCase() + rawLabel.slice(1);
+      const prev = map.get(key) || { key, label: prettyLabel, total: 0, count: 0 };
+      prev.total += Number(s.distance) || 0;
+      prev.count += 1; // ➕ on compte les séances
+      map.set(key, prev);
+    });
+    return Array.from(map.values()).sort((a, b) => a.key.localeCompare(b.key));
+  }, [sessions]);
+
   if (!monthly.length) return <p className="text-sm text-slate-600 dark:text-slate-300">Aucune donnée mensuelle encore.</p>;
+
   return (
     <div className="h-72 w-full text-slate-900 dark:text-slate-100">
       <ResponsiveContainer>
@@ -307,9 +309,11 @@ const monthly = useMemo(() => {
               color: isDark ? "#e5e7eb" : "#0f172a",
             }}
             itemStyle={{ color: isDark ? "#e5e7eb" : "#0f172a" }}
-            // 🔑 enlève la ligne du haut (label de l’axe X)
-            labelFormatter={() => ""}
-            formatter={(v) => [`${v} m`, "Total du mois"]}
+            labelFormatter={() => ""} // supprime la ligne de label du haut
+            formatter={(v, _name, props) => {
+              const count = props.payload.count;
+              return [`${v} m (${count} séance${count > 1 ? "s" : ""})`, "Total du mois"];
+            }}
           />
           <Bar dataKey="total" fill="rgb(99 102 241)" radius={[8, 8, 0, 0]} />
         </BarChart>
@@ -404,68 +408,142 @@ function History({ sessions, onDelete, onEdit }) {
 
 // App
 export default function App() {
-  const [sessions, setSessions] = useLocalStorage(LOCAL_STORAGE_KEY, []);
+  const [sessions, setSessions] = useLocalStorage("swim_sessions", []);
   const nf = useMemo(() => new Intl.NumberFormat("fr-FR"), []);
   const monthKey = dayjs().format("YYYY-MM");
   const monthLabel = dayjs().format("MMMM YYYY");
-  const totalMonth = useMemo(() => sessions.reduce((sum, s) => (dayjs(s.date).format("YYYY-MM") === monthKey ? sum + (Number(s.distance) || 0) : sum), 0), [sessions, monthKey]);
-  const totalAll = useMemo(() => sessions.reduce((sum, s) => sum + (Number(s.distance) || 0), 0), [sessions]);
-  const avgPerSession = useMemo(() => (sessions.length ? Math.round(totalAll / sessions.length) : 0), [sessions.length, totalAll]);
+
+  const totalMonth = useMemo(
+    () =>
+      sessions.reduce(
+        (sum, s) =>
+          dayjs(s.date).format("YYYY-MM") === monthKey
+            ? sum + (Number(s.distance) || 0)
+            : sum,
+        0
+      ),
+    [sessions, monthKey]
+  );
+  const totalAll = useMemo(
+    () => sessions.reduce((sum, s) => sum + (Number(s.distance) || 0), 0),
+    [sessions]
+  );
+  const avgPerSession = useMemo(
+    () => (sessions.length ? Math.round(totalAll / sessions.length) : 0),
+    [sessions.length, totalAll]
+  );
+
+  const totalSessions = sessions.length; // 🔥 compteur global
+
   const addSession = (payload) => setSessions((prev) => [...prev, payload]);
-  const deleteSession = (id) => setSessions((prev) => prev.filter((s) => s.id !== id));
-  const editSession = (id, updated) => setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, ...updated } : s)));
-  const exportCSV = () => downloadCSV("natation_sessions.csv", sessions);
+  const deleteSession = (id) =>
+    setSessions((prev) => prev.filter((s) => s.id !== id));
+  const editSession = (id, updated) =>
+    setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, ...updated } : s)));
+  const exportCSV = () =>
+    downloadCSV("natation_sessions.csv", sessions);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 via-indigo-50 to-white px-4 xl:px-12 py-8 dark:from-[#0b1020] dark:via-[#0a1028] dark:to-[#0b1228]">
       <header className="mb-6 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex items-center gap-2">
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl text-slate-900 dark:text-slate-100">🏊‍♂️ Suivi Natation</h1>
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl text-slate-900 dark:text-slate-100">
+            🏊‍♂️ Suivi Natation
+          </h1>
           <ThemeToggle />
         </div>
         <div className="grid grid-cols-2 gap-3 w-full max-w-xl">
-          <KpiChip title="Total du mois" subtitle={monthLabel} value={<>{nf.format(totalMonth)} <span className="text-xs opacity-70">m</span></>} icon={<CalendarDays size={18} />} />
-          <KpiChip title="Moyenne / séance" subtitle="Toutes séances" value={<>{nf.format(avgPerSession)} <span className="text-xs opacity-70">m</span></>} icon={<Calculator size={18} />} />
+          <KpiChip
+            title="Total du mois"
+            subtitle={monthLabel}
+            value={
+              <>
+                {nf.format(totalMonth)}{" "}
+                <span className="text-xs opacity-70">m</span>
+              </>
+            }
+            icon={<CalendarDays size={18} />}
+          />
+          <KpiChip
+            title="Moyenne / séance"
+            subtitle="Toutes séances"
+            value={
+              <>
+                {nf.format(avgPerSession)}{" "}
+                <span className="text-xs opacity-70">m</span>
+              </>
+            }
+            icon={<Calculator size={18} />}
+          />
         </div>
       </header>
 
       <div className="grid grid-cols-1 xl:grid-cols-[2fr_3fr] gap-x-6 gap-y-2 items-start">
+        {/* Bloc gauche Options + Historique desktop */}
         <section className="self-start order-1 overflow-hidden rounded-3xl ring-1 ring-slate-200 bg-white/80 backdrop-blur dark:ring-slate-700 dark:bg-slate-900/60">
           <div className="flex items-center justify-between border-b px-5 py-4 dark:border-slate-700 dark:bg-slate-800/70">
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">📘 Options</h2>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+              📘 Options
+            </h2>
           </div>
-          <div className="p-5"><AddSessionForm onAdd={addSession} onExport={exportCSV} /></div>
+          <div className="p-5">
+            <AddSessionForm onAdd={addSession} onExport={exportCSV} />
+          </div>
           <div className="hidden xl:block border-t dark:border-slate-700" />
           <div className="hidden xl:block px-5 pt-5 pb-5">
             <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-slate-100">
               📋 Historique
             </h3>
-            <History sessions={sessions} onDelete={deleteSession} onEdit={editSession} />
+            <History
+              sessions={sessions}
+              onDelete={deleteSession}
+              onEdit={editSession}
+            />
           </div>
         </section>
 
-        {/* Colonne droite = Graphique + Cumulatif */}
+        {/* Colonne droite */}
         <section className="flex flex-col gap-6 self-start order-2">
           <div className="overflow-hidden rounded-3xl ring-1 ring-slate-200 bg-white/80 dark:ring-slate-700 dark:bg-slate-900/60">
             <div className="flex items-center justify-between border-b px-5 py-4 dark:border-slate-700 dark:bg-slate-800/70">
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">📈 Graphique</h2>
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                📈 Séances
+                <span className="ml-2 text-sm font-normal text-slate-600 dark:text-slate-300">
+                  ({totalSessions})
+                </span>
+              </h2>
             </div>
-            <div className="p-5"><SwimChart sessions={sessions} /></div>
+            <div className="p-5">
+              <SwimChart sessions={sessions} />
+            </div>
           </div>
+
           <div className="overflow-hidden rounded-3xl ring-1 ring-slate-200 bg-white/80 dark:ring-slate-700 dark:bg-slate-900/60">
             <div className="flex items-center justify-between border-b px-5 py-4 dark:border-slate-700 dark:bg-slate-800/70">
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">📊 Cumulatif par mois</h2>
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                📊 Cumulatif par mois
+              </h2>
             </div>
-            <div className="p-5"><MonthlyBarChart sessions={sessions} /></div>
+            <div className="p-5">
+              <MonthlyBarChart sessions={sessions} />
+            </div>
           </div>
         </section>
 
-        {/* Mobile : Historique séparé */}
+        {/* Mobile: Historique séparé */}
         <section className="self-start order-4 xl:hidden overflow-hidden rounded-3xl ring-1 ring-slate-200 bg-white/80 dark:ring-slate-700 dark:bg-slate-900/60">
           <div className="flex items-center justify-between border-b px-5 py-4 dark:border-slate-700 dark:bg-slate-800/70">
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">📋 Historique</h2>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+              📋 Historique
+            </h2>
           </div>
-          <div className="p-5"><History sessions={sessions} onDelete={deleteSession} onEdit={editSession} /></div>
+          <div className="p-5">
+            <History
+              sessions={sessions}
+              onDelete={deleteSession}
+              onEdit={editSession}
+            />
+          </div>
         </section>
       </div>
     </div>
