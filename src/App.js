@@ -215,18 +215,23 @@ function SwimChart({ sessions }) {
 
           {/* On n'affiche un tick que si c'est le premier point OU si le mois change vs le précédent */}
           <XAxis
-            dataKey="dateLabel"
-            interval={0}
-            tickMargin={10}
-            padding={{ right: 20 }}
-            tick={{ fill: "currentColor" }}
-            tickFormatter={(_value, index) => {
-              const d = dayjs(data[index].date);
-              if (index === 0) return d.format("MMM YY");
-              const prev = dayjs(data[index - 1].date);
-              return d.isSame(prev, "month") ? "" : d.format("MMM YY");
-            }}
-          />
+  dataKey="dateLabel"
+  interval={0}
+  tickMargin={10}
+  padding={{ right: 20 }}
+  tick={{ fill: "currentColor" }}
+  tickFormatter={(_value, index) => {
+    const d = dayjs(data[index].date);
+    if (index === 0) {
+      const label = d.format("MMM YY");
+      return label.charAt(0).toUpperCase() + label.slice(1);
+    }
+    const prev = dayjs(data[index - 1].date);
+    if (d.isSame(prev, "month")) return "";
+    const label = d.format("MMM YY");
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  }}
+/>
 
           <YAxis tick={{ fill: "currentColor" }} />
 
@@ -253,6 +258,8 @@ function SwimChart({ sessions }) {
             }}
             labelClassName="text-xs"
             itemStyle={{ color: isDark ? "#e5e7eb" : "#0f172a" }}
+            // 🔑 ceci supprime la première ligne (le label de l'axe X)
+            labelFormatter={() => ""}
             formatter={(v, _n, p) => [v + " m", dayjs(p.payload.date).format("DD/MM/YYYY")]}
           />
 
@@ -272,17 +279,18 @@ function SwimChart({ sessions }) {
 
 function MonthlyBarChart({ sessions }) {
   const isDark = useIsDark();
-  const monthly = useMemo(() => {
-    const map = new Map();
-    sessions.forEach((s) => {
-      const key = dayjs(s.date).format("YYYY-MM");
-      const label = dayjs(s.date).format("MMMM YYYY");
-      const prev = map.get(key) || { key, label, total: 0 };
-      prev.total += Number(s.distance) || 0;
-      map.set(key, prev);
-    });
-    return Array.from(map.values()).sort((a, b) => a.key.localeCompare(b.key));
-  }, [sessions]);
+const monthly = useMemo(() => {
+  const map = new Map();
+  sessions.forEach((s) => {
+    const key = dayjs(s.date).format("YYYY-MM");
+    const rawLabel = dayjs(s.date).format("MMMM YYYY");
+    const prettyLabel = rawLabel.charAt(0).toUpperCase() + rawLabel.slice(1);
+    const prev = map.get(key) || { key, label: prettyLabel, total: 0 };
+    prev.total += Number(s.distance) || 0;
+    map.set(key, prev);
+  });
+  return Array.from(map.values()).sort((a, b) => a.key.localeCompare(b.key));
+}, [sessions]);
   if (!monthly.length) return <p className="text-sm text-slate-600 dark:text-slate-300">Aucune donnée mensuelle encore.</p>;
   return (
     <div className="h-72 w-full text-slate-900 dark:text-slate-100">
@@ -299,6 +307,8 @@ function MonthlyBarChart({ sessions }) {
               color: isDark ? "#e5e7eb" : "#0f172a",
             }}
             itemStyle={{ color: isDark ? "#e5e7eb" : "#0f172a" }}
+            // 🔑 enlève la ligne du haut (label de l’axe X)
+            labelFormatter={() => ""}
             formatter={(v) => [`${v} m`, "Total du mois"]}
           />
           <Bar dataKey="total" fill="rgb(99 102 241)" radius={[8, 8, 0, 0]} />
