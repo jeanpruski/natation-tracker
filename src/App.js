@@ -13,6 +13,7 @@ import {
   CartesianGrid,
   BarChart,
   Bar,
+  ReferenceLine,
 } from "recharts";
 import { Download, Moon, Sun, Plus, CalendarDays, Calculator } from "lucide-react";
 
@@ -182,19 +183,67 @@ function AddSessionForm({ onAdd, onExport }) {
 // Graphiques
 function SwimChart({ sessions }) {
   const isDark = useIsDark();
+
+  // Moyenne de toutes les séances (pour la ligne bleue)
+  const avgAll = useMemo(() => {
+    if (!sessions.length) return 0;
+    const sum = sessions.reduce((acc, s) => acc + (Number(s.distance) || 0), 0);
+    return Math.round(sum / sessions.length);
+  }, [sessions]);
+
+  // Data triée + label pour tooltip, on garde la date brute pour comparer les mois
   const data = useMemo(
-    () => [...sessions].sort((a, b) => new Date(a.date) - new Date(b.date))
-      .map((s) => ({ ...s, dateLabel: dayjs(s.date).format("DD/MM") })),
+    () =>
+      [...sessions]
+        .sort((a, b) => new Date(a.date) - new Date(b.date))
+        .map((s) => ({
+          ...s,                        // garde s.date intact
+          dateLabel: dayjs(s.date).format("DD/MM"),
+        })),
     [sessions]
   );
-  if (!data.length) return <p className="text-sm text-slate-600 dark:text-slate-300">Aucune donnée encore.</p>;
+
+  if (!data.length) {
+    return <p className="text-sm text-slate-600 dark:text-slate-300">Aucune donnée encore.</p>;
+  }
+
   return (
     <div className="h-72 w-full text-slate-900 dark:text-slate-100">
       <ResponsiveContainer>
         <LineChart data={data}>
           <CartesianGrid strokeOpacity={0.12} strokeDasharray="3 3" />
-          <XAxis dataKey="dateLabel" tick={{ fill: "currentColor" }} />
+
+          {/* On n'affiche un tick que si c'est le premier point OU si le mois change vs le précédent */}
+          <XAxis
+            dataKey="dateLabel"
+            interval={0}
+            tickMargin={10}
+            padding={{ right: 20 }}
+            tick={{ fill: "currentColor" }}
+            tickFormatter={(_value, index) => {
+              const d = dayjs(data[index].date);
+              if (index === 0) return d.format("MMM YY");
+              const prev = dayjs(data[index - 1].date);
+              return d.isSame(prev, "month") ? "" : d.format("MMM YY");
+            }}
+          />
+
           <YAxis tick={{ fill: "currentColor" }} />
+
+          {/* Lignes de référence */}
+          <ReferenceLine
+            y={1000}
+            stroke="rgb(16 185 129)"      // vert
+            strokeDasharray="1"
+            label={{ value: "1000 m", position: "right", fill: "currentColor", fontSize: 12 }}
+          />
+          <ReferenceLine
+            y={avgAll}
+            stroke="rgb(59 130 246)"      // bleu
+            strokeDasharray="4 4"
+            label={{ value: `${avgAll} m (moy.)`, position: "right", fill: "currentColor", fontSize: 12 }}
+          />
+
           <Tooltip
             contentStyle={{
               borderRadius: 12,
@@ -204,14 +253,23 @@ function SwimChart({ sessions }) {
             }}
             labelClassName="text-xs"
             itemStyle={{ color: isDark ? "#e5e7eb" : "#0f172a" }}
-            formatter={(v, _n, p) => [v + " m", p.payload.date]}
+            formatter={(v, _n, p) => [v + " m", dayjs(p.payload.date).format("DD/MM/YYYY")]}
           />
-          <Line type="monotone" dataKey="distance" stroke="rgb(99 102 241)" strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+
+          <Line
+            type="monotone"
+            dataKey="distance"
+            stroke="rgb(99 102 241)"
+            strokeWidth={3}
+            dot={{ r: 3 }}
+            activeDot={{ r: 5 }}
+          />
         </LineChart>
       </ResponsiveContainer>
     </div>
   );
 }
+
 function MonthlyBarChart({ sessions }) {
   const isDark = useIsDark();
   const monthly = useMemo(() => {
