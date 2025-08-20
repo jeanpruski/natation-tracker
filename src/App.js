@@ -229,12 +229,18 @@ function AddSessionForm({ onAdd, onExport }) {
             </button>
           </div>
           {useCustomDate && (
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="mt-1 w-full rounded-xl bg-transparent p-2 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500 dark:text-slate-100"
-            />
+            <div className="relative">
+  <input
+    type="date"
+    value={date}
+    onChange={(e) => setDate(e.target.value)}
+    className="mt-1 w-full rounded-xl bg-transparent p-2 pr-10 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500 dark:text-slate-100"
+  />
+  <CalendarDays
+    size={16}
+    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 dark:text-slate-300 pointer-events-none"
+  />
+</div>
           )}
         </div>
       </div>
