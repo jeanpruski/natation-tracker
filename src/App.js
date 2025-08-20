@@ -138,12 +138,23 @@ function ThemeToggle() {
 function KpiChip({ title, subtitle, icon, value }) {
   return (
     <div className="w-full flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/90 px-3 py-2 shadow-sm dark:border-slate-700 dark:bg-slate-900/60">
-      <div className="hidden sm:flex">{icon}</div>
-      <div className="leading-tight">
-        <p className="text-[10px] uppercase tracking-wide text-slate-600 dark:text-slate-300">{title}</p>
-        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{subtitle}</p>
+      {/* Icône qui suit le thème */}
+      <div className="hidden sm:flex text-slate-900 dark:text-slate-100">
+        {React.cloneElement(icon, { className: "w-5 h-5 text-current" })}
       </div>
-      <div className="ml-2 text-lg font-bold text-slate-900 dark:text-slate-100">{value}</div>
+
+      <div className="leading-tight">
+        <p className="text-[10px] uppercase tracking-wide text-slate-600 dark:text-slate-300">
+          {title}
+        </p>
+        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+          {subtitle}
+        </p>
+      </div>
+
+      <div className="ml-2 text-lg font-bold text-slate-900 dark:text-slate-100">
+        {value}
+      </div>
     </div>
   );
 }
@@ -294,7 +305,7 @@ function SwimChart({ sessions }) {
           <ReferenceLine
             y={1000}
             stroke="rgb(16 185 129)"
-            strokeDasharray="1"
+            strokeDasharray="10000000"
             label={{ value: "1000 m", position: "right", fill: "currentColor", fontSize: 12 }}
           />
           <ReferenceLine
