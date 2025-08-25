@@ -25,6 +25,15 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Show build content
+        run: ls -la && echo "----" && ls -la build || true
+
+      - name: Upload build as artifact (debug)
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: build/**         # ou dist/** si Vite
+
       # Déploiement via FTPS (recommandé sur mutualisé)
       - name: Deploy via FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
