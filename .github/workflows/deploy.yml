@@ -34,15 +34,14 @@ jobs:
           name: build-output
           path: build/**         # ou dist/** si Vite
 
-      - name: Deploy via FTPS
+      - name: Deploy via FTP (insecure)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps          # FTPS explicite
+          protocol: ftp          # 👈 au lieu de ftps
           port: 21
-          timeout: 60000          # 60s, augmente si besoin
-          local-dir: build/
-          server-dir: ${{ secrets.FTP_SERVER_DIR }}   # "/" si compte FTP chrooté sur le sous-domaine
+          local-dir: build/      # ou dist/ si Vite
+          server-dir: ${{ secrets.FTP_SERVER_DIR }}
           log-level: verbose
