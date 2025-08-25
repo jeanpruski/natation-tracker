@@ -26,16 +26,12 @@ jobs:
         run: npm run build
 
       # Déploiement via FTPS (recommandé sur mutualisé)
-      - name: Deploy via FTP(S)
-        if: ${{ !env.SFTP }}
-        uses: SamKirkland/FTP-Deploy-Action@v4
+      - name: Deploy via FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           protocol: ftps
-          local-dir: build/
+          local-dir: build/           # ou dist/ si Vite
           server-dir: ${{ secrets.FTP_SERVER_DIR }}
-          # options utiles:
-          # state-name: .ftp-deploy-sync-state.json
-          # dangerous-clean-slate: false
