@@ -19,6 +19,52 @@ import { Download, Moon, Sun, Plus, CalendarDays, Calculator } from "lucide-reac
 
 dayjs.locale("fr");
 
+/* =========================
+   API helpers (AJOUT)
+   ========================= */
+const API_BASE = process.env.REACT_APP_API_BASE ?? "/api";
+
+async function parseJsonOrThrow(r) {
+  const ct = r.headers.get("content-type") || "";
+  if (!ct.includes("application/json")) {
+    const text = await r.text();
+    throw new Error(
+      `Réponse non-JSON (status ${r.status}) — extrait: ${text.slice(0, 120)}...`
+    );
+  }
+  return r.json();
+}
+
+async function apiGet(path) {
+  const r = await fetch(`${API_BASE}${path}`, { credentials: "same-origin" });
+  if (!r.ok) {
+    const msg = await r.text().catch(() => r.statusText);
+    throw new Error(`HTTP ${r.status} — ${msg?.slice?.(0, 120) || r.statusText}`);
+  }
+  return parseJsonOrThrow(r);
+}
+
+async function apiJson(method, path, body) {
+  const r = await fetch(`${API_BASE}${path}`, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined,
+    credentials: "same-origin",
+  });
+  if (method === "DELETE") {
+    if (!r.ok) {
+      const msg = await r.text().catch(() => r.statusText);
+      throw new Error(`HTTP ${r.status} — ${msg?.slice?.(0, 120) || r.statusText}`);
+    }
+    return true;
+  }
+  if (!r.ok) {
+    const msg = await r.text().catch(() => r.statusText);
+    throw new Error(`HTTP ${r.status} — ${msg?.slice?.(0, 120) || r.statusText}`);
+  }
+  return parseJsonOrThrow(r);
+}
+
 // --- Login Card ---
 function LoginCard({ onLogin }) {
   const [email, setEmail] = useState("");
@@ -78,7 +124,7 @@ function LockedBadge() {
   );
 }
 
-// --- Local Storage Hook ---
+// --- Local Storage Hook (conservé pour le thème uniquement) ---
 function useLocalStorage(key, initialValue) {
   const [value, setValue] = useState(() => {
     try {
@@ -138,11 +184,9 @@ function ThemeToggle() {
 function KpiChip({ title, subtitle, icon, value }) {
   return (
     <div className="w-full flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/90 px-3 py-2 shadow-sm dark:border-slate-700 dark:bg-slate-900/60">
-      {/* Icône qui suit le thème */}
       <div className="hidden sm:flex text-slate-900 dark:text-slate-100">
         {React.cloneElement(icon, { className: "w-5 h-5 text-current" })}
       </div>
-
       <div className="leading-tight">
         <p className="text-[10px] uppercase tracking-wide text-slate-600 dark:text-slate-300">
           {title}
@@ -151,7 +195,6 @@ function KpiChip({ title, subtitle, icon, value }) {
           {subtitle}
         </p>
       </div>
-
       <div className="ml-2 text-lg font-bold text-slate-900 dark:text-slate-100">
         {value}
       </div>
@@ -182,11 +225,11 @@ function AddSessionForm({ onAdd, onExport }) {
   const [useCustomDate, setUseCustomDate] = useState(false);
   const [date, setDate] = useState(dayjs().format("YYYY-MM-DD"));
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
     if (!distance || isNaN(distance)) return;
     const finalDate = useCustomDate ? date : dayjs().format("YYYY-MM-DD");
-    onAdd({ id: uuidv4(), distance: Number(distance), date: finalDate });
+    await onAdd({ id: uuidv4(), distance: Number(distance), date: finalDate });
     setDistance("");
     setUseCustomDate(false);
   };
@@ -219,28 +262,26 @@ function AddSessionForm({ onAdd, onExport }) {
             <button
               type="button"
               onClick={() => setUseCustomDate((v) => !v)}
-              className={`relative inline-flex h-7 w-12 items-center rounded-full transition ${useCustomDate ? "bg-indigo-600" : "bg-slate-300 dark:bg-slate-600"
-                }`}
+              className={`relative inline-flex h-7 w-12 items-center rounded-full transition ${useCustomDate ? "bg-indigo-600" : "bg-slate-300 dark:bg-slate-600"}`}
             >
               <span
-                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${useCustomDate ? "translate-x-6" : "translate-x-1"
-                  }`}
+                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${useCustomDate ? "translate-x-6" : "translate-x-1"}`}
               />
             </button>
           </div>
           {useCustomDate && (
             <div className="relative">
-  <input
-    type="date"
-    value={date}
-    onChange={(e) => setDate(e.target.value)}
-    className="mt-1 w-full rounded-xl bg-transparent p-2 pr-10 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500 dark:text-slate-100"
-  />
-  <CalendarDays
-    size={16}
-    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 dark:text-slate-300 pointer-events-none"
-  />
-</div>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="mt-1 w-full rounded-xl bg-transparent p-2 pr-10 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500 dark:text-slate-100"
+              />
+              <CalendarDays
+                size={16}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 dark:text-slate-300 pointer-events-none"
+              />
+            </div>
           )}
         </div>
       </div>
@@ -257,7 +298,7 @@ function AddSessionForm({ onAdd, onExport }) {
 }
 
 // =========================
-// Graphiques
+/* Graphiques */
 // =========================
 function SwimChart({ sessions }) {
   const isDark = useIsDark();
@@ -286,7 +327,6 @@ function SwimChart({ sessions }) {
       <ResponsiveContainer>
         <LineChart data={data}>
           <CartesianGrid strokeOpacity={0.12} strokeDasharray="3 3" />
-
           <XAxis
             dataKey="dateLabel"
             interval={0}
@@ -305,9 +345,7 @@ function SwimChart({ sessions }) {
               return label.charAt(0).toUpperCase() + label.slice(1);
             }}
           />
-
           <YAxis tick={{ fill: "currentColor" }} />
-
           <ReferenceLine
             y={1000}
             stroke="rgb(16 185 129)"
@@ -320,7 +358,6 @@ function SwimChart({ sessions }) {
             strokeDasharray="4 4"
             label={{ value: `${avgAll} m (moy.)`, position: "right", fill: "currentColor", fontSize: 12 }}
           />
-
           <Tooltip
             contentStyle={{
               borderRadius: 12,
@@ -333,7 +370,6 @@ function SwimChart({ sessions }) {
             labelFormatter={() => ""}
             formatter={(v, _n, p) => [v + " m", dayjs(p.payload.date).format("DD/MM/YYYY")]}
           />
-
           <Line type="monotone" dataKey="distance" stroke="rgb(99 102 241)" strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 5 }} />
         </LineChart>
       </ResponsiveContainer>
@@ -507,11 +543,29 @@ function History({ sessions, onDelete, onEdit }) {
 // =========================
 // App principale
 // =========================
-// --- App principale ---
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
 
-  const [sessions, setSessions] = useLocalStorage("swim_sessions", []);
+  /* Remplacement du localStorage pour sessions */
+  const [sessions, setSessions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const data = await apiGet("/sessions");
+        if (alive) setSessions(data);
+      } catch (e) {
+        if (alive) setError("Chargement impossible : " + (e?.message || "erreur inconnue"));
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => { alive = false; };
+  }, []);
+
   const nf = useMemo(() => new Intl.NumberFormat("fr-FR"), []);
   const monthKey = dayjs().format("YYYY-MM");
   const monthLabel = dayjs().format("MMMM YYYY");
@@ -538,13 +592,21 @@ export default function App() {
 
   const totalSessions = sessions.length;
 
-  const addSession = (payload) => setSessions((prev) => [...prev, payload]);
-  const deleteSession = (id) =>
+  /* Handlers connectés à l’API */
+  const addSession = async (payload) => {
+    const body = { id: payload.id, distance: payload.distance, date: payload.date };
+    const created = await apiJson("POST", "/sessions", body);
+    setSessions((prev) => [...prev, created]);
+  };
+  const deleteSession = async (id) => {
+    await apiJson("DELETE", `/sessions/${id}`);
     setSessions((prev) => prev.filter((s) => s.id !== id));
-  const editSession = (id, updated) =>
+  };
+  const editSession = async (id, updated) => {
+    await apiJson("PUT", `/sessions/${id}`, updated);
     setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, ...updated } : s)));
-  const exportCSV = () =>
-    downloadCSV("natation_sessions.csv", sessions);
+  };
+  const exportCSV = () => downloadCSV("natation_sessions.csv", sessions);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 via-indigo-50 to-white px-4 xl:px-12 py-8 dark:from-[#0b1020] dark:via-[#0a1028] dark:to-[#0b1228]">
@@ -581,10 +643,21 @@ export default function App() {
         </div>
       </header>
 
+      {/* Messages de statut */}
+      {loading && (
+        <p className="mb-4 rounded-xl bg-slate-100 px-3 py-2 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+          ⏳ Chargement des données…
+        </p>
+      )}
+      {error && (
+        <p className="mb-4 rounded-xl bg-rose-100 px-3 py-2 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200">
+          {error}
+        </p>
+      )}
+
       <div className="grid grid-cols-1 xl:grid-cols-[2fr_3fr] gap-x-6 gap-y-2 items-start">
         {/* Bloc gauche Options + Historique */}
         <section className="relative self-start order-1 overflow-hidden rounded-3xl ring-1 ring-slate-200 bg-white/80 backdrop-blur dark:ring-slate-700 dark:bg-slate-900/60">
-          {/* Contenu visuel désaturé quand déconnecté */}
           <div className={isLoggedIn ? "" : "pointer-events-none select-none opacity-60 grayscale"}>
             <div className="flex items-center justify-between border-b px-5 py-4 dark:border-slate-700 dark:bg-slate-800/70">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
@@ -610,15 +683,10 @@ export default function App() {
           {/* Calque + overlay + popup */}
           {!isLoggedIn && (
             <>
-              {/* Overlay semi-transparent qui couvre uniquement le bloc gauche */}
               <div className="absolute inset-0 z-10 bg-white/70 dark:bg-slate-900/70" aria-hidden="true" />
-
-              {/* Badge "Verrouillé" */}
               <div className="absolute left-5 top-4 z-20">
                 <LockedBadge />
               </div>
-
-              {/* Popup centrée */}
               <div className="absolute inset-0 z-30 flex items-center justify-center px-4 sm:px-8 py-6">
                 <LoginCard onLogin={() => setIsLoggedIn(true)} />
               </div>
@@ -626,7 +694,7 @@ export default function App() {
           )}
         </section>
 
-        {/* Colonne droite (graphiques toujours visibles en lecture seule) */}
+        {/* Colonne droite (graphiques) */}
         <section className="flex flex-col gap-6 self-start order-2">
           <div className="overflow-hidden rounded-3xl ring-1 ring-slate-200 bg-white/80 dark:ring-slate-700 dark:bg-slate-900/60">
             <div className="flex items-center justify-between border-b px-5 py-4 dark:border-slate-700">
