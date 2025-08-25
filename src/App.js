@@ -1,4 +1,4 @@
-// App.js – Suivi Natation (React + Tailwind v3 + Recharts) + Edit Lock (lecture seule visuelle + disabled)
+// App.js – Suivi Natation (React + Tailwind v3 + Recharts) + Edit Lock + UI compact
 import React, { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
 import "dayjs/locale/fr";
@@ -39,7 +39,8 @@ async function apiJson(method, path, body, editToken) {
   const headers = { "Content-Type": "application/json" };
   if (editToken) headers["Authorization"] = `Bearer ${editToken}`;
   const r = await fetch(`${API_BASE}${path}`, {
-    method, headers,
+    method,
+    headers,
     body: body ? JSON.stringify(body) : undefined,
     credentials: "same-origin",
   });
@@ -68,11 +69,10 @@ function useEditAuth() {
   const isAuth = !!token;
 
   const logout = () => {
-    try { localStorage.removeItem("edit_token"); } catch { }
+    try { localStorage.removeItem("edit_token"); } catch {}
     setToken("");
   };
 
-  // Vérifie le token courant (au démarrage et si jamais il change)
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -94,14 +94,13 @@ function useEditAuth() {
     return () => { alive = false; };
   }, [token]);
 
-  // ✅ nouvelle API pour se connecter : ne stocke le token QUE s’il est validé
   const verifyAndLogin = async (candidate) => {
     const r = await fetch(`${API_BASE}/auth/check`, {
       headers: { Authorization: `Bearer ${candidate}` },
       credentials: "same-origin",
     });
     if (!r.ok) throw new Error("invalid");
-    try { localStorage.setItem("edit_token", candidate); } catch { }
+    try { localStorage.setItem("edit_token", candidate); } catch {}
     setToken(candidate);
   };
 
@@ -112,7 +111,6 @@ function EditAuthModal({ open, onClose, onValid }) {
   const [value, setValue] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
-
   if (!open) return null;
 
   const tryUnlock = async () => {
@@ -120,8 +118,8 @@ function EditAuthModal({ open, onClose, onValid }) {
     if (!value) { setErr("Veuillez entrer une clé."); return; }
     setBusy(true);
     try {
-      await onValid(value);   // appelle useEditAuth().verifyAndLogin
-      onClose();              // fermer seulement si validée
+      await onValid(value);
+      onClose();
     } catch {
       setErr("Clé invalide.");
     } finally {
@@ -131,11 +129,11 @@ function EditAuthModal({ open, onClose, onValid }) {
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-700 dark:bg-slate-900">
-        <h3 className="mb-2 text-lg font-semibold text-slate-900 dark:text-slate-100">
+      <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-4 shadow-xl dark:border-slate-700 dark:bg-slate-900">
+        <h3 className="mb-1.5 text-base font-semibold text-slate-900 dark:text-slate-100">
           🔒 Déverrouiller l’édition
         </h3>
-        <p className="mb-4 text-sm text-slate-600 dark:text-slate-300">
+        <p className="mb-3 text-[13px] text-slate-600 dark:text-slate-300">
           Entrez la clé d’édition pour activer l’ajout, la modification et la suppression.
         </p>
 
@@ -145,21 +143,17 @@ function EditAuthModal({ open, onClose, onValid }) {
           onChange={(e) => setValue(e.target.value)}
           placeholder="Clé d’édition"
           disabled={busy}
-          className="mb-2 w-full rounded-xl border border-slate-300 bg-white p-2 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+          className="mb-2 w-full rounded-lg border border-slate-300 bg-white p-1.5 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
         />
 
-        {err && (
-          <p className="mb-3 text-sm text-rose-600 dark:text-rose-400">
-            {err}
-          </p>
-        )}
+        {err && <p className="mb-2 text-sm text-rose-600 dark:text-rose-400">{err}</p>}
 
         <div className="flex justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
             disabled={busy}
-            className="rounded-xl bg-slate-200 px-3 py-2 text-slate-800 hover:bg-slate-300 disabled:opacity-60 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600"
+            className="rounded-lg bg-slate-200 px-3 py-1.5 text-sm text-slate-800 hover:bg-slate-300 disabled:opacity-60 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600"
           >
             Annuler
           </button>
@@ -167,7 +161,7 @@ function EditAuthModal({ open, onClose, onValid }) {
             type="button"
             onClick={tryUnlock}
             disabled={busy}
-            className="rounded-xl bg-indigo-600 px-3 py-2 font-semibold text-white hover:bg-indigo-500 disabled:opacity-60"
+            className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-60"
           >
             {busy ? "Vérification..." : "Déverrouiller"}
           </button>
@@ -222,7 +216,7 @@ function ThemeToggle() {
       aria-label={isDark ? "Passer en clair" : "Passer en sombre"}
       className="inline-flex items-center justify-center rounded-xl bg-slate-200 p-2 text-slate-900 shadow hover:bg-slate-300 dark:bg-slate-700/70 dark:text-slate-100 dark:hover:bg-slate-700"
     >
-      {isDark ? <Sun size={18} /> : <Moon size={18} />}
+      {isDark ? <Sun size={16} /> : <Moon size={16} />}
     </button>
   );
 }
@@ -232,13 +226,13 @@ function ThemeToggle() {
    ========================= */
 function KpiChip({ title, subtitle, icon, value }) {
   return (
-    <div className="w-full flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/90 px-3 py-2 shadow-sm dark:border-slate-700 dark:bg-slate-900/60">
+    <div className="w-full flex items-center gap-3 rounded-xl border border-slate-200 bg-white/90 px-3 py-2 shadow-sm dark:border-slate-700 dark:bg-slate-900/60">
       <div className="hidden sm:flex text-slate-900 dark:text-slate-100">
-        {React.cloneElement(icon, { className: "w-5 h-5 text-current" })}
+        {React.cloneElement(icon, { className: "w-4 h-4 text-current" })}
       </div>
       <div className="leading-tight">
         <p className="text-[10px] uppercase tracking-wide text-slate-600 dark:text-slate-300">{title}</p>
-        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{subtitle}</p>
+        <p className="text-[13px] font-medium text-slate-900 dark:text-slate-100">{subtitle}</p>
       </div>
       <div className="ml-2 text-lg font-bold text-slate-900 dark:text-slate-100">{value}</div>
     </div>
@@ -280,7 +274,7 @@ function AddSessionForm({ onAdd, onExport, readOnly }) {
   const disabledCls = "opacity-60 cursor-not-allowed";
 
   return (
-    <form onSubmit={submit} className="space-y-4">
+    <form onSubmit={submit} className="space-y-3">
       <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
         <label className="group relative flex flex-col rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-inner dark:border-slate-700 dark:bg-slate-800/80">
           <span className="text-xs font-medium uppercase tracking-wide text-slate-600 group-hover:text-slate-800 dark:text-slate-300 dark:group-hover:text-slate-100">
@@ -292,7 +286,7 @@ function AddSessionForm({ onAdd, onExport, readOnly }) {
             onChange={(e) => setDistance(e.target.value)}
             placeholder="ex: 1000"
             disabled={readOnly}
-            className={`mt-1 w-full rounded-xl bg-transparent p-2 text-slate-900 outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 dark:text-slate-100 dark:placeholder:text-slate-400 ${readOnly ? disabledCls : ""}`}
+            className={`mt-1 w-full rounded-xl bg-transparent p-1.5 text-slate-900 outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 dark:text-slate-100 dark:placeholder:text-slate-400 ${readOnly ? disabledCls : ""}`}
           />
         </label>
         <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-inner dark:border-slate-700 dark:bg-slate-800/80">
@@ -307,9 +301,9 @@ function AddSessionForm({ onAdd, onExport, readOnly }) {
               type="button"
               onClick={() => !readOnly && setUseCustomDate((v) => !v)}
               disabled={readOnly}
-              className={`relative inline-flex h-7 w-12 items-center rounded-full transition ${useCustomDate ? "bg-indigo-600" : "bg-slate-300 dark:bg-slate-600"} ${readOnly ? disabledCls : ""}`}
+              className={`relative inline-flex h-6 w-10 items-center rounded-full transition ${useCustomDate ? "bg-indigo-600" : "bg-slate-300 dark:bg-slate-600"} ${readOnly ? disabledCls : ""}`}
             >
-              <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${useCustomDate ? "translate-x-6" : "translate-x-1"}`} />
+              <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${useCustomDate ? "translate-x-5" : "translate-x-0.5"}`} />
             </button>
           </div>
           {useCustomDate && (
@@ -319,25 +313,25 @@ function AddSessionForm({ onAdd, onExport, readOnly }) {
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 disabled={readOnly}
-                className={`mt-1 w-full rounded-xl bg-transparent p-2 pr-10 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500 dark:text-slate-100 ${readOnly ? disabledCls : ""}`}
+                className={`mt-1 w-full rounded-xl bg-transparent p-1.5 pr-9 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500 dark:text-slate-100 ${readOnly ? disabledCls : ""}`}
               />
-              <CalendarDays size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 dark:text-slate-300 pointer-events-none" />
+              <CalendarDays size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 dark:text-slate-300 pointer-events-none" />
             </div>
           )}
         </div>
       </div>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <button
           type="submit"
           disabled={readOnly}
-          className={`inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-4 py-3 font-semibold text-white hover:bg-indigo-500 ${readOnly ? disabledCls : ""}`}
+          className={`inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500 ${readOnly ? disabledCls : ""}`}
         >
-          <Plus size={16} /> Ajouter la séance
+          <Plus size={14} /> Ajouter la séance
         </button>
         <button
           type="button"
           onClick={onExport}
-          className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3 font-semibold text-white hover:bg-emerald-500"
+          className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
         >
           <Download size={16} /> Exporter en CSV
         </button>
@@ -351,18 +345,24 @@ function AddSessionForm({ onAdd, onExport, readOnly }) {
    ========================= */
 function SwimChart({ sessions }) {
   const isDark = useIsDark();
-  const avgAll = useMemo(() => sessions.length ? Math.round(sessions.reduce((a, s) => a + (Number(s.distance) || 0), 0) / sessions.length) : 0, [sessions]);
-  const data = useMemo(() => [...sessions].sort((a, b) => new Date(a.date) - new Date(b.date)).map((s) => ({ ...s, dateLabel: dayjs(s.date).format("DD/MM") })), [sessions]);
+  const avgAll = useMemo(
+    () => (sessions.length ? Math.round(sessions.reduce((a, s) => a + (Number(s.distance) || 0), 0) / sessions.length) : 0),
+    [sessions]
+  );
+  const data = useMemo(
+    () => [...sessions].sort((a, b) => new Date(a.date) - new Date(b.date)).map((s) => ({ ...s, dateLabel: dayjs(s.date).format("DD/MM") })),
+    [sessions]
+  );
 
   if (!data.length) return <p className="text-sm text-slate-600 dark:text-slate-300">Aucune donnée encore.</p>;
 
   return (
-    <div className="h-72 w-full text-slate-900 dark:text-slate-100">
+    <div className="h-60 w-full text-slate-900 dark:text-slate-100">
       <ResponsiveContainer>
         <LineChart data={data}>
           <CartesianGrid strokeOpacity={0.12} strokeDasharray="3 3" />
           <XAxis
-            dataKey="dateLabel" interval={0} tickMargin={10} padding={{ right: 20 }} tick={{ fill: "currentColor" }}
+            dataKey="dateLabel" interval={0} tickMargin={8} padding={{ right: 16 }} tick={{ fill: "currentColor" }}
             tickFormatter={(_v, i) => {
               const d = dayjs(data[i].date);
               if (i === 0) { const label = d.format("MMM YY"); return label.charAt(0).toUpperCase() + label.slice(1); }
@@ -409,7 +409,7 @@ function MonthlyBarChart({ sessions }) {
   if (!monthly.length) return <p className="text-sm text-slate-600 dark:text-slate-300">Aucune donnée mensuelle encore.</p>;
 
   return (
-    <div className="h-72 w-full text-slate-900 dark:text-slate-100">
+    <div className="h-60 w-full text-slate-900 dark:text-slate-100">
       <ResponsiveContainer>
         <BarChart data={monthly}>
           <CartesianGrid strokeOpacity={0.12} strokeDasharray="3 3" />
@@ -468,46 +468,46 @@ function History({ sessions, onDelete, onEdit, readOnly }) {
   const disabledCls = "opacity-60 cursor-not-allowed";
 
   return (
-    <div className="overflow-hidden rounded-3xl ring-1 ring-slate-200 bg-white/80 backdrop-blur dark:ring-slate-700 dark:bg-slate-900/60">
-      <div className="p-5">
-        <table className="w-full text-left">
+    <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/80 backdrop-blur dark:ring-slate-700 dark:bg-slate-900/60">
+      <div className="p-4">
+        <table className="w-full text-left text-sm">
           <thead className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
             <tr>
-              <th className="px-4 py-3">Date</th>
-              <th className="px-4 py-3">Métrage (m)</th>
-              <th className="px-4 py-3 text-right">Action</th>
+              <th className="px-3 py-2">Date</th>
+              <th className="px-3 py-2">Métrage (m)</th>
+              <th className="px-3 py-2 text-right">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
             {currentData.map((s) => (
               <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/60">
-                <td className="px-4 py-3 text-slate-900 dark:text-slate-100">
+                <td className="px-3 py-2 text-slate-900 dark:text-slate-100">
                   {editId === s.id ? (
                     <input
                       type="date"
                       value={editDate}
                       onChange={(e) => setEditDate(e.target.value)}
                       disabled={readOnly}
-                      className={`rounded-lg border border-slate-300 bg-white p-1 text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 ${readOnly ? disabledCls : ""}`}
+                      className={`rounded-lg border border-slate-300 bg-white p-1.5 text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 ${readOnly ? disabledCls : ""}`}
                     />
                   ) : (
                     dayjs(s.date).format("DD-MM-YYYY")
                   )}
                 </td>
-                <td className="px-4 py-3 font-semibold text-slate-900 dark:text-slate-100">
+                <td className="px-3 py-2 font-semibold text-slate-900 dark:text-slate-100">
                   {editId === s.id ? (
                     <input
                       type="number"
                       value={editDistance}
                       onChange={(e) => setEditDistance(e.target.value)}
                       disabled={readOnly}
-                      className={`w-24 rounded-lg border border-slate-300 bg-white p-1 text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 ${readOnly ? disabledCls : ""}`}
+                      className={`w-24 rounded-lg border border-slate-300 bg-white p-1.5 text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 ${readOnly ? disabledCls : ""}`}
                     />
                   ) : (
                     s.distance
                   )}
                 </td>
-                <td className="px-4 py-3 text-right">
+                <td className="px-3 py-2 text-right">
                   {editId === s.id ? (
                     <div className="inline-flex gap-2">
                       <button
@@ -549,11 +549,11 @@ function History({ sessions, onDelete, onEdit, readOnly }) {
           </tbody>
         </table>
 
-        <div className="mt-4 flex items-center justify-between rounded-xl bg-slate-100 px-3 py-2 text-slate-700 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700">
+        <div className="mt-3 flex items-center justify-between rounded-xl bg-slate-100 px-3 py-2 text-slate-700 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700">
           <button
             onClick={goPrev}
             disabled={page === 1}
-            className="rounded-lg px-3 py-1 font-medium hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-slate-700/60"
+            className="rounded-lg px-2.5 py-1.5 text-sm font-medium hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-slate-700/60"
           >
             ◀ Précédent
           </button>
@@ -563,7 +563,7 @@ function History({ sessions, onDelete, onEdit, readOnly }) {
           <button
             onClick={goNext}
             disabled={page === totalPages}
-            className="rounded-lg px-3 py-1 font-medium hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-slate-700/60"
+            className="rounded-lg px-2.5 py-1.5 text-sm font-medium hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-slate-700/60"
           >
             Suivant ▶
           </button>
@@ -611,9 +611,9 @@ export default function App() {
   const avgPerSession = useMemo(() => (sessions.length ? Math.round(totalAll / sessions.length) : 0), [sessions.length, totalAll]);
   const totalSessions = sessions.length;
 
-  // Guard réseau : même si l’UI est disabled, on sécurise.
+  // Guard réseau
   const guard = (fn) => (...args) => {
-    if (checking) return;       // attend la vérification initiale
+    if (checking) return;
     if (!isAuth) { setShowEditModal(true); return; }
     return fn(...args);
   };
@@ -633,17 +633,13 @@ export default function App() {
   });
   const exportCSV = () => downloadCSV("natation_sessions.csv", sessions);
 
-  // classes de flou/lock visuel quand lecture seule
-  const lockedMask =
-    !isAuth
-      ? "pointer-events-none select-none blur-[1.5px] grayscale-[.3] opacity-75"
-      : "";
+  const lockedMask = !isAuth ? "pointer-events-none select-none blur-[1.5px] grayscale-[.3] opacity-75" : "";
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-50 via-indigo-50 to-white px-4 xl:px-12 py-8 dark:from-[#0b1020] dark:via-[#0a1028] dark:to-[#0b1228]">
-      <header className="mb-6 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+    <div className="min-h-screen bg-gradient-to-b from-sky-50 via-indigo-50 to-white px-4 xl:px-12 py-8 text-[13.5px] sm:text-[14px] dark:from-[#0b1020] dark:via-[#0a1028] dark:to-[#0b1228]">
+      <header className="mb-6 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex items-center gap-2">
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl text-slate-900 dark:text-slate-100">🏊‍♂️ Suivi Natation</h1>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl text-slate-900 dark:text-slate-100">🏊‍♂️ Suivi Natation</h1>
           <ThemeToggle />
           <button
             onClick={() => (isAuth ? editLogout() : setShowEditModal(true))}
@@ -658,86 +654,74 @@ export default function App() {
             title="Total du mois"
             subtitle={monthLabel}
             value={<>{nf.format(totalMonth)} <span className="text-xs opacity-70">m</span></>}
-            icon={<CalendarDays size={18} />}
+            icon={<CalendarDays size={16} />}
           />
           <KpiChip
             title="Moyenne / séance"
             subtitle="Toutes séances"
             value={<>{nf.format(avgPerSession)} <span className="text-xs opacity-70">m</span></>}
-            icon={<Calculator size={18} />}
+            icon={<Calculator size={16} />}
           />
         </div>
       </header>
 
-      {/* Messages de statut */}
-      {loading && <p className="mb-4 rounded-xl bg-slate-100 px-3 py-2 text-slate-700 dark:bg-slate-800 dark:text-slate-200">⏳ Chargement des données…</p>}
-      {error && <p className="mb-4 rounded-xl bg-rose-100 px-3 py-2 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200">{error}</p>}
+      {loading && <p className="mb-3 rounded-xl bg-slate-100 px-3 py-2 text-slate-700 dark:bg-slate-800 dark:text-slate-200">⏳ Chargement des données…</p>}
+      {error && <p className="mb-3 rounded-xl bg-rose-100 px-3 py-2 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200">{error}</p>}
 
-      <div className="grid grid-cols-1 xl:grid-cols-[2fr_3fr] gap-x-6 gap-y-6 items-start">
-        {/* Colonne Graphiques (mobile en premier, desktop à droite) */}
-        <section className="flex flex-col gap-6 self-start order-1 xl:order-2">
-          {/* 📈 Séances */}
-          <div className="overflow-hidden rounded-3xl ring-1 ring-slate-200 bg-white/80 dark:ring-slate-700 dark:bg-slate-900/60">
-            <div className="flex items-center justify-between border-b px-5 py-4 dark:border-slate-700">
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                📈 Séances <span className="ml-2 text-sm font-normal text-slate-600 dark:text-slate-300">({totalSessions})</span>
-              </h2>
-            </div>
-            <div className="p-5">
-              <SwimChart sessions={sessions} />
-            </div>
-          </div>
-
-          {/* 📊 Cumulatif */}
-          <div className="overflow-hidden rounded-3xl ring-1 ring-slate-200 bg-white/80 dark:ring-slate-700 dark:bg-slate-900/60">
-            <div className="flex items-center justify-between border-b px-5 py-4 dark:border-slate-700">
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">📊 Cumulatif par mois</h2>
-            </div>
-            <div className="p-5">
-              <MonthlyBarChart sessions={sessions} />
-            </div>
-          </div>
-        </section>
-
-        {/* Panneau unique Options + Historique (mobile ET desktop) */}
-        <section className="relative self-start order-2 xl:order-1 overflow-hidden rounded-3xl ring-1 ring-slate-200 bg-white/80 backdrop-blur dark:ring-slate-700 dark:bg-slate-900/60">
-          {/* Bandeau lock si lecture seule */}
+      <div className="grid grid-cols-1 xl:grid-cols-[2fr_3fr] gap-x-4 gap-y-3 items-start">
+        {/* Panneau Options + Historique (toujours groupé, mobile inclus) */}
+        <section className="relative self-start order-2 xl:order-1 overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/80 backdrop-blur dark:ring-slate-700 dark:bg-slate-900/60">
           {!isAuth && (
             <div className="absolute left-4 top-4 z-20 inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white/80 px-3 py-1 text-xs font-medium text-slate-700 shadow-sm dark:border-slate-600 dark:bg-slate-800/70 dark:text-slate-200">
               <Lock size={14} /> Mode lecture seule — cliquez “Éditer” pour déverrouiller
             </div>
           )}
 
-          {/* ✅ tout le contenu (Options + Historique) est dans le même wrapper flouté */}
           <div className={`${lockedMask}`}>
-            {/* Options */}
-            <div className="flex items-center justify-between border-b px-5 py-4 dark:border-slate-700 dark:bg-slate-800/70">
+            <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700 dark:bg-slate-800/70">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">📘 Options</h2>
             </div>
-            <div className="p-5">
+            <div className="p-4">
               <AddSessionForm onAdd={addSession} onExport={exportCSV} readOnly={!isAuth} />
             </div>
 
-            {/* Historique (même panneau, toutes tailles d’écran) */}
+            {/* Historique visible aussi en mobile (plus de hidden xl:block) */}
             <div className="border-t dark:border-slate-700" />
-            <div className="px-5 pt-5 pb-5">
-              <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-slate-100">📋 Historique</h3>
-              <History
-                sessions={sessions}
-                onDelete={deleteSession}
-                onEdit={editSession}
-                readOnly={!isAuth}
-              />
+            <div className="px-4 pt-4 pb-4">
+              <h3 className="mb-2.5 text-lg font-semibold text-slate-900 dark:text-slate-100">📋 Historique</h3>
+              <History sessions={sessions} onDelete={deleteSession} onEdit={editSession} readOnly={!isAuth} />
+            </div>
+          </div>
+        </section>
+
+        {/* Colonne droite (graphiques) */}
+        <section className="flex flex-col gap-4 self-start order-1 xl:order-2">
+          <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/80 dark:ring-slate-700 dark:bg-slate-900/60">
+            <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                📈 Séances <span className="ml-2 text-sm font-normal text-slate-600 dark:text-slate-300">({totalSessions})</span>
+              </h2>
+            </div>
+            <div className="p-4">
+              <SwimChart sessions={sessions} />
+            </div>
+          </div>
+
+          <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/80 dark:ring-slate-700 dark:bg-slate-900/60">
+            <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">📊 Cumulatif par mois</h2>
+            </div>
+            <div className="p-4">
+              <MonthlyBarChart sessions={sessions} />
             </div>
           </div>
         </section>
       </div>
 
-      {/* Modal clé d'édition */}
       <EditAuthModal
         open={showEditModal}
         onClose={() => setShowEditModal(false)}
-        onValid={verifyAndLogin}   // ✅ passe la bonne fonction ici
+        onValid={verifyAndLogin}
       />
     </div>
   );
