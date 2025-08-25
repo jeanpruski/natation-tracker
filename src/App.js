@@ -68,7 +68,7 @@ function useEditAuth() {
   const isAuth = !!token;
 
   const logout = () => {
-    try { localStorage.removeItem("edit_token"); } catch {}
+    try { localStorage.removeItem("edit_token"); } catch { }
     setToken("");
   };
 
@@ -101,7 +101,7 @@ function useEditAuth() {
       credentials: "same-origin",
     });
     if (!r.ok) throw new Error("invalid");
-    try { localStorage.setItem("edit_token", candidate); } catch {}
+    try { localStorage.setItem("edit_token", candidate); } catch { }
     setToken(candidate);
   };
 
@@ -673,34 +673,10 @@ export default function App() {
       {loading && <p className="mb-4 rounded-xl bg-slate-100 px-3 py-2 text-slate-700 dark:bg-slate-800 dark:text-slate-200">⏳ Chargement des données…</p>}
       {error && <p className="mb-4 rounded-xl bg-rose-100 px-3 py-2 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200">{error}</p>}
 
-      <div className="grid grid-cols-1 xl:grid-cols-[2fr_3fr] gap-x-6 gap-y-2 items-start">
-        {/* Bloc gauche Options + Historique */}
-        <section className="relative self-start order-1 overflow-hidden rounded-3xl ring-1 ring-slate-200 bg-white/80 backdrop-blur dark:ring-slate-700 dark:bg-slate-900/60">
-          {/* bandeau lock si lecture seule */}
-          {!isAuth && (
-            <div className="absolute left-4 top-4 z-20 inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white/80 px-3 py-1 text-xs font-medium text-slate-700 shadow-sm dark:border-slate-600 dark:bg-slate-800/70 dark:text-slate-200">
-              <Lock size={14} /> Mode lecture seule — cliquez “Éditer” pour déverrouiller
-            </div>
-          )}
-
-          {/* contenu flouté/désactivé si non-auth */}
-          <div className={`${lockedMask}`}>
-            <div className="flex items-center justify-between border-b px-5 py-4 dark:border-slate-700 dark:bg-slate-800/70">
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">📘 Options</h2>
-            </div>
-            <div className="p-5">
-              <AddSessionForm onAdd={addSession} onExport={exportCSV} readOnly={!isAuth} />
-            </div>
-            <div className="hidden xl:block border-t dark:border-slate-700" />
-            <div className="hidden xl:block px-5 pt-5 pb-5">
-              <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-slate-100">📋 Historique</h3>
-              <History sessions={sessions} onDelete={deleteSession} onEdit={editSession} readOnly={!isAuth} />
-            </div>
-          </div>
-        </section>
-
-        {/* Colonne droite (graphiques) */}
-        <section className="flex flex-col gap-6 self-start order-2">
+      <div className="grid grid-cols-1 xl:grid-cols-[2fr_3fr] gap-x-6 gap-y-6 items-start">
+        {/* Colonne Graphiques (mobile en premier, desktop à droite) */}
+        <section className="flex flex-col gap-6 self-start order-1 xl:order-2">
+          {/* 📈 Séances */}
           <div className="overflow-hidden rounded-3xl ring-1 ring-slate-200 bg-white/80 dark:ring-slate-700 dark:bg-slate-900/60">
             <div className="flex items-center justify-between border-b px-5 py-4 dark:border-slate-700">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
@@ -712,12 +688,46 @@ export default function App() {
             </div>
           </div>
 
+          {/* 📊 Cumulatif */}
           <div className="overflow-hidden rounded-3xl ring-1 ring-slate-200 bg-white/80 dark:ring-slate-700 dark:bg-slate-900/60">
             <div className="flex items-center justify-between border-b px-5 py-4 dark:border-slate-700">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">📊 Cumulatif par mois</h2>
             </div>
             <div className="p-5">
               <MonthlyBarChart sessions={sessions} />
+            </div>
+          </div>
+        </section>
+
+        {/* Panneau unique Options + Historique (mobile ET desktop) */}
+        <section className="relative self-start order-2 xl:order-1 overflow-hidden rounded-3xl ring-1 ring-slate-200 bg-white/80 backdrop-blur dark:ring-slate-700 dark:bg-slate-900/60">
+          {/* Bandeau lock si lecture seule */}
+          {!isAuth && (
+            <div className="absolute left-4 top-4 z-20 inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white/80 px-3 py-1 text-xs font-medium text-slate-700 shadow-sm dark:border-slate-600 dark:bg-slate-800/70 dark:text-slate-200">
+              <Lock size={14} /> Mode lecture seule — cliquez “Éditer” pour déverrouiller
+            </div>
+          )}
+
+          {/* ✅ tout le contenu (Options + Historique) est dans le même wrapper flouté */}
+          <div className={`${lockedMask}`}>
+            {/* Options */}
+            <div className="flex items-center justify-between border-b px-5 py-4 dark:border-slate-700 dark:bg-slate-800/70">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">📘 Options</h2>
+            </div>
+            <div className="p-5">
+              <AddSessionForm onAdd={addSession} onExport={exportCSV} readOnly={!isAuth} />
+            </div>
+
+            {/* Historique (même panneau, toutes tailles d’écran) */}
+            <div className="border-t dark:border-slate-700" />
+            <div className="px-5 pt-5 pb-5">
+              <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-slate-100">📋 Historique</h3>
+              <History
+                sessions={sessions}
+                onDelete={deleteSession}
+                onEdit={editSession}
+                readOnly={!isAuth}
+              />
             </div>
           </div>
         </section>
