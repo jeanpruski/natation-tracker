@@ -1,4 +1,3 @@
-// App.js – Suivi Natation (React + Tailwind v3 + Recharts) + Edit Lock + UI compact
 import React, { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
 import "dayjs/locale/fr";
@@ -10,6 +9,15 @@ import {
 import { Download, Moon, Sun, Plus, CalendarDays, Calculator, Lock } from "lucide-react";
 
 dayjs.locale("fr");
+
+// Utilitaire: majuscule initiale (pour jours en fr)
+const capFirst = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+
+// Appliquer le thème sombre le plus tôt possible (pour l'écran de chargement)
+try {
+  const prefDark = JSON.parse(localStorage.getItem("theme_dark") || "false");
+  document.documentElement.classList.toggle("dark", !!prefDark);
+} catch {}
 
 /* =========================
    API helpers
@@ -130,13 +138,10 @@ function EditAuthModal({ open, onClose, onValid }) {
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4">
       <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-4 shadow-xl dark:border-slate-700 dark:bg-slate-900">
-        <h3 className="mb-1.5 text-base font-semibold text-slate-900 dark:text-slate-100">
-          🔒 Déverrouiller l’édition
-        </h3>
+        <h3 className="mb-1.5 text-base font-semibold text-slate-900 dark:text-slate-100">🔒 Déverrouiller l’édition</h3>
         <p className="mb-3 text-[13px] text-slate-600 dark:text-slate-300">
           Entrez la clé d’édition pour activer l’ajout, la modification et la suppression.
         </p>
-
         <input
           type="password"
           value={value}
@@ -145,9 +150,7 @@ function EditAuthModal({ open, onClose, onValid }) {
           disabled={busy}
           className="mb-2 w-full rounded-lg border border-slate-300 bg-white p-1.5 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
         />
-
         {err && <p className="mb-2 text-sm text-rose-600 dark:text-rose-400">{err}</p>}
-
         <div className="flex justify-end gap-2">
           <button
             type="button"
@@ -172,37 +175,47 @@ function EditAuthModal({ open, onClose, onValid }) {
 }
 
 /* =========================
-   Local Storage Hook (thème)
+   Export CSV
+   ========================= */
+function downloadCSV(filename, rows) {
+  const headers = ["Date", "Métrage (m)"];
+  const csvRows = [headers, ...(rows || []).map((r) => [r.date, r.distance])];
+
+  const csv = csvRows
+    .map((r) =>
+      r
+        .map((c) => `"${String(c ?? "").replaceAll('"', '""')}"`)
+        .join(",")
+    )
+    .join("\n");
+
+  // Ajoute un BOM pour que Excel/Numbers détectent bien l’UTF-8
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename || "export.csv";
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+  URL.revokeObjectURL(url);
+}
+
+
+/* =========================
+   Dark mode
    ========================= */
 function useLocalStorage(key, initialValue) {
   const [value, setValue] = useState(() => {
     try { const item = localStorage.getItem(key); return item ? JSON.parse(item) : initialValue; }
     catch { return initialValue; }
   });
-  useEffect(() => {
-    try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { console.error("localStorage write error", e); }
-  }, [key, value]);
+  useEffect(() => { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} }, [key, value]);
   return [value, setValue];
 }
-
-/* =========================
-   Export CSV
-   ========================= */
-function downloadCSV(filename, rows) {
-  const headers = ["Date", "Métrage (m)"];
-  const csv = [headers, ...rows.map((r) => [r.date, r.distance])]
-    .map((r) => r.map((c) => `"${String(c).replaceAll('"', '""')}"`).join(","))
-    .join("\n");
-  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = filename; a.click();
-  URL.revokeObjectURL(url);
-}
-
-/* =========================
-   Dark mode
-   ========================= */
 function useTheme() {
   const [isDark, setIsDark] = useLocalStorage("theme_dark", false);
   useEffect(() => { document.documentElement.classList.toggle("dark", isDark); }, [isDark]);
@@ -222,25 +235,35 @@ function ThemeToggle() {
 }
 
 /* =========================
-   KPIs
+   KPI Chip (larges)
    ========================= */
-function KpiChip({ title, subtitle, icon, value }) {
+function KpiChip({ title, subtitle, icon, value, tone = "default", subtitleClassName = "" }) {
+  const isDanger = tone === "danger";
   return (
-    <div className="w-full flex items-center gap-3 rounded-xl border border-slate-200 bg-white/90 px-3 py-2 shadow-sm dark:border-slate-700 dark:bg-slate-900/60">
+    <div
+      className={[
+        "flex items-center gap-3 rounded-xl px-4 py-3 shadow-sm border w-full min-w-[260px]",
+        isDanger
+          ? "border-rose-300 bg-rose-50 dark:border-rose-700 dark:bg-rose-900/40"
+          : "border-slate-200 bg-white/90 dark:border-slate-700 dark:bg-slate-900/60",
+      ].join(" ")}
+    >
       <div className="hidden sm:flex text-slate-900 dark:text-slate-100">
-        {React.cloneElement(icon, { className: "w-4 h-4 text-current" })}
+        {React.cloneElement(icon, { className: "w-5 h-5" })}
       </div>
       <div className="leading-tight">
         <p className="text-[10px] uppercase tracking-wide text-slate-600 dark:text-slate-300">{title}</p>
-        <p className="text-[13px] font-medium text-slate-900 dark:text-slate-100">{subtitle}</p>
+        <p className={["text-[14px] font-medium text-slate-900 dark:text-slate-100", subtitleClassName].filter(Boolean).join(" ")}>{subtitle}</p>
       </div>
-      <div className="ml-2 text-lg font-bold text-slate-900 dark:text-slate-100">{value}</div>
+      <div className={["ml-auto text-lg font-bold", isDanger ? "text-rose-700 dark:text-rose-300" : "text-slate-900 dark:text-slate-100"].join(" ")}>
+        {value}
+      </div>
     </div>
   );
 }
 
 /* =========================
-   Hook dark mode state
+   useIsDark
    ========================= */
 function useIsDark() {
   const [isDark, setIsDark] = useState(
@@ -582,7 +605,8 @@ export default function App() {
 
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState("");            // << manquait
+  const totalSessions = sessions.length;             // << manquait
 
   useEffect(() => {
     let alive = true;
@@ -601,17 +625,24 @@ export default function App() {
 
   const nf = useMemo(() => new Intl.NumberFormat("fr-FR"), []);
   const monthKey = dayjs().format("YYYY-MM");
-  const monthLabel = dayjs().format("MMMM YYYY");
+  const monthLabel = capFirst(dayjs().format("MMMM YYYY"));
 
   const totalMonth = useMemo(
-    () => sessions.reduce((sum, s) => (dayjs(s.date).format("YYYY-MM") === monthKey ? sum + (Number(s.distance) || 0) : sum), 0),
+    () => sessions.reduce((s, x) => (dayjs(x.date).format("YYYY-MM") === monthKey ? s + (+x.distance || 0) : s), 0),
     [sessions, monthKey]
   );
-  const totalAll = useMemo(() => sessions.reduce((sum, s) => sum + (Number(s.distance) || 0), 0), [sessions]);
+  const totalAll = useMemo(() => sessions.reduce((s, x) => s + (+x.distance || 0), 0), [sessions]);
   const avgPerSession = useMemo(() => (sessions.length ? Math.round(totalAll / sessions.length) : 0), [sessions.length, totalAll]);
-  const totalSessions = sessions.length;
 
-  // Guard réseau
+  const lastSessionDay = useMemo(() => {
+    if (!sessions.length) return null;
+    const max = sessions.reduce((m, s) => (m && dayjs(m).isAfter(s.date) ? m : s.date), null);
+    return max ? dayjs(max) : null;
+  }, [sessions]);
+  const daysSinceLast = useMemo(() => (lastSessionDay ? dayjs().diff(lastSessionDay, "day") : null), [lastSessionDay]);
+  const lastLabel = lastSessionDay ? capFirst(lastSessionDay.format("dddd DD MMM YYYY")) : "Aucune";
+
+  // Guard réseau + actions CRUD (<< manquaient)
   const guard = (fn) => (...args) => {
     if (checking) return;
     if (!isAuth) { setShowEditModal(true); return; }
@@ -633,13 +664,32 @@ export default function App() {
   });
   const exportCSV = () => downloadCSV("natation_sessions.csv", sessions);
 
-  const lockedMask = !isAuth ? "pointer-events-none select-none blur-[1.5px] grayscale-[.3] opacity-75" : "";
+  const lockedMask = !isAuth ? "pointer-events-none select-none blur-[1.5px] grayscale-[.3] opacity-75" : ""; // << manquait
+
+  // Plein écran: logo + spinner pendant le chargement (mobile & desktop)
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-sky-50 via-indigo-50 to-white dark:from-[#0b1020] dark:via-[#0a1028] dark:to-[#0b1228] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <img src="/apple-touch-icon.png" alt="NaTrack" className="w-16 h-16" />
+          <div className="h-10 w-10 rounded-full border-4 border-slate-300 border-t-indigo-500 dark:border-slate-700 dark:border-t-indigo-400 animate-spin" aria-label="Chargement" />
+          <span className="sr-only">Chargement…</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 via-indigo-50 to-white px-4 xl:px-12 py-8 text-[13.5px] sm:text-[14px] dark:from-[#0b1020] dark:via-[#0a1028] dark:to-[#0b1228]">
       <header className="mb-6 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl text-slate-900 dark:text-slate-100">🏊‍♂️ Suivi Natation</h1>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            <img
+              src="/apple-touch-icon.png"
+              alt="Logo natation"
+              className="w-8 h-8"
+            />
+            NaTrack</h1>
           <ThemeToggle />
           <button
             onClick={() => (isAuth ? editLogout() : setShowEditModal(true))}
@@ -649,27 +699,35 @@ export default function App() {
             {isAuth ? "🔒 Verrouiller" : "🔓 Éditer"}
           </button>
         </div>
-        <div className="grid grid-cols-2 gap-3 w-full max-w-xl">
+        {/* KPI plus larges */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 w-full max-w-4xl">
           <KpiChip
             title="Total du mois"
             subtitle={monthLabel}
+            subtitleClassName="capitalize"
             value={<>{nf.format(totalMonth)} <span className="text-xs opacity-70">m</span></>}
-            icon={<CalendarDays size={16} />}
+            icon={<CalendarDays />}
           />
           <KpiChip
             title="Moyenne / séance"
             subtitle="Toutes séances"
             value={<>{nf.format(avgPerSession)} <span className="text-xs opacity-70">m</span></>}
-            icon={<Calculator size={16} />}
+            icon={<Calculator />}
+          />
+          <KpiChip
+            title="Dernière séance"
+            subtitle={lastLabel}
+            value={daysSinceLast !== null ? <>{nf.format(daysSinceLast)} <span className="text-xs opacity-70">j</span></> : "—"}
+            icon={<CalendarDays />}
+            tone={daysSinceLast > 4 ? "danger" : "default"}
           />
         </div>
       </header>
 
-      {loading && <p className="mb-3 rounded-xl bg-slate-100 px-3 py-2 text-slate-700 dark:bg-slate-800 dark:text-slate-200">⏳ Chargement des données…</p>}
       {error && <p className="mb-3 rounded-xl bg-rose-100 px-3 py-2 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200">{error}</p>}
 
       <div className="grid grid-cols-1 xl:grid-cols-[2fr_3fr] gap-x-4 gap-y-3 items-start">
-        {/* Panneau Options + Historique (toujours groupé, mobile inclus) */}
+        {/* Panneau Options + Historique */}
         <section className="relative self-start order-2 xl:order-1 overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/80 backdrop-blur dark:ring-slate-700 dark:bg-slate-900/60">
           {!isAuth && (
             <div className="absolute left-4 top-4 z-20 inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white/80 px-3 py-1 text-xs font-medium text-slate-700 shadow-sm dark:border-slate-600 dark:bg-slate-800/70 dark:text-slate-200">
@@ -677,7 +735,7 @@ export default function App() {
             </div>
           )}
 
-          <div className={`${lockedMask}`}>
+          <div className={lockedMask}>
             <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700 dark:bg-slate-800/70">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">📘 Options</h2>
             </div>
@@ -685,7 +743,6 @@ export default function App() {
               <AddSessionForm onAdd={addSession} onExport={exportCSV} readOnly={!isAuth} />
             </div>
 
-            {/* Historique visible aussi en mobile (plus de hidden xl:block) */}
             <div className="border-t dark:border-slate-700" />
             <div className="px-4 pt-4 pb-4">
               <h3 className="mb-2.5 text-lg font-semibold text-slate-900 dark:text-slate-100">📋 Historique</h3>
