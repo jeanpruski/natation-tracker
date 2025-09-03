@@ -16,12 +16,6 @@ import { capFirst } from "./utils/strings";
 
 dayjs.locale("fr");
 
-// Appliquer le thème sombre le plus tôt possible (pour l'écran de chargement)
-try {
-  const prefDark = JSON.parse(localStorage.getItem("theme_dark") || "false");
-  document.documentElement.classList.toggle("dark", !!prefDark);
-} catch {}
-
 // components and hooks moved to separate files above
 
 /* =========================

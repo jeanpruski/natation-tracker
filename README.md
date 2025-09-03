@@ -1,23 +1,28 @@
 # 🏊‍♂️ Suivi Natation – React + Tailwind + Recharts
 
-Application web responsive pour suivre ses séances de natation, visualiser l’évolution des distances parcourues et obtenir un cumul mensuel.  
-Mode clair/sombre, export CSV, pagination et édition des séances inclus.
+Application web responsive pour suivre ses séances de natation, visualiser l’évolution des distances parcourues et obtenir un cumul mensuel.
+
+- KPIs: Total du mois, Moyenne/séance, Dernière séance (jour + date + jours écoulés)
+- Mode clair/sombre (préférence persistée) et écran de chargement plein écran (logo + spinner), compatible dark mode
+- Historique avec pagination, modification et suppression
+- Export CSV
+- Édition déverrouillable par clé (token)
 
 ---
 
 ## ✨ Fonctionnalités
 
-- **Ajout de séances** avec métrage et date (date automatique ou personnalisée)
-- **Visualisation graphique** :
+- **Ajout de séances** avec métrage et date (aujourd’hui par défaut ou date personnalisée)
+- **KPIs**: Total du mois, Moyenne/séance, Dernière séance (ex: « Mercredi 03 janv. 2025 » et « 4 j » depuis)
+- **Graphiques**:
   - Courbe des séances
-  - Diagramme en barres du cumul mensuel
-- **Historique complet** :
-  - Pagination (5 séances/page)
-  - Modification ou suppression d’une séance
-  - Tri par date (plus récentes en haut)
-- **Mode clair / sombre** (switch manuel)
-- **Export CSV** des données
-- **Données sauvegardées** dans `localStorage` (persistantes entre sessions)
+  - Barres cumul mensuel
+- **Historique**:
+  - Pagination (5/s page), édition inline, suppression
+  - Tri décroissant par date
+- **Mode clair/sombre**: toggle manuel, préférence persistée; écran de chargement plein écran respectant le thème
+- **Export CSV** des données visibles
+- **Mode édition**: verrouillage/déverrouillage par clé (token)
 
 ---
 
@@ -36,7 +41,7 @@ Mode clair/sombre, export CSV, pagination et édition des séances inclus.
 - [Tailwind CSS](https://tailwindcss.com/) 3.x
 - [Recharts](https://recharts.org/en-US/) pour les graphiques
 - [Lucide React](https://lucide.dev/) pour les icônes
-- [Day.js](https://day.js.org/) pour la gestion des dates
+- [Day.js](https://day.js.org/) pour la gestion des dates (locale fr)
 
 ---
 
@@ -44,8 +49,8 @@ Mode clair/sombre, export CSV, pagination et édition des séances inclus.
 
 1. **Cloner le repo**  
 ```bash
-git clone https://github.com/toncompte/natation-tracker.git
-cd natation-tracker
+git clone <votre-repo>
+cd <votre-repo>
 ````
 
 2. **Installer les dépendances**
@@ -68,7 +73,7 @@ http://localhost:3000
 
 ---
 
-## ⚙️ Configuration Tailwind CSS
+## ⚙️ Configuration
 
 L’app utilise Tailwind avec PostCSS et Autoprefixer.
 Fichier `tailwind.config.js` minimal :
@@ -92,26 +97,59 @@ Fichier `src/index.css` :
 
 ---
 
-## 📂 Structure des fichiers
+## 🔌 API & Variables d’environnement
+
+- Base API: `REACT_APP_API_BASE` (optionnelle). Par défaut: `"/api"`.
+- Endpoints utilisés:
+  - `GET /sessions` → `[{ id, date: YYYY-MM-DD, distance: number }, ...]`
+  - `POST /sessions` (auth requise) → crée une séance
+  - `PUT /sessions/:id` (auth requise) → met à jour une séance
+  - `DELETE /sessions/:id` (auth requise) → supprime une séance
+  - `GET /auth/check` avec header `Authorization: Bearer <token>` → valide la clé d’édition
+
+Stockages navigateur:
+- `localStorage["theme_dark"]`: préférence de thème
+- `localStorage["edit_token"]`: clé d’édition (si saisie)
+
+Exemple `.env`:
 
 ```
-src/
-├── App.js               # Composant principal
-├── index.js             # Point d'entrée React
-├── index.css            # Styles Tailwind
-├── components/          # Composants (AddSessionForm, History, SwimChart...)
-└── ...
+REACT_APP_API_BASE=/api
 ```
 
 ---
 
-## 💾 Sauvegarde des données
-
-Toutes les séances sont enregistrées dans le navigateur via **localStorage** avec la clé :
+## 📂 Structure des fichiers
 
 ```
-swim_sessions
+src/
+├── App.js               # Orchestration de l’UI (KPIs, graphiques, historique, modal)
+├── index.js             # Point d'entrée React
+├── index.css            # Styles Tailwind
+├── components/
+│   ├── AddSessionForm.jsx
+│   ├── EditAuthModal.jsx
+│   ├── History.jsx
+│   ├── KpiChip.jsx
+│   ├── MonthlyBarChart.jsx
+│   ├── SwimChart.jsx
+│   └── ThemeToggle.jsx
+├── hooks/
+│   ├── useEditAuth.js
+│   └── useTheme.js       # useTheme, useLocalStorage, useIsDark
+└── utils/
+    ├── api.js           # apiGet, apiJson, API_BASE
+    ├── downloadCSV.js
+    └── strings.js       # capFirst
 ```
+
+---
+
+## 🔐 Édition & sécurité
+
+- L’édition est verrouillée par défaut. Cliquez sur « Éditer » et saisissez la **clé d’édition**.
+- La clé est vérifiée via `GET /auth/check` avec le header `Authorization: Bearer <token>`.
+- Une fois validée, la clé est conservée en local dans `localStorage["edit_token"]` jusqu’à « Verrouiller ».
 
 ---
 
