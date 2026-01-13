@@ -125,12 +125,8 @@ function EditModal({
           {/* top bar */}
           <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
             <div className="flex items-center gap-2">
-              <h2 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-slate-100">
-                {isAuth ? "Mode édition" : "Déverrouiller l’édition"}
-              </h2>
-
               {isAuth && (
-                <div className="ml-2 inline-flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800/70">
+                <div className="inline-flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800/70">
                   <button
                     onClick={() => setTab("options")}
                     className={`px-3 py-1.5 text-sm rounded-lg ${
@@ -179,7 +175,7 @@ function EditModal({
             {!isAuth ? (
               <form onSubmit={submit} className="mx-auto max-w-md space-y-3">
                 <p className="text-sm text-slate-600 dark:text-slate-300">
-                  Entre ton mot de passe (EDIT_TOKEN) pour activer l’édition.
+                  Entre ton mot de passe pour activer l’édition.
                 </p>
                 <input
                   value={token}
@@ -351,26 +347,36 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 via-indigo-50 to-white px-4 xl:px-8 py-4 xl:py-8 text-[13.5px] sm:text-[14px] dark:from-[#0b1020] dark:via-[#0a1028] dark:to-[#0b1228]">
       <header className="mb-6 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-        <div className="flex items-center gap-2">
+        {/* Bloc gauche : logo + toggle + bouton */}
+        <div className="flex items-center gap-2 w-full xl:w-auto">
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl text-slate-900 dark:text-slate-100 flex items-center gap-2">
             <img src="/apple-touch-icon.png" alt="Logo" className="w-8 h-8" />
             NaTrack
           </h1>
+
           <ThemeToggle />
 
+          {/* Bouton éditeur */}
           <button
             onClick={() => setShowEditModal(true)}
-            className={`ml-2 rounded-xl px-3 py-2 text-sm ${
-              isAuth ? "bg-emerald-600 text-white hover:bg-emerald-500" : "bg-amber-500 text-white hover:bg-amber-400"
+            className={`ml-auto xl:ml-2 rounded-xl px-3 py-2 text-sm transition ${
+              isAuth
+                ? "bg-emerald-600 text-white hover:bg-emerald-500"
+                : "bg-amber-500 text-white hover:bg-amber-400"
             }`}
             title={isAuth ? "Ouvrir l’éditeur" : "Déverrouiller l’édition"}
           >
-            {isAuth ? "✏️ Éditeur" : "🔓 Éditer"}
+            <span className="inline-flex items-center gap-1.5">
+              {isAuth ? "✏️" : "🔓"}
+              <span className="hidden sm:inline">
+                {isAuth ? "Éditeur" : "Éditer"}
+              </span>
+            </span>
           </button>
         </div>
 
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-sm text-slate-600 dark:text-slate-300"> </span>
+        {/* Bloc droit : switch */}
+        <div className="flex items-center justify-end gap-3">
           <TypeSwitch value={mode} onChange={setMode} />
         </div>
       </header>
