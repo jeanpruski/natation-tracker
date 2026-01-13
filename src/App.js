@@ -27,7 +27,7 @@ const pluralize = (n, word) => `${n} ${word}${n > 1 ? "s" : ""}`;
    ========================= */
 function TypeSwitch({ value, onChange }) {
   const items = [
-    { key: "all", label: "Tout" },
+    { key: "all", label: "Mixte" },
     { key: "swim", label: "Natation" },
     { key: "run", label: "Running" },
   ];
@@ -52,6 +52,31 @@ function TypeSwitch({ value, onChange }) {
         );
       })}
     </div>
+  );
+}
+
+/* =========================
+   Filtre période (dropdown)
+   ========================= */
+function RangeSelect({ value, onChange }) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="
+        appearance-none
+        rounded-xl border border-slate-300
+        bg-white px-3 py-2 text-sm
+        text-slate-900
+        dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100
+        outline-none focus:ring-2 focus:ring-indigo-500
+      "
+    >
+      <option value="all">Historique</option>
+      <option value="6m">6M</option>
+      <option value="2026">2026</option>
+      <option value="2025">2025</option>
+    </select>
   );
 }
 
@@ -116,13 +141,10 @@ function EditModal({
 
   return (
     <div className="fixed inset-0 z-50">
-      {/* overlay */}
       <div className="absolute inset-0 bg-black/35" onClick={onClose} aria-hidden="true" />
 
-      {/* fullscreen */}
       <div className="absolute inset-0">
         <div className="h-full w-full bg-white dark:bg-slate-900">
-          {/* top bar */}
           <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
             <div className="flex items-center gap-2">
               {isAuth && (
@@ -158,10 +180,7 @@ function EditModal({
                   className="rounded-xl bg-rose-600 px-3 py-2 text-sm text-white hover:bg-rose-500"
                   title="Repasser en lecture seule"
                 >
-                  🔒
-                  <span className="hidden sm:inline">
-                    Verrouiller
-                  </span>
+                  🔒 <span className="hidden sm:inline">Verrouiller</span>
                 </button>
               )}
               <button
@@ -173,7 +192,6 @@ function EditModal({
             </div>
           </div>
 
-          {/* content fullscreen */}
           <div className="h-[calc(100%-52px)] overflow-auto p-4 sm:p-6">
             {!isAuth ? (
               <form onSubmit={submit} className="mx-auto max-w-md space-y-3">
@@ -223,7 +241,9 @@ export default function App() {
   const [showEditModal, setShowEditModal] = useState(false);
 
   const [sessions, setSessions] = useState([]);
-  const [mode, setMode] = useState("all"); // all | swim | run
+  const [mode, setMode] = useState("all");   // all | swim | run
+  const [range, setRange] = useState("all"); // all | 6m | 2026 | 2025
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -248,11 +268,23 @@ export default function App() {
 
   const modeLabel = mode === "swim" ? "Natation" : mode === "run" ? "Running" : null;
 
-  // ✅ source unique pour KPI + graphes
+  /* ===== Filtre période ===== */
+  const periodSessions = useMemo(() => {
+    if (range === "all") return sessions;
+
+    const now = dayjs();
+    if (range === "6m") {
+      return sessions.filter((s) => dayjs(s.date).isAfter(now.subtract(6, "month")));
+    }
+
+    return sessions.filter((s) => dayjs(s.date).format("YYYY") === range);
+  }, [sessions, range]);
+
+  /* ===== Filtre sport ===== */
   const shownSessions = useMemo(() => {
-    if (mode === "all") return sessions;
-    return sessions.filter((s) => normType(s.type) === mode);
-  }, [sessions, mode]);
+    if (mode === "all") return periodSessions;
+    return periodSessions.filter((s) => normType(s.type) === mode);
+  }, [periodSessions, mode]);
 
   /* ===== Total du mois (mètres) ===== */
   const monthTotals = useMemo(() => {
@@ -284,7 +316,7 @@ export default function App() {
     return { swimAvg, runAvg, swimN, runN, totalN };
   }, [shownSessions]);
 
-  /* ===== Séances ce mois-ci (counts) ===== */
+  /* ===== Séances ce mois-ci ===== */
   const monthCounts = useMemo(() => {
     let swimN = 0, runN = 0;
     shownSessions.forEach((s) => {
@@ -295,7 +327,7 @@ export default function App() {
     return { swimN, runN, totalN: swimN + runN };
   }, [shownSessions, monthKey]);
 
-  /* ===== Dernière séance + sport (dans le mode) ===== */
+  /* ===== Dernière séance ===== */
   const lastSession = useMemo(() => {
     if (!shownSessions.length) return null;
     return shownSessions.reduce((best, s) => {
@@ -309,7 +341,7 @@ export default function App() {
   const lastLabel = lastSessionDay ? capFirst(lastSessionDay.format("dddd DD MMM YYYY")) : "Aucune";
   const lastType = lastSession ? normType(lastSession.type) : null;
 
-  /* ===== CRUD (protégés par auth) ===== */
+  /* ===== CRUD ===== */
   const guard = (fn) => async (...args) => {
     if (checking) return;
     if (!isAuth) { setShowEditModal(true); return; }
@@ -334,7 +366,6 @@ export default function App() {
 
   const exportCSV = () => downloadCSV("sessions.csv", sessions);
 
-  /* ===== Loading ===== */
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-sky-50 via-indigo-50 to-white dark:from-[#0b1020] dark:via-[#0a1028] dark:to-[#0b1228] flex items-center justify-center">
@@ -347,26 +378,32 @@ export default function App() {
     );
   }
 
+  const showMonthCardsOnlyWhenAllRange = range === "all";
+
   return (
-    // <div className="min-h-screen bg-gradient-to-b from-sky-50 via-indigo-50 to-white px-4 xl:px-8 py-4 xl:py-8 text-[13.5px] sm:text-[14px] dark:from-[#0b1020] dark:via-[#0a1028] dark:to-[#0b1228]">
-    <div className="
-      min-h-screen
-      bg-gradient-to-b
-      from-sky-50 via-indigo-50 to-white
-      dark:from-[#0b1020] dark:via-[#0a1028] dark:to-[#0b1228]
-      text-[13.5px] sm:text-[14px]
-    ">
-      <header className="
-        sticky top-0 z-40
-        mb-2
-        flex flex-col gap-3
-        xl:flex-row xl:items-center xl:justify-between
-        bg-white/80 backdrop-blur
-        dark:bg-slate-900/80
-        border-b border-slate-200 dark:border-slate-700
-        px-4 xl:px-8 py-3
-      ">
-        {/* Bloc gauche : logo + toggle + bouton */}
+    <div
+      className="
+        min-h-screen
+        bg-gradient-to-b
+        from-sky-50 via-indigo-50 to-white
+        dark:from-[#0b1020] dark:via-[#0a1028] dark:to-[#0b1228]
+        text-[13.5px] sm:text-[14px]
+      "
+    >
+      {/* HEADER sticky */}
+      <header
+        className="
+          sticky top-0 z-40
+          mb-2
+          flex flex-col gap-3
+          xl:flex-row xl:items-center xl:justify-between
+          bg-white/80 backdrop-blur
+          dark:bg-slate-900/80
+          border-b border-slate-200 dark:border-slate-700
+          px-4 xl:px-8 py-3
+        "
+      >
+        {/* Ligne 1 : logo + toggle + éditeur */}
         <div className="flex items-center gap-2 w-full xl:w-auto">
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl text-slate-900 dark:text-slate-100 flex items-center gap-2 whitespace-nowrap">
             <img src="/apple-touch-icon.png" alt="Logo" className="w-8 h-8" />
@@ -375,97 +412,112 @@ export default function App() {
 
           <ThemeToggle />
 
-          {/* Bouton éditeur */}
           <button
             onClick={() => setShowEditModal(true)}
             className={`ml-auto xl:ml-2 rounded-xl px-3 py-2 text-sm transition ${
-              isAuth
-                ? "bg-emerald-600 text-white hover:bg-emerald-500"
-                : "bg-amber-500 text-white hover:bg-amber-400"
+              isAuth ? "bg-emerald-600 text-white hover:bg-emerald-500" : "bg-amber-500 text-white hover:bg-amber-400"
             }`}
             title={isAuth ? "Ouvrir l’éditeur" : "Déverrouiller l’édition"}
           >
             <span className="inline-flex items-center gap-1.5">
               {isAuth ? "✏️" : "🔓"}
-              <span className="hidden sm:inline">
-                {isAuth ? "Éditeur" : "Éditer"}
-              </span>
+              <span className="hidden sm:inline">{isAuth ? "Éditeur" : "Éditer"}</span>
             </span>
           </button>
         </div>
 
-        {/* Bloc droit : switch */}
-        <div className="flex items-center justify-end gap-3">
+        {/* Ligne 2 (MOBILE) : dropdown à gauche + switch à droite */}
+        <div className="flex items-center justify-between gap-3 xl:hidden">
+          <RangeSelect value={range} onChange={setRange} />
+          <TypeSwitch value={mode} onChange={setMode} />
+        </div>
+
+        {/* DESKTOP : dropdown à gauche du switch (dans le même bloc à droite) */}
+        <div className="hidden xl:flex items-center justify-end gap-3">
+          <RangeSelect value={range} onChange={setRange} />
           <TypeSwitch value={mode} onChange={setMode} />
         </div>
       </header>
 
       {error && (
-        <p className="mb-3 rounded-xl bg-rose-100 px-3 py-2 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200">
+        <p className="mb-3 rounded-xl bg-rose-100 px-4 py-2 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200">
           {error}
         </p>
       )}
 
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_3fr] gap-4 items-start px-4 xl:px-8 py-4 xl:py-4">
-        {/* GAUCHE : KPI empilés */}
+        {/* GAUCHE : KPI */}
         <aside className="self-start">
           <div className="grid grid-cols-1 gap-4">
-            {/* 1) Dernière séance */}
-            <KpiChip
-              title="Dernière séance"
-              subtitle={mode === "all" ? lastLabel : `${modeLabel} · ${lastLabel}`}
-              subtitleClassName="capitalize"
-              value={
-                <div className="text-right">
-                  {daysSinceLast !== null ? (
-                    <div className="mt-1 flex justify-end gap-2 flex-wrap items-center">
-                      <div className="font-bold leading-none flex items-baseline">
-                        {nf.format(daysSinceLast)}{" "}
-                        <span className="text-xs opacity-70 leading-none">j</span>
+            {/* (AFFICHER UNIQUEMENT SI range === "all") : Dernière séance */}
+            {showMonthCardsOnlyWhenAllRange && (
+              <KpiChip
+                title="Dernière séance"
+                subtitle={mode === "all" ? lastLabel : `${modeLabel} · ${lastLabel}`}
+                subtitleClassName="capitalize"
+                value={
+                  <div className="text-right">
+                    {daysSinceLast !== null ? (
+                      <div className="mt-1 flex justify-end gap-2 flex-wrap items-center">
+                        <div className="font-bold leading-none flex items-baseline">
+                          {nf.format(daysSinceLast)}
+                          <span className="ml-1 text-xs opacity-70 leading-none">
+                            jour{daysSinceLast > 1 ? "s" : ""}
+                          </span>
+                        </div>
+
+                        {mode === "all" && lastType && (
+                          <TypePill type={lastType}>
+                            {lastType === "run" ? "Running" : "Natation"}
+                          </TypePill>
+                        )}
                       </div>
-                      {mode === "all" && lastType && (
-                        <TypePill type={lastType}>{lastType === "run" ? "Running" : "Natation"}</TypePill>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="font-bold">—</div>
-                  )}
-                </div>
-              }
-              icon={<CalendarDays />}
-              tone={daysSinceLast > 4 ? "danger" : "default"}
-            />
-
-            {/* 2) Total du mois (mètres) */}
-            <KpiChip
-              title="Total du mois"
-              subtitle={mode === "all" ? monthLabel : modeLabel}
-              subtitleClassName="capitalize"
-              value={
-                <div className="text-right">
-                  <div className="font-bold">
-                    {nf.format(monthTotals.all)} <span className="text-xs opacity-70">m</span>
+                    ) : (
+                      <div className="font-bold">—</div>
+                    )}
                   </div>
-                  {mode === "all" && (
-                    <div className="mt-1 flex justify-end gap-2 flex-wrap">
-                      <TypePill type="swim">{nf.format(monthTotals.swim)}m</TypePill>
-                      <TypePill type="run">{nf.format(monthTotals.run)}m</TypePill>
-                    </div>
-                  )}
-                </div>
-              }
-              icon={<CalendarDays />}
-            />
+                }
+                icon={<CalendarDays />}
+                tone={daysSinceLast > 4 ? "danger" : "default"}
+              />
+            )}
 
-            {/* 3) Moyenne / séance */}
+            {/* (AFFICHER UNIQUEMENT SI range === "all") : Total du mois */}
+            {showMonthCardsOnlyWhenAllRange && (
+              <KpiChip
+                title="Total du mois"
+                subtitle={mode === "all" ? monthLabel : modeLabel}
+                subtitleClassName="capitalize"
+                value={
+                  <div className="text-right">
+                    <div className="font-bold">
+                      {nf.format(monthTotals.all)} <span className="text-xs opacity-70">m</span>
+                    </div>
+                    {mode === "all" && (
+                      <div className="mt-1 flex justify-end gap-2 flex-wrap">
+                        <TypePill type="swim">{nf.format(monthTotals.swim)}m</TypePill>
+                        <TypePill type="run">{nf.format(monthTotals.run)}m</TypePill>
+                      </div>
+                    )}
+                  </div>
+                }
+                icon={<CalendarDays />}
+              />
+            )}
+
+            {/* ✅ Toujours affiché : Moyenne / séance */}
             <KpiChip
               title="Moyenne / séance"
               subtitle={mode === "all" ? "Par sport" : modeLabel}
               value={
                 mode === "all" ? (
                   <div className="mt-1 flex justify-end gap-2 flex-wrap">
-                    <TypePill type="swim">{nf.format(stats.swimAvg)} <span className="opacity-80">m</span></TypePill>
-                    <TypePill type="run">{nf.format(stats.runAvg)} <span className="opacity-80">m</span></TypePill>
+                    <TypePill type="swim">
+                      {nf.format(stats.swimAvg)} <span className="opacity-80">m</span>
+                    </TypePill>
+                    <TypePill type="run">
+                      {nf.format(stats.runAvg)} <span className="opacity-80">m</span>
+                    </TypePill>
                   </div>
                 ) : (
                   <div className="text-right font-bold">
@@ -477,26 +529,28 @@ export default function App() {
               icon={<Calculator />}
             />
 
-            {/* 4) Séances ce mois-ci */}
-            <KpiChip
-              title="Séances ce mois-ci"
-              subtitle={mode === "all" ? monthLabel : modeLabel}
-              subtitleClassName="capitalize"
-              value={
-                <div className="text-right">
-                  <div className="font-bold">{pluralize(monthCounts.totalN, "Séance")}</div>
-                  {mode === "all" && (
-                    <div className="mt-1 flex justify-end gap-2 flex-wrap">
-                      <TypePill type="swim">{pluralize(monthCounts.swimN, "Séance")}</TypePill>
-                      <TypePill type="run">{pluralize(monthCounts.runN, "Séance")}</TypePill>
-                    </div>
-                  )}
-                </div>
-              }
-              icon={<CalendarDays />}
-            />
+            {/* (AFFICHER UNIQUEMENT SI range === "all") : Séances ce mois-ci */}
+            {showMonthCardsOnlyWhenAllRange && (
+              <KpiChip
+                title="Séances ce mois-ci"
+                subtitle={mode === "all" ? monthLabel : modeLabel}
+                subtitleClassName="capitalize"
+                value={
+                  <div className="text-right">
+                    <div className="font-bold">{pluralize(monthCounts.totalN, "Séance")}</div>
+                    {mode === "all" && (
+                      <div className="mt-1 flex justify-end gap-2 flex-wrap">
+                        <TypePill type="swim">{pluralize(monthCounts.swimN, "Séance")}</TypePill>
+                        <TypePill type="run">{pluralize(monthCounts.runN, "Séance")}</TypePill>
+                      </div>
+                    )}
+                  </div>
+                }
+                icon={<CalendarDays />}
+              />
+            )}
 
-            {/* 5) Séances (total) */}
+            {/* ✅ Toujours affiché : Séances (total) */}
             <KpiChip
               title="Séances"
               subtitle={mode === "all" ? "Total" : modeLabel}
@@ -518,7 +572,6 @@ export default function App() {
 
         {/* DROITE : graphes */}
         <section className="flex flex-col gap-4 self-start">
-          {/* Chart séances */}
           <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/80 dark:ring-slate-700 dark:bg-slate-900/60">
             <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">📈 Séances</h2>
@@ -528,7 +581,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Chart mensuel */}
           <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/80 dark:ring-slate-700 dark:bg-slate-900/60">
             <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">📊 Cumulatif par mois</h2>
