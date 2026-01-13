@@ -1,3 +1,4 @@
+// App.js
 import React, { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
 import "dayjs/locale/fr";
@@ -56,7 +57,6 @@ function TypeSwitch({ value, onChange }) {
 
 /* =========================
    Petit badge icône (vague / running)
-   - on peut y mettre du texte + chiffre
    ========================= */
 function TypePill({ type, children }) {
   const isRun = type === "run";
@@ -247,7 +247,10 @@ export default function App() {
   const monthKey = dayjs().format("YYYY-MM");
   const monthLabel = capFirst(dayjs().format("MMMM YYYY"));
 
-  const filteredSessions = useMemo(() => {
+  const modeLabel = mode === "swim" ? "Natation" : mode === "run" ? "Running" : null;
+
+  // ✅ source unique pour KPI + graphes
+  const shownSessions = useMemo(() => {
     if (mode === "all") return sessions;
     return sessions.filter((s) => normType(s.type) === mode);
   }, [sessions, mode]);
@@ -255,20 +258,20 @@ export default function App() {
   /* ===== Total du mois (mètres) ===== */
   const monthTotals = useMemo(() => {
     let swim = 0, run = 0;
-    sessions.forEach((s) => {
+    shownSessions.forEach((s) => {
       if (dayjs(s.date).format("YYYY-MM") !== monthKey) return;
       const d = Number(s.distance) || 0;
       if (normType(s.type) === "run") run += d;
       else swim += d;
     });
     return { all: swim + run, swim, run };
-  }, [sessions, monthKey]);
+  }, [shownSessions, monthKey]);
 
   /* ===== Stats globales (moyennes + counts) ===== */
   const stats = useMemo(() => {
     let swimSum = 0, swimN = 0, runSum = 0, runN = 0;
 
-    sessions.forEach((s) => {
+    shownSessions.forEach((s) => {
       const d = Number(s.distance) || 0;
       const t = normType(s.type);
       if (t === "run") { runSum += d; runN += 1; }
@@ -280,27 +283,27 @@ export default function App() {
     const totalN = swimN + runN;
 
     return { swimAvg, runAvg, swimN, runN, totalN };
-  }, [sessions]);
+  }, [shownSessions]);
 
   /* ===== Séances ce mois-ci (counts) ===== */
   const monthCounts = useMemo(() => {
     let swimN = 0, runN = 0;
-    sessions.forEach((s) => {
+    shownSessions.forEach((s) => {
       if (dayjs(s.date).format("YYYY-MM") !== monthKey) return;
       if (normType(s.type) === "run") runN += 1;
       else swimN += 1;
     });
     return { swimN, runN, totalN: swimN + runN };
-  }, [sessions, monthKey]);
+  }, [shownSessions, monthKey]);
 
-  /* ===== Dernière séance + sport ===== */
+  /* ===== Dernière séance + sport (dans le mode) ===== */
   const lastSession = useMemo(() => {
-    if (!sessions.length) return null;
-    return sessions.reduce((best, s) => {
+    if (!shownSessions.length) return null;
+    return shownSessions.reduce((best, s) => {
       if (!best) return s;
       return dayjs(s.date).isAfter(best.date) ? s : best;
     }, null);
-  }, [sessions]);
+  }, [shownSessions]);
 
   const lastSessionDay = useMemo(() => (lastSession ? dayjs(lastSession.date) : null), [lastSession]);
   const daysSinceLast = useMemo(() => (lastSessionDay ? dayjs().diff(lastSessionDay, "day") : null), [lastSessionDay]);
@@ -367,7 +370,7 @@ export default function App() {
         </div>
 
         <div className="flex items-center justify-between gap-3">
-          <span className="text-sm text-slate-600 dark:text-slate-300">Affichage :</span>
+          <span className="text-sm text-slate-600 dark:text-slate-300"> </span>
           <TypeSwitch value={mode} onChange={setMode} />
         </div>
       </header>
@@ -382,48 +385,22 @@ export default function App() {
         {/* GAUCHE : KPI empilés */}
         <aside className="self-start">
           <div className="grid grid-cols-1 gap-4">
-
-            {/* 2) Total du mois (mètres) */}
-            <KpiChip
-              title="Total du mois"
-              subtitle={monthLabel}
-              subtitleClassName="capitalize"
-              value={
-                <div className="text-right">
-                  <div className="font-bold">
-                    {nf.format(monthTotals.all)} <span className="text-xs opacity-70">m</span>
-                  </div>
-                  <div className="mt-1 flex justify-end gap-2 flex-wrap">
-                    <TypePill type="swim">{nf.format(monthTotals.swim)}m</TypePill>
-                    <TypePill type="run">{nf.format(monthTotals.run)}m</TypePill>
-                  </div>
-                </div>
-              }
-              icon={<CalendarDays />}
-            />
-
-            {/* ✅ 1) Dernière séance en premier + sport */}
+            {/* 1) Dernière séance */}
             <KpiChip
               title="Dernière séance"
-              subtitle={lastLabel}
+              subtitle={mode === "all" ? lastLabel : `${modeLabel} · ${lastLabel}`}
               subtitleClassName="capitalize"
               value={
                 <div className="text-right">
-                  {lastType ? (
+                  {daysSinceLast !== null ? (
                     <div className="mt-1 flex justify-end gap-2 flex-wrap items-center">
                       <div className="font-bold leading-none flex items-baseline">
-                        {daysSinceLast !== null ? (
-                          <>
-                            {nf.format(daysSinceLast)}{" "}
-                            <span className="text-xs opacity-70 leading-none">j</span>
-                          </>
-                        ) : (
-                          "—"
-                        )}
+                        {nf.format(daysSinceLast)}{" "}
+                        <span className="text-xs opacity-70 leading-none">j</span>
                       </div>
-                      <TypePill type={lastType}>
-                        {lastType === "run" ? "Running" : "Natation"}
-                      </TypePill>
+                      {mode === "all" && lastType && (
+                        <TypePill type={lastType}>{lastType === "run" ? "Running" : "Natation"}</TypePill>
+                      )}
                     </div>
                   ) : (
                     <div className="font-bold">—</div>
@@ -434,53 +411,79 @@ export default function App() {
               tone={daysSinceLast > 4 ? "danger" : "default"}
             />
 
-              {/* ✅ 2bis) Moyenne : natation & running SEULEMENT, chiffre à côté du logo */}
+            {/* 2) Total du mois (mètres) */}
             <KpiChip
-              title="Moyenne / séance"
-              subtitle="Par sport"
-              value={
-                <div className="mt-1 flex justify-end gap-2 flex-wrap">
-                  <TypePill type="swim">
-                    {nf.format(stats.swimAvg)} <span className="opacity-80">m</span>
-                  </TypePill>
-                  <TypePill type="run">
-                    {nf.format(stats.runAvg)} <span className="opacity-80">m</span>
-                  </TypePill>
-                </div>
-              }
-              icon={<Calculator />}
-            />
-
-            {/* 3) Séance ce moi ci  */}
-            <KpiChip
-              title="Séances ce mois-ci"
-              subtitle={monthLabel}
+              title="Total du mois"
+              subtitle={mode === "all" ? monthLabel : modeLabel}
               subtitleClassName="capitalize"
               value={
                 <div className="text-right">
                   <div className="font-bold">
-                    {pluralize(monthCounts.totalN, "Séance")}
+                    {nf.format(monthTotals.all)} <span className="text-xs opacity-70">m</span>
                   </div>
-                  <div className="mt-1 flex justify-end gap-2 flex-wrap">
-                    <TypePill type="swim">{pluralize(monthCounts.swimN, "Séance")}</TypePill>
-                    <TypePill type="run">{pluralize(monthCounts.runN, "Séance")}</TypePill>
-                  </div>
+                  {mode === "all" && (
+                    <div className="mt-1 flex justify-end gap-2 flex-wrap">
+                      <TypePill type="swim">{nf.format(monthTotals.swim)}m</TypePill>
+                      <TypePill type="run">{nf.format(monthTotals.run)}m</TypePill>
+                    </div>
+                  )}
                 </div>
               }
               icon={<CalendarDays />}
             />
 
-            {/* 4) Séances (total + split) */}
+            {/* 3) Moyenne / séance */}
+            <KpiChip
+              title="Moyenne / séance"
+              subtitle={mode === "all" ? "Par sport" : modeLabel}
+              value={
+                mode === "all" ? (
+                  <div className="mt-1 flex justify-end gap-2 flex-wrap">
+                    <TypePill type="swim">{nf.format(stats.swimAvg)} <span className="opacity-80">m</span></TypePill>
+                    <TypePill type="run">{nf.format(stats.runAvg)} <span className="opacity-80">m</span></TypePill>
+                  </div>
+                ) : (
+                  <div className="text-right font-bold">
+                    {nf.format(mode === "swim" ? stats.swimAvg : stats.runAvg)}{" "}
+                    <span className="text-xs opacity-70">m</span>
+                  </div>
+                )
+              }
+              icon={<Calculator />}
+            />
+
+            {/* 4) Séances ce mois-ci */}
+            <KpiChip
+              title="Séances ce mois-ci"
+              subtitle={mode === "all" ? monthLabel : modeLabel}
+              subtitleClassName="capitalize"
+              value={
+                <div className="text-right">
+                  <div className="font-bold">{pluralize(monthCounts.totalN, "Séance")}</div>
+                  {mode === "all" && (
+                    <div className="mt-1 flex justify-end gap-2 flex-wrap">
+                      <TypePill type="swim">{pluralize(monthCounts.swimN, "Séance")}</TypePill>
+                      <TypePill type="run">{pluralize(monthCounts.runN, "Séance")}</TypePill>
+                    </div>
+                  )}
+                </div>
+              }
+              icon={<CalendarDays />}
+            />
+
+            {/* 5) Séances (total) */}
             <KpiChip
               title="Séances"
-              subtitle="Total"
+              subtitle={mode === "all" ? "Total" : modeLabel}
               value={
                 <div className="text-right">
                   <div className="font-bold">{pluralize(stats.totalN, "Séance")}</div>
-                  <div className="mt-1 flex justify-end gap-2 flex-wrap">
-                    <TypePill type="swim">{pluralize(stats.swimN, "Séance")}</TypePill>
-                    <TypePill type="run">{pluralize(stats.runN, "Séance")}</TypePill>
-                  </div>
+                  {mode === "all" && (
+                    <div className="mt-1 flex justify-end gap-2 flex-wrap">
+                      <TypePill type="swim">{pluralize(stats.swimN, "Séance")}</TypePill>
+                      <TypePill type="run">{pluralize(stats.runN, "Séance")}</TypePill>
+                    </div>
+                  )}
                 </div>
               }
               icon={<CalendarDays />}
@@ -493,24 +496,20 @@ export default function App() {
           {/* Chart séances */}
           <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/80 dark:ring-slate-700 dark:bg-slate-900/60">
             <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                📈 Séances
-              </h2>
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">📈 Séances</h2>
             </div>
             <div className="p-4">
-              <SwimChart sessions={filteredSessions} mode={mode} />
+              <SwimChart sessions={shownSessions} mode={mode} />
             </div>
           </div>
 
           {/* Chart mensuel */}
           <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/80 dark:ring-slate-700 dark:bg-slate-900/60">
             <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                📊 Cumulatif par mois
-              </h2>
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">📊 Cumulatif par mois</h2>
             </div>
             <div className="p-4">
-              <MonthlyBarChart sessions={filteredSessions} />
+              <MonthlyBarChart sessions={shownSessions} />
             </div>
           </div>
         </section>
