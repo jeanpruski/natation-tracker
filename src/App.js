@@ -158,7 +158,10 @@ function EditModal({
                   className="rounded-xl bg-rose-600 px-3 py-2 text-sm text-white hover:bg-rose-500"
                   title="Repasser en lecture seule"
                 >
-                  🔒 Verrouiller
+                  🔒
+                  <span className="hidden sm:inline">
+                    Verrouiller
+                  </span>
                 </button>
               )}
               <button
@@ -345,11 +348,27 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-50 via-indigo-50 to-white px-4 xl:px-8 py-4 xl:py-8 text-[13.5px] sm:text-[14px] dark:from-[#0b1020] dark:via-[#0a1028] dark:to-[#0b1228]">
-      <header className="mb-6 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+    // <div className="min-h-screen bg-gradient-to-b from-sky-50 via-indigo-50 to-white px-4 xl:px-8 py-4 xl:py-8 text-[13.5px] sm:text-[14px] dark:from-[#0b1020] dark:via-[#0a1028] dark:to-[#0b1228]">
+    <div className="
+      min-h-screen
+      bg-gradient-to-b
+      from-sky-50 via-indigo-50 to-white
+      dark:from-[#0b1020] dark:via-[#0a1028] dark:to-[#0b1228]
+      text-[13.5px] sm:text-[14px]
+    ">
+      <header className="
+        sticky top-0 z-40
+        mb-2
+        flex flex-col gap-3
+        xl:flex-row xl:items-center xl:justify-between
+        bg-white/80 backdrop-blur
+        dark:bg-slate-900/80
+        border-b border-slate-200 dark:border-slate-700
+        px-4 xl:px-8 py-3
+      ">
         {/* Bloc gauche : logo + toggle + bouton */}
         <div className="flex items-center gap-2 w-full xl:w-auto">
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl text-slate-900 dark:text-slate-100 flex items-center gap-2 whitespace-nowrap">
             <img src="/apple-touch-icon.png" alt="Logo" className="w-8 h-8" />
             NaTrack
           </h1>
@@ -387,7 +406,7 @@ export default function App() {
         </p>
       )}
 
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_3fr] gap-4 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_3fr] gap-4 items-start px-4 xl:px-8 py-4 xl:py-4">
         {/* GAUCHE : KPI empilés */}
         <aside className="self-start">
           <div className="grid grid-cols-1 gap-4">
