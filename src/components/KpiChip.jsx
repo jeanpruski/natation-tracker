@@ -15,8 +15,8 @@ export function KpiChip({ title, subtitle, icon, value, tone = "default", subtit
         {React.cloneElement(icon, { className: "w-5 h-5" })}
       </div>
       <div className="leading-tight">
-        <p className="text-[10px] uppercase tracking-wide text-slate-600 dark:text-slate-300">{title}</p>
-        <p className={["text-[14px] font-medium text-slate-900 dark:text-slate-100", subtitleClassName].filter(Boolean).join(" ")}>{subtitle}</p>
+        <p className="text-[10px] uppercase tracking-wide text-slate-600 dark:text-slate-300 whitespace-nowrap">{title}</p>
+        <p className={["text-[14px] font-medium text-slate-900 dark:text-slate-100 whitespace-nowrap", subtitleClassName].filter(Boolean).join(" ")}>{subtitle}</p>
       </div>
       <div className={["ml-auto text-lg font-bold", isDanger ? "text-rose-700 dark:text-rose-300" : "text-slate-900 dark:text-slate-100"].join(" ")}>
         {value}

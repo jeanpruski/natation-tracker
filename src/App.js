@@ -62,7 +62,7 @@ function TypePill({ type, children }) {
   const isRun = type === "run";
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[12px] font-medium ring-1
+      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[12px] font-medium ring-1 whitespace-nowrap
       ${
         isRun
           ? "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-500/20"
@@ -346,7 +346,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-50 via-indigo-50 to-white px-4 xl:px-12 py-8 text-[13.5px] sm:text-[14px] dark:from-[#0b1020] dark:via-[#0a1028] dark:to-[#0b1228]">
+    <div className="min-h-screen bg-gradient-to-b from-sky-50 via-indigo-50 to-white px-4 xl:px-8 py-4 xl:py-8 text-[13.5px] sm:text-[14px] dark:from-[#0b1020] dark:via-[#0a1028] dark:to-[#0b1228]">
       <header className="mb-6 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl text-slate-900 dark:text-slate-100 flex items-center gap-2">
@@ -417,7 +417,7 @@ export default function App() {
               title="Moyenne / séance"
               subtitle="Par sport"
               value={
-                <div className="text-right flex flex-col items-end gap-2">
+                <div className="text-right flex flex-col items-end gap-2 flex-wrap">
                   <TypePill type="swim">
                     {nf.format(stats.swimAvg)} <span className="opacity-80">m</span>
                   </TypePill>
@@ -439,7 +439,7 @@ export default function App() {
                   <div className="font-bold">
                     {nf.format(monthTotals.all)} <span className="text-xs opacity-70">m</span>
                   </div>
-                  <div className="mt-1 flex justify-end gap-2">
+                  <div className="mt-1 flex justify-end gap-2 flex-wrap">
                     <TypePill type="swim">{nf.format(monthTotals.swim)}m</TypePill>
                     <TypePill type="run">{nf.format(monthTotals.run)}m</TypePill>
                   </div>
@@ -458,7 +458,7 @@ export default function App() {
                   <div className="font-bold">
                     {pluralize(monthCounts.totalN, "Séance")}
                   </div>
-                  <div className="mt-1 flex justify-end gap-2">
+                  <div className="mt-1 flex justify-end gap-2 flex-wrap">
                     <TypePill type="swim">{pluralize(monthCounts.swimN, "Séance")}</TypePill>
                     <TypePill type="run">{pluralize(monthCounts.runN, "Séance")}</TypePill>
                   </div>
@@ -474,7 +474,7 @@ export default function App() {
               value={
                 <div className="text-right">
                   <div className="font-bold">{pluralize(stats.totalN, "Séance")}</div>
-                  <div className="mt-1 flex justify-end gap-2">
+                  <div className="mt-1 flex justify-end gap-2 flex-wrap">
                     <TypePill type="swim">{pluralize(stats.swimN, "Séance")}</TypePill>
                     <TypePill type="run">{pluralize(stats.runN, "Séance")}</TypePill>
                   </div>
