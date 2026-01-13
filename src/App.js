@@ -383,52 +383,6 @@ export default function App() {
         <aside className="self-start">
           <div className="grid grid-cols-1 gap-4">
 
-            {/* ✅ 1) Dernière séance en premier + sport */}
-            <KpiChip
-              title="Dernière séance"
-              subtitle={lastLabel}
-              subtitleClassName="capitalize"
-              value={
-                <div className="text-right">
-                  {lastType ? (
-                    <div className="flex flex-col items-end gap-2">
-                      <TypePill type={lastType}>{lastType === "run" ? "Running" : "Natation"}</TypePill>
-                      <div className="font-bold">
-                        {daysSinceLast !== null ? (
-                          <>
-                            {nf.format(daysSinceLast)} <span className="text-xs opacity-70">j</span>
-                          </>
-                        ) : (
-                          "—"
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="font-bold">—</div>
-                  )}
-                </div>
-              }
-              icon={<CalendarDays />}
-              tone={daysSinceLast > 4 ? "danger" : "default"}
-            />
-
-              {/* ✅ 2bis) Moyenne : natation & running SEULEMENT, chiffre à côté du logo */}
-            <KpiChip
-              title="Moyenne / séance"
-              subtitle="Par sport"
-              value={
-                <div className="text-right flex flex-col items-end gap-2 flex-wrap">
-                  <TypePill type="swim">
-                    {nf.format(stats.swimAvg)} <span className="opacity-80">m</span>
-                  </TypePill>
-                  <TypePill type="run">
-                    {nf.format(stats.runAvg)} <span className="opacity-80">m</span>
-                  </TypePill>
-                </div>
-              }
-              icon={<Calculator />}
-            />
-
             {/* 2) Total du mois (mètres) */}
             <KpiChip
               title="Total du mois"
@@ -446,6 +400,55 @@ export default function App() {
                 </div>
               }
               icon={<CalendarDays />}
+            />
+
+            {/* ✅ 1) Dernière séance en premier + sport */}
+            <KpiChip
+              title="Dernière séance"
+              subtitle={lastLabel}
+              subtitleClassName="capitalize"
+              value={
+                <div className="text-right">
+                  {lastType ? (
+                    <div className="mt-1 flex justify-end gap-2 flex-wrap items-center">
+                      <div className="font-bold leading-none flex items-baseline">
+                        {daysSinceLast !== null ? (
+                          <>
+                            {nf.format(daysSinceLast)}{" "}
+                            <span className="text-xs opacity-70 leading-none">j</span>
+                          </>
+                        ) : (
+                          "—"
+                        )}
+                      </div>
+                      <TypePill type={lastType}>
+                        {lastType === "run" ? "Running" : "Natation"}
+                      </TypePill>
+                    </div>
+                  ) : (
+                    <div className="font-bold">—</div>
+                  )}
+                </div>
+              }
+              icon={<CalendarDays />}
+              tone={daysSinceLast > 4 ? "danger" : "default"}
+            />
+
+              {/* ✅ 2bis) Moyenne : natation & running SEULEMENT, chiffre à côté du logo */}
+            <KpiChip
+              title="Moyenne / séance"
+              subtitle="Par sport"
+              value={
+                <div className="mt-1 flex justify-end gap-2 flex-wrap">
+                  <TypePill type="swim">
+                    {nf.format(stats.swimAvg)} <span className="opacity-80">m</span>
+                  </TypePill>
+                  <TypePill type="run">
+                    {nf.format(stats.runAvg)} <span className="opacity-80">m</span>
+                  </TypePill>
+                </div>
+              }
+              icon={<Calculator />}
             />
 
             {/* 3) Séance ce moi ci  */}
