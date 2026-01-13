@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
 import "dayjs/locale/fr";
-import { CalendarDays, Calculator } from "lucide-react";
+import { CalendarDays, Calculator, Waves, PersonStanding } from "lucide-react";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { KpiChip } from "./components/KpiChip";
 import { AddSessionForm } from "./components/AddSessionForm";
@@ -14,6 +14,12 @@ import { downloadCSV } from "./utils/downloadCSV";
 import { capFirst } from "./utils/strings";
 
 dayjs.locale("fr");
+
+/* =========================
+   Utils
+   ========================= */
+const normType = (t) => ((t || "swim").toLowerCase() === "run" ? "run" : "swim");
+const pluralize = (n, word) => `${n} ${word}${n > 1 ? "s" : ""}`;
 
 /* =========================
    Mini segmented control
@@ -34,9 +40,10 @@ function TypeSwitch({ value, onChange }) {
             key={it.key}
             onClick={() => onChange(it.key)}
             className={`px-3 py-1.5 text-xs sm:text-sm rounded-lg transition
-              ${active
-                ? "bg-white text-slate-900 shadow ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-100 dark:ring-slate-700"
-                : "text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100"
+              ${
+                active
+                  ? "bg-white text-slate-900 shadow ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-100 dark:ring-slate-700"
+                  : "text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100"
               }`}
           >
             {it.label}
@@ -48,7 +55,28 @@ function TypeSwitch({ value, onChange }) {
 }
 
 /* =========================
-   Modal édition (auth + editor)
+   Petit badge icône (vague / running)
+   - on peut y mettre du texte + chiffre
+   ========================= */
+function TypePill({ type, children }) {
+  const isRun = type === "run";
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[12px] font-medium ring-1
+      ${
+        isRun
+          ? "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-500/20"
+          : "bg-indigo-50 text-indigo-700 ring-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-200 dark:ring-indigo-500/20"
+      }`}
+    >
+      {isRun ? <PersonStanding size={14} /> : <Waves size={14} />}
+      {children}
+    </span>
+  );
+}
+
+/* =========================
+   Modal édition (auth + editor) — FULLSCREEN
    ========================= */
 function EditModal({
   open,
@@ -81,8 +109,7 @@ function EditModal({
     setErr("");
     try {
       await verifyAndLogin(token);
-      // si ok => isAuth passera true via hook
-    } catch (e2) {
+    } catch {
       setErr("Mot de passe invalide");
     }
   };
@@ -90,15 +117,12 @@ function EditModal({
   return (
     <div className="fixed inset-0 z-50">
       {/* overlay */}
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+      <div className="absolute inset-0 bg-black/35" onClick={onClose} aria-hidden="true" />
 
-      {/* modal */}
-      <div className="absolute inset-0 flex items-center justify-center p-4">
-        <div className="w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700">
+      {/* fullscreen */}
+      <div className="absolute inset-0">
+        <div className="h-full w-full bg-white dark:bg-slate-900">
+          {/* top bar */}
           <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
             <div className="flex items-center gap-2">
               <h2 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-slate-100">
@@ -150,7 +174,8 @@ function EditModal({
             </div>
           </div>
 
-          <div className="p-4">
+          {/* content fullscreen */}
+          <div className="h-[calc(100%-52px)] overflow-auto p-4 sm:p-6">
             {!isAuth ? (
               <form onSubmit={submit} className="mx-auto max-w-md space-y-3">
                 <p className="text-sm text-slate-600 dark:text-slate-300">
@@ -176,43 +201,12 @@ function EditModal({
                 </button>
               </form>
             ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1.8fr] gap-4">
-                <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white dark:ring-slate-700 dark:bg-slate-900">
-                  {/* Header stylé */}
-                  <div className="flex items-center gap-3 border-b bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800/70">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-300">
-                      {tab === "options" ? "✏️" : "📋"}
-                    </div>
-                    <div className="leading-tight">
-                      <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                        {tab === "options" ? "Options" : "Historique"}
-                      </h3>
-                      <p className="text-xs text-slate-600 dark:text-slate-300">
-                        {tab === "options"
-                          ? "Ajouter ou exporter des séances"
-                          : "Modifier ou supprimer des séances"}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Contenu */}
-                  <div className="p-4">
-                    {tab === "options" ? (
-                      <AddSessionForm
-                        onAdd={onAdd}
-                        onExport={onExport}
-                        readOnly={false}
-                      />
-                    ) : (
-                      <History
-                        sessions={sessions}
-                        onDelete={onDelete}
-                        onEdit={onEdit}
-                        readOnly={false}
-                      />
-                    )}
-                  </div>
-                </div>
+              <div className="mx-auto w-full max-w-5xl">
+                {tab === "options" ? (
+                  <AddSessionForm onAdd={onAdd} onExport={onExport} readOnly={false} />
+                ) : (
+                  <History sessions={sessions} onDelete={onDelete} onEdit={onEdit} readOnly={false} />
+                )}
               </div>
             )}
           </div>
@@ -253,55 +247,67 @@ export default function App() {
   const monthKey = dayjs().format("YYYY-MM");
   const monthLabel = capFirst(dayjs().format("MMMM YYYY"));
 
-  // Helpers type
-  const normType = (t) => ((t || "swim").toLowerCase() === "run" ? "run" : "swim");
-
   const filteredSessions = useMemo(() => {
     if (mode === "all") return sessions;
     return sessions.filter((s) => normType(s.type) === mode);
   }, [sessions, mode]);
 
-  // Totaux mois (all + split)
+  /* ===== Total du mois (mètres) ===== */
   const monthTotals = useMemo(() => {
-    let swim = 0, run = 0, all = 0;
+    let swim = 0, run = 0;
     sessions.forEach((s) => {
       if (dayjs(s.date).format("YYYY-MM") !== monthKey) return;
       const d = Number(s.distance) || 0;
-      const t = normType(s.type);
-      all += d;
-      if (t === "run") run += d;
+      if (normType(s.type) === "run") run += d;
       else swim += d;
     });
-    return { all, swim, run };
+    return { all: swim + run, swim, run };
   }, [sessions, monthKey]);
 
-  // Moyennes globales (all + split)
-  const avgs = useMemo(() => {
+  /* ===== Stats globales (moyennes + counts) ===== */
+  const stats = useMemo(() => {
     let swimSum = 0, swimN = 0, runSum = 0, runN = 0;
+
     sessions.forEach((s) => {
       const d = Number(s.distance) || 0;
       const t = normType(s.type);
       if (t === "run") { runSum += d; runN += 1; }
       else { swimSum += d; swimN += 1; }
     });
-    const allN = swimN + runN;
-    const allAvg = allN ? Math.round((swimSum + runSum) / allN) : 0;
+
     const swimAvg = swimN ? Math.round(swimSum / swimN) : 0;
     const runAvg = runN ? Math.round(runSum / runN) : 0;
-    return { allAvg, swimAvg, runAvg, swimN, runN };
+    const totalN = swimN + runN;
+
+    return { swimAvg, runAvg, swimN, runN, totalN };
   }, [sessions]);
 
-  const totalSessions = sessions.length;
+  /* ===== Séances ce mois-ci (counts) ===== */
+  const monthCounts = useMemo(() => {
+    let swimN = 0, runN = 0;
+    sessions.forEach((s) => {
+      if (dayjs(s.date).format("YYYY-MM") !== monthKey) return;
+      if (normType(s.type) === "run") runN += 1;
+      else swimN += 1;
+    });
+    return { swimN, runN, totalN: swimN + runN };
+  }, [sessions, monthKey]);
 
-  const lastSessionDay = useMemo(() => {
+  /* ===== Dernière séance + sport ===== */
+  const lastSession = useMemo(() => {
     if (!sessions.length) return null;
-    const max = sessions.reduce((m, s) => (m && dayjs(m).isAfter(s.date) ? m : s.date), null);
-    return max ? dayjs(max) : null;
+    return sessions.reduce((best, s) => {
+      if (!best) return s;
+      return dayjs(s.date).isAfter(best.date) ? s : best;
+    }, null);
   }, [sessions]);
+
+  const lastSessionDay = useMemo(() => (lastSession ? dayjs(lastSession.date) : null), [lastSession]);
   const daysSinceLast = useMemo(() => (lastSessionDay ? dayjs().diff(lastSessionDay, "day") : null), [lastSessionDay]);
   const lastLabel = lastSessionDay ? capFirst(lastSessionDay.format("dddd DD MMM YYYY")) : "Aucune";
+  const lastType = lastSession ? normType(lastSession.type) : null;
 
-  // CRUD (protégés par auth)
+  /* ===== CRUD (protégés par auth) ===== */
   const guard = (fn) => async (...args) => {
     if (checking) return;
     if (!isAuth) { setShowEditModal(true); return; }
@@ -326,6 +332,7 @@ export default function App() {
 
   const exportCSV = () => downloadCSV("sessions.csv", sessions);
 
+  /* ===== Loading ===== */
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-sky-50 via-indigo-50 to-white dark:from-[#0b1020] dark:via-[#0a1028] dark:to-[#0b1228] flex items-center justify-center">
@@ -359,11 +366,8 @@ export default function App() {
           </button>
         </div>
 
-        {/* switch global pour les graphes */}
         <div className="flex items-center justify-between gap-3">
-          <span className="text-sm text-slate-600 dark:text-slate-300">
-            Affichage :
-          </span>
+          <span className="text-sm text-slate-600 dark:text-slate-300">Affichage :</span>
           <TypeSwitch value={mode} onChange={setMode} />
         </div>
       </header>
@@ -374,74 +378,120 @@ export default function App() {
         </p>
       )}
 
-      {/* Layout : gauche = 1/4, droite = 3/4 */}
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_3fr] gap-4 items-start">
         {/* GAUCHE : KPI empilés */}
         <aside className="self-start">
           <div className="grid grid-cols-1 gap-4">
+
+            {/* ✅ 1) Dernière séance en premier + sport */}
+            <KpiChip
+              title="Dernière séance"
+              subtitle={lastLabel}
+              subtitleClassName="capitalize"
+              value={
+                <div className="text-right">
+                  {lastType ? (
+                    <div className="flex flex-col items-end gap-2">
+                      <TypePill type={lastType}>{lastType === "run" ? "Running" : "Natation"}</TypePill>
+                      <div className="font-bold">
+                        {daysSinceLast !== null ? (
+                          <>
+                            {nf.format(daysSinceLast)} <span className="text-xs opacity-70">j</span>
+                          </>
+                        ) : (
+                          "—"
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="font-bold">—</div>
+                  )}
+                </div>
+              }
+              icon={<CalendarDays />}
+              tone={daysSinceLast > 4 ? "danger" : "default"}
+            />
+
+              {/* ✅ 2bis) Moyenne : natation & running SEULEMENT, chiffre à côté du logo */}
+            <KpiChip
+              title="Moyenne / séance"
+              subtitle="Par sport"
+              value={
+                <div className="text-right flex flex-col items-end gap-2">
+                  <TypePill type="swim">
+                    {nf.format(stats.swimAvg)} <span className="opacity-80">m</span>
+                  </TypePill>
+                  <TypePill type="run">
+                    {nf.format(stats.runAvg)} <span className="opacity-80">m</span>
+                  </TypePill>
+                </div>
+              }
+              icon={<Calculator />}
+            />
+
+            {/* 2) Total du mois (mètres) */}
             <KpiChip
               title="Total du mois"
               subtitle={monthLabel}
               subtitleClassName="capitalize"
               value={
                 <div className="text-right">
-                  <div>
-                    {nf.format(monthTotals.all)}{" "}
-                    <span className="text-xs opacity-70">m</span>
+                  <div className="font-bold">
+                    {nf.format(monthTotals.all)} <span className="text-xs opacity-70">m</span>
                   </div>
-                  <div className="text-[11px] font-medium text-slate-600 dark:text-slate-300 mt-0.5">
-                    🟦 {nf.format(monthTotals.swim)}m · 🟩 {nf.format(monthTotals.run)}m
+                  <div className="mt-1 flex justify-end gap-2">
+                    <TypePill type="swim">{nf.format(monthTotals.swim)}m</TypePill>
+                    <TypePill type="run">{nf.format(monthTotals.run)}m</TypePill>
                   </div>
                 </div>
               }
               icon={<CalendarDays />}
             />
 
+            {/* 3) Séance ce moi ci  */}
             <KpiChip
-              title="Moyenne / séance"
-              subtitle={`Toutes (${totalSessions})`}
-              value={
-                <div className="text-right">
-                  <div>
-                    {nf.format(avgs.allAvg)}{" "}
-                    <span className="text-xs opacity-70">m</span>
-                  </div>
-                  <div className="text-[11px] font-medium text-slate-600 dark:text-slate-300 mt-0.5">
-                    🟦 {nf.format(avgs.swimAvg)}m · 🟩 {nf.format(avgs.runAvg)}m
-                  </div>
-                </div>
-              }
-              icon={<Calculator />}
-            />
-
-            <KpiChip
-              title="Dernière séance"
-              subtitle={lastLabel}
+              title="Séances ce mois-ci"
+              subtitle={monthLabel}
               subtitleClassName="capitalize"
               value={
-                daysSinceLast !== null ? (
-                  <>
-                    {nf.format(daysSinceLast)} <span className="text-xs opacity-70">j</span>
-                  </>
-                ) : (
-                  "—"
-                )
+                <div className="text-right">
+                  <div className="font-bold">
+                    {pluralize(monthCounts.totalN, "Séance")}
+                  </div>
+                  <div className="mt-1 flex justify-end gap-2">
+                    <TypePill type="swim">{pluralize(monthCounts.swimN, "Séance")}</TypePill>
+                    <TypePill type="run">{pluralize(monthCounts.runN, "Séance")}</TypePill>
+                  </div>
+                </div>
               }
               icon={<CalendarDays />}
-              tone={daysSinceLast > 4 ? "danger" : "default"}
+            />
+
+            {/* 4) Séances (total + split) */}
+            <KpiChip
+              title="Séances"
+              subtitle="Total"
+              value={
+                <div className="text-right">
+                  <div className="font-bold">{pluralize(stats.totalN, "Séance")}</div>
+                  <div className="mt-1 flex justify-end gap-2">
+                    <TypePill type="swim">{pluralize(stats.swimN, "Séance")}</TypePill>
+                    <TypePill type="run">{pluralize(stats.runN, "Séance")}</TypePill>
+                  </div>
+                </div>
+              }
+              icon={<CalendarDays />}
             />
           </div>
         </aside>
 
         {/* DROITE : graphes */}
         <section className="flex flex-col gap-4 self-start">
+          {/* Chart séances */}
           <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/80 dark:ring-slate-700 dark:bg-slate-900/60">
             <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                📈 Séances{" "}
-                <span className="ml-2 text-sm font-normal text-slate-600 dark:text-slate-300">
-                  ({filteredSessions.length})
-                </span>
+                📈 Séances
               </h2>
             </div>
             <div className="p-4">
@@ -449,6 +499,7 @@ export default function App() {
             </div>
           </div>
 
+          {/* Chart mensuel */}
           <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/80 dark:ring-slate-700 dark:bg-slate-900/60">
             <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">

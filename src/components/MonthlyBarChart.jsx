@@ -91,12 +91,7 @@ export function MonthlyBarChart({ sessions }) {
             dataKey="swimTotal"
             stackId="total"
             fill="rgb(99 102 241)"
-            radius={(props) => {
-              // props.payload = ligne du mois
-              const hasRun = (props?.payload?.runTotal || 0) > 0;
-              // si running existe => haut de la piscine doit être carré
-              return hasRun ? [0, 0, 0, 0] : [8, 8, 0, 0];
-            }}
+            radius={[0, 0, 0, 0]}
           />
 
           {/* 🟩 Running (haut) : arrondi en haut, mais seulement s'il existe */}
@@ -104,7 +99,7 @@ export function MonthlyBarChart({ sessions }) {
             dataKey="runTotal"
             stackId="total"
             fill="rgb(16 185 129)"
-            radius={[8, 8, 0, 0]}
+            radius={[0, 0, 0, 0]}
           />
         </BarChart>
       </ResponsiveContainer>
