@@ -72,10 +72,10 @@ function RangeSelect({ value, onChange }) {
         outline-none focus:ring-2 focus:ring-indigo-500
       "
     >
-      <option value="all">Historique</option>
-      <option value="6m">6M</option>
-      <option value="2026">2026</option>
-      <option value="2025">2025</option>
+      <option value="all">Historique complet</option>
+      <option value="6m">6 Derniers mois</option>
+      <option value="2026">Année 2026</option>
+      <option value="2025">Année 2025</option>
     </select>
   );
 }
