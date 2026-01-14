@@ -18,7 +18,12 @@ export function KpiChip({ title, subtitle, icon, value, tone = "default", subtit
         <p className="text-[10px] uppercase tracking-wide text-slate-600 dark:text-slate-300 whitespace-nowrap">{title}</p>
         <p className={["text-[14px] font-medium text-slate-900 dark:text-slate-100 whitespace-nowrap", subtitleClassName].filter(Boolean).join(" ")}>{subtitle}</p>
       </div>
-      <div className={["ml-auto text-lg font-bold", isDanger ? "text-rose-700 dark:text-rose-300" : "text-slate-900 dark:text-slate-100"].join(" ")}>
+      <div
+        className={[
+          "ml-auto text-lg font-bold min-h-[44px] flex flex-col justify-center",
+          isDanger ? "text-rose-700 dark:text-rose-300" : "text-slate-900 dark:text-slate-100",
+        ].join(" ")}
+      >
         {value}
       </div>
     </div>
