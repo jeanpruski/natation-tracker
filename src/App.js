@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
 import "dayjs/locale/fr";
-import { CalendarDays, CalendarCheck, Calculator, Waves, PersonStanding } from "lucide-react";
+import { CalendarDays, CalendarCheck, Calculator, Waves, PersonStanding, Footprints } from "lucide-react";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { KpiChip } from "./components/KpiChip";
 import { AddSessionForm } from "./components/AddSessionForm";
@@ -268,6 +268,8 @@ export default function App() {
   const monthLabel = capFirst(dayjs().format("MMMM YYYY"));
 
   const modeLabel = mode === "swim" ? "Natation" : mode === "run" ? "Running" : null;
+  const shoesStart = dayjs("2026-01-01");
+  const shoesTargetMeters = 550 * 1000;
 
   /* ===== Filtre période ===== */
   const periodSessions = useMemo(() => {
@@ -320,6 +322,20 @@ export default function App() {
 
     return { swimAvg, runAvg, swimN, runN, totalN, swimSum, runSum, totalMeters };
   }, [shownSessions]);
+
+  /* ===== Chaussures running (Nike Pegasus Premium) ===== */
+  const shoesLife = useMemo(() => {
+    let runMeters = 0;
+    sessions.forEach((s) => {
+      if (normType(s.type) !== "run") return;
+      if (dayjs(s.date).isBefore(shoesStart, "day")) return;
+      runMeters += Number(s.distance) || 0;
+    });
+    const used = Math.min(runMeters, shoesTargetMeters);
+    const remaining = Math.max(shoesTargetMeters - runMeters, 0);
+    const percent = shoesTargetMeters ? Math.min((runMeters / shoesTargetMeters) * 100, 100) : 0;
+    return { used, remaining, percent };
+  }, [sessions, shoesStart, shoesTargetMeters]);
 
   /* ===== Séances ce mois-ci ===== */
   const monthCounts = useMemo(() => {
@@ -453,7 +469,7 @@ export default function App() {
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_3fr] gap-4 items-start px-4 xl:px-8 py-4 xl:py-4">
         {/* GAUCHE : KPI */}
         <aside className="self-start">
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 min-[800px]:grid-cols-2 xl:grid-cols-1 gap-4">
             {/* (AFFICHER UNIQUEMENT SI range === "all") : Dernière séance */}
             {showMonthCardsOnlyWhenAllRange && (
               <KpiChip
@@ -554,6 +570,35 @@ export default function App() {
               }
               icon={<Calculator />}
             />
+
+            {mode === "run" && (
+              <KpiChip
+                title="Chaussures"
+                subtitle={
+                  <span className="block">
+                    <span className="block">Pegasus</span>
+                  </span>
+                }
+                subtitleClassName="whitespace-normal leading-tight"
+                value={
+                  <div className="text-right">
+                    <div className="font-bold">
+                      {nf.format(Math.ceil(shoesLife.remaining / 1000))}{" "}
+                      <span className="text-xs opacity-70">
+                        km restants ({nf.format(Math.floor(shoesLife.used / 1000))} / 550 km)
+                      </span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-emerald-500"
+                        style={{ width: `${shoesLife.percent}%` }}
+                      />
+                    </div>
+                  </div>
+                }
+                icon={<Footprints />}
+              />
+            )}
 
              {/* ✅ Toujours affiché : Total métrage */}
             <KpiChip
