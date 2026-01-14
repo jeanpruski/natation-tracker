@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
 import "dayjs/locale/fr";
-import { CalendarDays, Calculator, Waves, PersonStanding } from "lucide-react";
+import { CalendarDays, CalendarCheck, Calculator, Waves, PersonStanding } from "lucide-react";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { KpiChip } from "./components/KpiChip";
 import { AddSessionForm } from "./components/AddSessionForm";
@@ -73,6 +73,7 @@ function RangeSelect({ value, onChange }) {
       "
     >
       <option value="all">Historique complet</option>
+      <option value="3m">3 Derniers mois</option>
       <option value="6m">6 Derniers mois</option>
       <option value="2026">Année 2026</option>
       <option value="2025">Année 2025</option>
@@ -276,6 +277,9 @@ export default function App() {
     if (range === "6m") {
       return sessions.filter((s) => dayjs(s.date).isAfter(now.subtract(6, "month")));
     }
+    if (range === "3m") {
+      return sessions.filter((s) => dayjs(s.date).isAfter(now.subtract(3, "month")));
+    }
 
     return sessions.filter((s) => dayjs(s.date).format("YYYY") === range);
   }, [sessions, range]);
@@ -312,8 +316,9 @@ export default function App() {
     const swimAvg = swimN ? Math.round(swimSum / swimN) : 0;
     const runAvg = runN ? Math.round(runSum / runN) : 0;
     const totalN = swimN + runN;
+    const totalMeters = swimSum + runSum;
 
-    return { swimAvg, runAvg, swimN, runN, totalN };
+    return { swimAvg, runAvg, swimN, runN, totalN, swimSum, runSum, totalMeters };
   }, [shownSessions]);
 
   /* ===== Séances ce mois-ci ===== */
@@ -477,7 +482,7 @@ export default function App() {
                     )}
                   </div>
                 }
-                icon={<CalendarDays />}
+                icon={<CalendarCheck />}
                 tone={daysSinceLast > 4 ? "danger" : "default"}
               />
             )}
@@ -495,8 +500,29 @@ export default function App() {
                     </div>
                     {mode === "all" && (
                       <div className="mt-1 flex justify-end gap-2 flex-wrap">
-                        <TypePill type="swim">{nf.format(monthTotals.swim)}m</TypePill>
-                        <TypePill type="run">{nf.format(monthTotals.run)}m</TypePill>
+                        <TypePill type="swim">{nf.format(monthTotals.swim)} m</TypePill>
+                        <TypePill type="run">{nf.format(monthTotals.run)} m</TypePill>
+                      </div>
+                    )}
+                  </div>
+                }
+                icon={<Calculator />}
+              />
+            )}
+
+            {/* (AFFICHER UNIQUEMENT SI range === "all") : Séances ce mois-ci */}
+            {showMonthCardsOnlyWhenAllRange && (
+              <KpiChip
+                title="Séances ce mois-ci"
+                subtitle={mode === "all" ? monthLabel : modeLabel}
+                subtitleClassName="capitalize"
+                value={
+                  <div className="text-right">
+                    <div className="font-bold">{pluralize(monthCounts.totalN, "Séance")}</div>
+                    {mode === "all" && (
+                      <div className="mt-1 flex justify-end gap-2 flex-wrap">
+                        <TypePill type="swim">{pluralize(monthCounts.swimN, "Séance")}</TypePill>
+                        <TypePill type="run">{pluralize(monthCounts.runN, "Séance")}</TypePill>
                       </div>
                     )}
                   </div>
@@ -505,7 +531,7 @@ export default function App() {
               />
             )}
 
-            {/* ✅ Toujours affiché : Moyenne / séance */}
+             {/* ✅ Toujours affiché : Moyenne / séance */}
             <KpiChip
               title="Moyenne / séance"
               subtitle={mode === "all" ? "Par sport" : modeLabel}
@@ -529,30 +555,29 @@ export default function App() {
               icon={<Calculator />}
             />
 
-            {/* (AFFICHER UNIQUEMENT SI range === "all") : Séances ce mois-ci */}
-            {showMonthCardsOnlyWhenAllRange && (
-              <KpiChip
-                title="Séances ce mois-ci"
-                subtitle={mode === "all" ? monthLabel : modeLabel}
-                subtitleClassName="capitalize"
-                value={
-                  <div className="text-right">
-                    <div className="font-bold">{pluralize(monthCounts.totalN, "Séance")}</div>
-                    {mode === "all" && (
-                      <div className="mt-1 flex justify-end gap-2 flex-wrap">
-                        <TypePill type="swim">{pluralize(monthCounts.swimN, "Séance")}</TypePill>
-                        <TypePill type="run">{pluralize(monthCounts.runN, "Séance")}</TypePill>
-                      </div>
-                    )}
+             {/* ✅ Toujours affiché : Total métrage */}
+            <KpiChip
+              title="Distance totale"
+              subtitle={mode === "all" ? "Total" : modeLabel}
+              value={
+                <div className="text-right">
+                  <div className="font-bold">
+                    {nf.format(stats.totalMeters)} <span className="text-xs opacity-70">m</span>
                   </div>
-                }
-                icon={<CalendarDays />}
-              />
-            )}
+                  {mode === "all" && (
+                    <div className="mt-1 flex justify-end gap-2 flex-wrap">
+                      <TypePill type="swim">{nf.format(stats.swimSum)} m</TypePill>
+                      <TypePill type="run">{nf.format(stats.runSum)} m</TypePill>
+                    </div>
+                  )}
+                </div>
+              }
+              icon={<Calculator />}
+            />
 
             {/* ✅ Toujours affiché : Séances (total) */}
             <KpiChip
-              title="Séances"
+              title="Séances totales"
               subtitle={mode === "all" ? "Total" : modeLabel}
               value={
                 <div className="text-right">
@@ -567,6 +592,7 @@ export default function App() {
               }
               icon={<CalendarDays />}
             />
+           
           </div>
         </aside>
 
