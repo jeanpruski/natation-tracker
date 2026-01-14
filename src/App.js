@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
 import "dayjs/locale/fr";
-import { CalendarDays, CalendarCheck, Calculator, Waves, PersonStanding, Footprints } from "lucide-react";
+import { CalendarDays, CalendarCheck, Calculator, Waves, PersonStanding, Footprints, Gauge } from "lucide-react";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { KpiChip } from "./components/KpiChip";
 import { AddSessionForm } from "./components/AddSessionForm";
@@ -568,10 +568,10 @@ export default function App() {
                   </div>
                 )
               }
-              icon={<Calculator />}
+              icon={<Gauge />}
             />
 
-            {mode === "run" && (
+            {mode === "run" && showMonthCardsOnlyWhenAllRange && (
               <KpiChip
                 title="Chaussures"
                 subtitle={
@@ -585,7 +585,7 @@ export default function App() {
                     <div className="font-bold">
                       {nf.format(Math.ceil(shoesLife.remaining / 1000))}{" "}
                       <span className="text-xs opacity-70">
-                        km restants ({nf.format(Math.floor(shoesLife.used / 1000))} / 550 km)
+                        km restants ({nf.format(Math.floor(shoesLife.used / 1000))} / 550)
                       </span>
                     </div>
                     <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
