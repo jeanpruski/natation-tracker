@@ -105,6 +105,7 @@ function RangeSelect({ value, onChange }) {
       "
     >
       <option value="all">Historique complet</option>
+      <option value="m">Mois en cours</option>
       <option value="3m">3 Derniers mois</option>
       <option value="6m">6 Derniers mois</option>
       <option value="2026">Année 2026</option>
@@ -282,7 +283,7 @@ export default function App() {
 
   const [sessions, setSessions] = useState([]);
   const [mode, setMode] = useState("all");   // all | swim | run
-  const [range, setRange] = useState(getInitialRange); // all | 6m | 3m | 2026 | 2025
+  const [range, setRange] = useState(getInitialRange); // all | m | 6m | 3m | 2026 | 2025
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -317,7 +318,7 @@ export default function App() {
   const monthLabel = capFirst(dayjs().format("MMMM YYYY"));
 
   const modeLabel = mode === "swim" ? "Natation" : mode === "run" ? "Running" : null;
-  const shoesStart = dayjs("2026-01-01");
+  const shoesStart = dayjs("2026-01-13");
   const shoesTargetMeters = 550 * 1000;
 
   /* ===== Filtre période ===== */
@@ -325,6 +326,9 @@ export default function App() {
     if (range === "all") return sessions;
 
     const now = dayjs();
+    if (range === "m") {
+      return sessions.filter((s) => dayjs(s.date).format("YYYY-MM") === now.format("YYYY-MM"));
+    }
     if (range === "6m") {
       return sessions.filter((s) => dayjs(s.date).isAfter(now.subtract(6, "month")));
     }
@@ -411,6 +415,7 @@ export default function App() {
     };
     if (range === "6m") return compute(periodSessions);
     if (range === "3m") return compute(periodSessions);
+    if (range === "m") return compute(periodSessions);
     return shoesLife;
   }, [periodSessions, range, shoesLife, shoesStart, shoesTargetMeters]);
 
@@ -756,7 +761,8 @@ export default function App() {
               icon={<Gauge />}
             />
 
-            {mode === "run" && (range === "all" || range === "6m" || range === "3m" || range === "2026") && (
+            {mode === "run" &&
+              (range === "all" || range === "6m" || range === "3m" || range === "m" || range === "2026") && (
               <KpiChip
                 title="Chaussures"
                 subtitle={
@@ -768,9 +774,9 @@ export default function App() {
                 value={
                   <div className="text-right">
                     <div className="font-bold">
-                      {nf.format(Math.ceil(shoesLifeByRange.remaining / 1000))}{" "}
+                      {nfDecimal.format(shoesLifeByRange.remaining / 1000)}{" "}
                       <span className="text-xs opacity-70">
-                        km restants ({nf.format(Math.floor(shoesLifeByRange.used / 1000))} / 550)
+                        km restants ({nfDecimal.format(shoesLifeByRange.used / 1000)} / 550)
                       </span>
                     </div>
                     <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
