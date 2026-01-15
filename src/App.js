@@ -26,6 +26,7 @@ import { SwimChart } from "./components/SwimChart";
 import { MonthlyBarChart } from "./components/MonthlyBarChart";
 import { History } from "./components/History";
 import { SportSharePie } from "./components/SportSharePie";
+import { CalendarHeatmap } from "./components/CalendarHeatmap";
 import { useEditAuth } from "./hooks/useEditAuth";
 import { apiGet, apiJson } from "./utils/api";
 import { downloadCSV } from "./utils/downloadCSV";
@@ -1377,7 +1378,7 @@ export default function App() {
           </div>
         </section>
 
-        <section className="px-4 xl:px-8 pb-6">
+        <section className="px-4 xl:px-8 pb-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/50 dark:ring-slate-700 dark:bg-slate-900/60">
               <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
@@ -1488,6 +1489,17 @@ export default function App() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="px-4 xl:px-8 pb-8">
+          <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/50 dark:ring-slate-700 dark:bg-slate-900/60">
+            <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">🗓️ Calendrier d'activité</h2>
+            </div>
+            <div className="p-4">
+              <CalendarHeatmap sessions={periodSessions} range={range} />
             </div>
           </div>
         </section>
