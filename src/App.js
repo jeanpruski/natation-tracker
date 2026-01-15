@@ -21,6 +21,13 @@ dayjs.locale("fr");
    ========================= */
 const normType = (t) => ((t || "swim").toLowerCase() === "run" ? "run" : "swim");
 const pluralize = (n, word) => `${n} ${word}${n > 1 ? "s" : ""}`;
+const getInitialRange = () => {
+  if (typeof window === "undefined") return "all";
+  const w = window.innerWidth;
+  if (w < 800) return "3m";
+  if (w < 1280) return "6m";
+  return "all";
+};
 
 /* =========================
    Mini segmented control
@@ -243,7 +250,7 @@ export default function App() {
 
   const [sessions, setSessions] = useState([]);
   const [mode, setMode] = useState("all");   // all | swim | run
-  const [range, setRange] = useState("all"); // all | 6m | 2026 | 2025
+  const [range, setRange] = useState(getInitialRange); // all | 6m | 3m | 2026 | 2025
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
