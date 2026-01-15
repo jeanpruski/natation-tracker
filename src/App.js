@@ -621,7 +621,7 @@ export default function App() {
         ? "current"
         : "last";
   const comparePanel = (
-    <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/80 dark:ring-slate-700 dark:bg-slate-900/60">
+    <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/50 dark:ring-slate-700 dark:bg-slate-900/60">
       <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
         <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
           📅 Comparatif mensuel — {mode === "all" ? "Mixte" : modeLabel}
@@ -884,61 +884,72 @@ export default function App() {
     <div
       className="
         min-h-screen
+        relative
         bg-gradient-to-b
         from-slate-100 via-slate-50 to-slate-50
         dark:from-[#0b1020] dark:via-[#0a1028] dark:to-[#0b1228]
         text-[13.5px] sm:text-[14px]
       "
     >
-      {/* HEADER sticky */}
-      <header
-        className={`
-          fixed top-0 left-0 right-0 z-40
-          flex flex-col gap-3
-          xl:flex-row xl:items-center xl:justify-between
-          ${HEADER_SURFACE_CLASS}
-          border-b border-slate-200 dark:border-slate-700
-          px-4 xl:px-8 pb-3
-        `}
-        style={HEADER_TOP_PADDING_STYLE}
-      >
-        {/* Ligne 1 : logo + toggle + éditeur */}
-        <div className="flex items-center gap-2 w-full xl:w-auto">
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl text-slate-900 dark:text-slate-100 flex items-center gap-2 whitespace-nowrap">
-            <img src="/apple-touch-icon.png" alt="Logo" className="w-8 h-8" />
-            NaTrack
-          </h1>
+      <div className="pointer-events-none fixed inset-0 z-0 flex items-center justify-center">
+        <img
+          src="/apple-touch-icon.png"
+          alt=""
+          aria-hidden="true"
+          className="w-[78vw] max-w-[980px] opacity-[0.48] blur-2xl dark:opacity-[0.32]"
+        />
+      </div>
 
-          <ThemeToggle />
+      <div className="relative z-10">
+        {/* HEADER sticky */}
+        <header
+          className={`
+            fixed top-0 left-0 right-0 z-40
+            flex flex-col gap-3
+            xl:flex-row xl:items-center xl:justify-between
+            ${HEADER_SURFACE_CLASS}
+            border-b border-slate-200 dark:border-slate-700
+            px-4 xl:px-8 pb-3
+          `}
+          style={HEADER_TOP_PADDING_STYLE}
+        >
+          {/* Ligne 1 : logo + toggle + éditeur */}
+          <div className="flex items-center gap-2 w-full xl:w-auto">
+            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl text-slate-900 dark:text-slate-100 flex items-center gap-2 whitespace-nowrap">
+              {/* <img src="/apple-touch-icon.png" alt="Logo" className="w-8 h-8" /> */}
+              NaTrack
+            </h1>
 
-          <button
-            onClick={() => setShowEditModal(true)}
-            className={`ml-auto xl:ml-2 rounded-xl px-3 py-2 text-sm transition ${
-              isAuth ? "bg-emerald-600 text-white hover:bg-emerald-500" : "bg-amber-500 text-white hover:bg-amber-400"
-            }`}
-            title={isAuth ? "Ouvrir l’éditeur" : "Déverrouiller l’édition"}
-          >
-            <span className="inline-flex items-center gap-1.5">
-              {isAuth ? "✏️" : "🔓"}
-              <span className="hidden sm:inline">{isAuth ? "Éditeur" : "Éditer"}</span>
-            </span>
-          </button>
-        </div>
+            <ThemeToggle />
 
-        {/* Ligne 2 (MOBILE) : dropdown à gauche + switch à droite */}
-        <div className="flex items-center justify-between gap-3 xl:hidden">
-          <RangeSelect value={range} onChange={setRange} />
-          <TypeSwitch value={mode} onChange={setMode} />
-        </div>
+            <button
+              onClick={() => setShowEditModal(true)}
+              className={`ml-auto xl:ml-2 rounded-xl px-3 py-2 text-sm transition ${
+                isAuth ? "bg-emerald-600 text-white hover:bg-emerald-500" : "bg-amber-500 text-white hover:bg-amber-400"
+              }`}
+              title={isAuth ? "Ouvrir l’éditeur" : "Déverrouiller l’édition"}
+            >
+              <span className="inline-flex items-center gap-1.5">
+                {isAuth ? "✏️" : "🔓"}
+                <span className="hidden sm:inline">{isAuth ? "Éditeur" : "Éditer"}</span>
+              </span>
+            </button>
+          </div>
 
-        {/* DESKTOP : dropdown à gauche du switch (dans le même bloc à droite) */}
-        <div className="hidden xl:flex items-center justify-end gap-3">
-          <RangeSelect value={range} onChange={setRange} />
-          <TypeSwitch value={mode} onChange={setMode} />
-        </div>
-      </header>
+          {/* Ligne 2 (MOBILE) : dropdown à gauche + switch à droite */}
+          <div className="flex items-center justify-between gap-3 xl:hidden">
+            <RangeSelect value={range} onChange={setRange} />
+            <TypeSwitch value={mode} onChange={setMode} />
+          </div>
 
-      <main className="pb-6" style={{ paddingTop: "var(--main-top-padding)" }}>
+          {/* DESKTOP : dropdown à gauche du switch (dans le même bloc à droite) */}
+          <div className="hidden xl:flex items-center justify-end gap-3">
+            <RangeSelect value={range} onChange={setRange} />
+            <TypeSwitch value={mode} onChange={setMode} />
+          </div>
+        </header>
+
+        <main className="pb-6" style={{ paddingTop: "var(--main-top-padding)" }}>
         {error && (
           <p className="mb-3 rounded-xl bg-rose-100 px-4 py-2 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200">
             {error}
@@ -1274,7 +1285,7 @@ export default function App() {
 
         {/* DROITE : graphes */}
         <section className="flex flex-col gap-4 self-start">
-          <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/80 dark:ring-slate-700 dark:bg-slate-900/60">
+          <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/50 dark:ring-slate-700 dark:bg-slate-900/60">
             <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">📈 Séances</h2>
             </div>
@@ -1283,7 +1294,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/80 dark:ring-slate-700 dark:bg-slate-900/60">
+          <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/50 dark:ring-slate-700 dark:bg-slate-900/60">
             <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">📊 Cumulatif par mois</h2>
             </div>
@@ -1301,7 +1312,7 @@ export default function App() {
         )}
 
         <section className="px-4 xl:px-8 pb-4">
-          <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/80 dark:ring-slate-700 dark:bg-slate-900/60">
+          <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/50 dark:ring-slate-700 dark:bg-slate-900/60">
             <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">🎯 Objectifs distance</h2>
               <div className="text-xs text-slate-500 dark:text-slate-400">
@@ -1361,7 +1372,7 @@ export default function App() {
 
         <section className="px-4 xl:px-8 pb-6">
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/80 dark:ring-slate-700 dark:bg-slate-900/60">
+            <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/50 dark:ring-slate-700 dark:bg-slate-900/60">
               <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">🏅 Records</h2>
               </div>
@@ -1438,7 +1449,7 @@ export default function App() {
               </div>
             </div>
 
-            <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/80 dark:ring-slate-700 dark:bg-slate-900/60">
+            <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/50 dark:ring-slate-700 dark:bg-slate-900/60">
               <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">⚖️ Répartition par sport</h2>
               </div>
@@ -1473,7 +1484,8 @@ export default function App() {
             </div>
           </div>
         </section>
-      </main>
+        </main>
+      </div>
 
       <EditModal
         open={showEditModal}

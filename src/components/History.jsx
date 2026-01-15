@@ -94,7 +94,7 @@ export function History({ sessions, onDelete, onEdit, readOnly }) {
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/80 backdrop-blur dark:ring-slate-700 dark:bg-slate-900/60">
+    <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/50 backdrop-blur dark:ring-slate-700 dark:bg-slate-900/60">
       <div className="p-0 sm:p-4">
         {/* ✅ minimal: table-fixed + paddings mobile réduits */}
         <table className="w-full table-fixed text-left text-slate-900 dark:text-slate-100">
