@@ -896,7 +896,7 @@ export default function App() {
           src="/apple-touch-icon.png"
           alt=""
           aria-hidden="true"
-          className="w-[78vw] max-w-[980px] opacity-[0.48] blur-2xl dark:opacity-[0.32]"
+          className="w-[90vw] max-w-[1200px] opacity-[0.48] blur-2xl dark:opacity-[0.32]"
         />
       </div>
 
@@ -916,8 +916,7 @@ export default function App() {
           {/* Ligne 1 : logo + toggle + éditeur */}
           <div className="flex items-center gap-2 w-full xl:w-auto">
             <h1 className="text-2xl font-bold tracking-tight sm:text-3xl text-slate-900 dark:text-slate-100 flex items-center gap-2 whitespace-nowrap">
-              {/* <img src="/apple-touch-icon.png" alt="Logo" className="w-8 h-8" /> */}
-              NaTrack
+              <img src="/big-logo.png" alt="Logo" className="h-9" />
             </h1>
 
             <ThemeToggle />
