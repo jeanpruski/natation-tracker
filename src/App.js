@@ -978,6 +978,7 @@ export default function App() {
         </header>
 
         <main className="pb-6" style={{ paddingTop: "var(--main-top-padding)" }}>
+        <div className="mx-auto max-w-[1550px]">
         {error && (
           <p className="mb-3 rounded-xl bg-rose-100 px-4 py-2 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200">
             {error}
@@ -1558,8 +1559,10 @@ export default function App() {
             </div>
           </div>
         </section>
+
         </>
         )}
+        </div>
         </main>
       </div>
 
