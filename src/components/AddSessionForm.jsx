@@ -1,13 +1,14 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import dayjs from "dayjs";
-import { CalendarDays, Download, Plus, Waves, PersonStanding } from "lucide-react";
+import { CalendarDays, Download, Plus, Upload, Waves, PersonStanding } from "lucide-react";
 
-export function AddSessionForm({ onAdd, onExport, readOnly }) {
+export function AddSessionForm({ onAdd, onExport, onImport, readOnly }) {
   const [distance, setDistance] = useState("");
   const [type, setType] = useState("swim"); // ✅ swim | run
   const [useCustomDate, setUseCustomDate] = useState(false);
   const [date, setDate] = useState(dayjs().format("YYYY-MM-DD"));
+  const fileInputRef = useRef(null);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -29,6 +30,12 @@ export function AddSessionForm({ onAdd, onExport, readOnly }) {
   };
 
   const disabledCls = "opacity-60 cursor-not-allowed";
+  const handleImportChange = (e) => {
+    if (readOnly) return;
+    const file = e.target.files && e.target.files[0];
+    if (file && onImport) onImport(file);
+    e.target.value = "";
+  };
 
   return (
     <form onSubmit={submit} className="space-y-3">
@@ -141,6 +148,34 @@ export function AddSessionForm({ onAdd, onExport, readOnly }) {
       </div>
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,text/csv"
+            onChange={handleImportChange}
+            className="hidden"
+          />
+          <button
+            type="button"
+            disabled={readOnly}
+            onClick={() => fileInputRef.current?.click()}
+            className={`inline-flex items-center gap-2 rounded-xl bg-orange-500 px-3 py-2 text-sm font-semibold text-white hover:bg-orange-400 ${
+              readOnly ? disabledCls : ""
+            }`}
+          >
+            <Upload size={16} /> Importer un CSV
+          </button>
+
+          <button
+            type="button"
+            onClick={onExport}
+            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+          >
+            <Download size={16} /> Exporter en CSV
+          </button>
+        </div>
+
         <button
           type="submit"
           disabled={readOnly}
@@ -149,14 +184,6 @@ export function AddSessionForm({ onAdd, onExport, readOnly }) {
           }`}
         >
           <Plus size={14} /> Ajouter la séance
-        </button>
-
-        <button
-          type="button"
-          onClick={onExport}
-          className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
-        >
-          <Download size={16} /> Exporter en CSV
         </button>
       </div>
     </form>

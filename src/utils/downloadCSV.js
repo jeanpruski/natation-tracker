@@ -1,6 +1,6 @@
 export function downloadCSV(filename, rows) {
-  const headers = ["Date", "Métrage (m)"];
-  const csvRows = [headers, ...(rows || []).map((r) => [r.date, r.distance])];
+  const headers = ["Date", "Métrage (m)", "Type"];
+  const csvRows = [headers, ...(rows || []).map((r) => [r.date, r.distance, r.type])];
 
   const csv = csvRows
     .map((r) => r.map((c) => `"${String(c ?? "").replaceAll('"', '""')}"`).join(","))
@@ -17,4 +17,3 @@ export function downloadCSV(filename, rows) {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
-

@@ -1,8 +1,18 @@
 // App.js
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import dayjs from "dayjs";
 import "dayjs/locale/fr";
-import { CalendarDays, CalendarCheck, Calculator, Waves, PersonStanding, Footprints, Gauge } from "lucide-react";
+import {
+  CalendarDays,
+  CalendarCheck,
+  Calculator,
+  Waves,
+  PersonStanding,
+  Footprints,
+  Gauge,
+  CheckCircle2,
+} from "lucide-react";
+import { v4 as uuidv4 } from "uuid";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { KpiChip } from "./components/KpiChip";
 import { AddSessionForm } from "./components/AddSessionForm";
@@ -12,6 +22,7 @@ import { History } from "./components/History";
 import { useEditAuth } from "./hooks/useEditAuth";
 import { apiGet, apiJson } from "./utils/api";
 import { downloadCSV } from "./utils/downloadCSV";
+import { parseCSV } from "./utils/parseCSV";
 import { capFirst } from "./utils/strings";
 
 dayjs.locale("fr");
@@ -122,6 +133,7 @@ function EditModal({
   onEdit,
   onDelete,
   onExport,
+  onImport,
 }) {
   const [token, setToken] = useState("");
   const [err, setErr] = useState("");
@@ -228,7 +240,7 @@ function EditModal({
             ) : (
               <div className="mx-auto w-full max-w-5xl">
                 {tab === "options" ? (
-                  <AddSessionForm onAdd={onAdd} onExport={onExport} readOnly={false} />
+                  <AddSessionForm onAdd={onAdd} onExport={onExport} onImport={onImport} readOnly={false} />
                 ) : (
                   <History sessions={sessions} onDelete={onDelete} onEdit={onEdit} readOnly={false} />
                 )}
@@ -247,6 +259,9 @@ function EditModal({
 export default function App() {
   const { token: editToken, isAuth, checking, verifyAndLogin, logout: editLogout } = useEditAuth();
   const [showEditModal, setShowEditModal] = useState(false);
+  const [toast, setToast] = useState("");
+  const [isBusy, setIsBusy] = useState(false);
+  const toastTimerRef = useRef(null);
 
   const [sessions, setSessions] = useState([]);
   const [mode, setMode] = useState("all");   // all | swim | run
@@ -268,6 +283,12 @@ export default function App() {
       }
     })();
     return () => { alive = false; };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
   }, []);
 
   const nf = useMemo(() => new Intl.NumberFormat("fr-FR"), []);
@@ -369,6 +390,27 @@ export default function App() {
   const lastLabel = lastSessionDay ? capFirst(lastSessionDay.format("dddd DD MMM YYYY")) : "Aucune";
   const lastType = lastSession ? normType(lastSession.type) : null;
 
+  const showToast = (message) => {
+    setToast(message);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => setToast(""), 2400);
+  };
+
+  const withBusy = async (fn) => {
+    setIsBusy(true);
+    const start = Date.now();
+    try {
+      return await fn();
+    } finally {
+      const elapsed = Date.now() - start;
+      const minDelay = 500;
+      if (elapsed < minDelay) {
+        await new Promise((resolve) => setTimeout(resolve, minDelay - elapsed));
+      }
+      setIsBusy(false);
+    }
+  };
+
   /* ===== CRUD ===== */
   const guard = (fn) => async (...args) => {
     if (checking) return;
@@ -377,22 +419,79 @@ export default function App() {
   };
 
   const addSession = guard(async (payload) => {
-    const body = { id: payload.id, distance: payload.distance, date: payload.date, type: payload.type };
-    const created = await apiJson("POST", "/sessions", body, editToken);
-    setSessions((prev) => [...prev, created]);
+    await withBusy(async () => {
+      const body = { id: payload.id, distance: payload.distance, date: payload.date, type: payload.type };
+      const created = await apiJson("POST", "/sessions", body, editToken);
+      setSessions((prev) => [...prev, created]);
+    });
+    setShowEditModal(false);
+    showToast("Seance ajoutee");
   });
 
   const deleteSession = guard(async (id) => {
-    await apiJson("DELETE", `/sessions/${id}`, undefined, editToken);
-    setSessions((prev) => prev.filter((s) => s.id !== id));
+    if (!window.confirm("Confirmer la suppression de cette seance ?")) return;
+    await withBusy(async () => {
+      await apiJson("DELETE", `/sessions/${id}`, undefined, editToken);
+      setSessions((prev) => prev.filter((s) => s.id !== id));
+    });
+    setShowEditModal(false);
+    showToast("Seance supprimee");
   });
 
   const editSession = guard(async (id, updated) => {
-    await apiJson("PUT", `/sessions/${id}`, updated, editToken);
-    setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, ...updated } : s)));
+    await withBusy(async () => {
+      await apiJson("PUT", `/sessions/${id}`, updated, editToken);
+      setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, ...updated } : s)));
+    });
+    setShowEditModal(false);
+    showToast("Seance modifiee");
   });
 
-  const exportCSV = () => downloadCSV("sessions.csv", sessions);
+  const importCSV = guard(async (file) => {
+    if (!file) return;
+    if (!window.confirm("Confirmer l'import du fichier CSV ?")) return;
+    const imported = await withBusy(async () => {
+      const text = await file.text();
+      const rows = parseCSV(text);
+      const normalized = [];
+
+      rows.forEach((row) => {
+        if (!row || row.length < 2) return;
+        const date = String(row[0] ?? "").trim();
+        if (!date || date.toLowerCase() === "date") return;
+        if (!dayjs(date).isValid()) return;
+        const distance = Number(String(row[1] ?? "").trim().replace(",", "."));
+        if (!Number.isFinite(distance)) return;
+        const typeRaw = String(row[2] ?? "").trim();
+        const type = typeRaw ? normType(typeRaw) : "swim";
+        normalized.push({ date, distance, type });
+      });
+
+      if (!normalized.length) return 0;
+
+      const created = [];
+      for (const row of normalized) {
+        const body = { id: uuidv4(), distance: row.distance, date: row.date, type: row.type };
+        const item = await apiJson("POST", "/sessions", body, editToken);
+        created.push(item);
+      }
+      if (created.length) setSessions((prev) => [...prev, ...created]);
+      return created.length;
+    });
+
+    if (imported) {
+      setShowEditModal(false);
+      showToast("Import termine");
+    }
+  });
+
+  const exportCSV = async () => {
+    await withBusy(() => {
+      downloadCSV("sessions.csv", sessions);
+    });
+    setShowEditModal(false);
+    showToast("Export termine");
+  };
 
   if (loading) {
     return (
@@ -471,6 +570,36 @@ export default function App() {
         <p className="mb-3 rounded-xl bg-rose-100 px-4 py-2 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200">
           {error}
         </p>
+      )}
+
+      {toast && (
+        <>
+          <style>{`
+            @keyframes toast-slide {
+              0% { opacity: 0; transform: translate(-50%, -16px); }
+              12% { opacity: 1; transform: translate(-50%, 0); }
+              85% { opacity: 1; transform: translate(-50%, 0); }
+              100% { opacity: 0; transform: translate(-50%, -16px); }
+            }
+          `}</style>
+          <div
+            className="fixed left-1/2 top-6 z-50 flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white shadow-lg"
+            style={{ animation: "toast-slide 2.4s ease-in-out" }}
+          >
+            <CheckCircle2 size={16} />
+            <span>{toast}</span>
+          </div>
+        </>
+      )}
+
+      {isBusy && (
+        <div className="fixed inset-0 z-[60] bg-white/50 dark:bg-slate-900/50 backdrop-blur-md flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <img src="/apple-touch-icon.png" alt="NaTrack" className="w-16 h-16" />
+            <div className="h-10 w-10 rounded-full border-4 border-slate-300 border-t-indigo-500 dark:border-slate-700 dark:border-t-indigo-400 animate-spin" aria-label="Chargement" />
+            <span className="sr-only">Chargement…</span>
+          </div>
+        </div>
       )}
 
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_3fr] gap-4 items-start px-4 xl:px-8 py-4 xl:py-4">
@@ -681,6 +810,7 @@ export default function App() {
         onEdit={editSession}
         onDelete={deleteSession}
         onExport={exportCSV}
+        onImport={importCSV}
       />
     </div>
   );
