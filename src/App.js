@@ -23,6 +23,7 @@ import { AddSessionForm } from "./components/AddSessionForm";
 import { SwimChart } from "./components/SwimChart";
 import { MonthlyBarChart } from "./components/MonthlyBarChart";
 import { History } from "./components/History";
+import { SportSharePie } from "./components/SportSharePie";
 import { useEditAuth } from "./hooks/useEditAuth";
 import { apiGet, apiJson } from "./utils/api";
 import { downloadCSV } from "./utils/downloadCSV";
@@ -376,6 +377,45 @@ export default function App() {
     return { swimAvg, runAvg, swimN, runN, totalN, swimSum, runSum, totalMeters };
   }, [shownSessions]);
 
+  const sportTotals = useMemo(() => {
+    let swimSum = 0, runSum = 0;
+    shownSessions.forEach((s) => {
+      const d = Number(s.distance) || 0;
+      if (normType(s.type) === "run") runSum += d;
+      else swimSum += d;
+    });
+    return { swimSum, runSum, total: swimSum + runSum };
+  }, [shownSessions]);
+
+  const records = useMemo(() => {
+    let bestSwim = null;
+    let bestRun = null;
+    const dayTotals = new Map();
+
+    shownSessions.forEach((s) => {
+      const d = Number(s.distance) || 0;
+      const t = normType(s.type);
+      if (t === "run") {
+        if (!bestRun || d > bestRun.distance) bestRun = { distance: d, date: s.date };
+      } else {
+        if (!bestSwim || d > bestSwim.distance) bestSwim = { distance: d, date: s.date };
+      }
+
+      const key = dayjs(s.date).format("YYYY-MM-DD");
+      const prev = dayTotals.get(key) || { distance: 0, count: 0, date: s.date };
+      prev.distance += d;
+      prev.count += 1;
+      dayTotals.set(key, prev);
+    });
+
+    let bestDay = null;
+    dayTotals.forEach((val) => {
+      if (!bestDay || val.distance > bestDay.distance) bestDay = val;
+    });
+
+    return { bestSwim, bestRun, bestDay };
+  }, [shownSessions]);
+
   const progressGoals = useMemo(
     () => [
       { id: "paris-disneyland", label: "Paris → Disneyland", targetMeters: 45000, Icon: Car },
@@ -549,7 +589,7 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-sky-50 via-indigo-50 to-white dark:from-[#0b1020] dark:via-[#0a1028] dark:to-[#0b1228] flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-slate-50 dark:from-[#0b1020] dark:via-[#0a1028] dark:to-[#0b1228] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <img src="/apple-touch-icon.png" alt="NaTrack" className="w-16 h-16" />
           <div className="h-10 w-10 rounded-full border-4 border-slate-300 border-t-indigo-500 dark:border-slate-700 dark:border-t-indigo-400 animate-spin" aria-label="Chargement" />
@@ -566,7 +606,7 @@ export default function App() {
       className="
         min-h-screen
         bg-gradient-to-b
-        from-sky-50 via-indigo-50 to-white
+        from-slate-100 via-slate-50 to-slate-50
         dark:from-[#0b1020] dark:via-[#0a1028] dark:to-[#0b1228]
         text-[13.5px] sm:text-[14px]
       "
@@ -909,6 +949,78 @@ export default function App() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        </section>
+
+        <section className="px-4 xl:px-8 pb-6">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/80 dark:ring-slate-700 dark:bg-slate-900/60">
+              <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">🏅 Records</h2>
+              </div>
+              <div className="grid gap-3 p-4 sm:grid-cols-2">
+                <div className="rounded-xl bg-slate-50/80 p-3 ring-1 ring-slate-200 dark:bg-slate-800/50 dark:ring-slate-700">
+                  <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Natation</div>
+                  <div className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    {records.bestSwim
+                      ? `${formatDistance(records.bestSwim.distance, nf)} · ${capFirst(dayjs(records.bestSwim.date).format("DD MMM YYYY"))}`
+                      : "—"}
+                  </div>
+                </div>
+
+                <div className="rounded-xl bg-slate-50/80 p-3 ring-1 ring-slate-200 dark:bg-slate-800/50 dark:ring-slate-700">
+                  <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Running</div>
+                  <div className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    {records.bestRun
+                      ? `${formatDistance(records.bestRun.distance, nf)} · ${capFirst(dayjs(records.bestRun.date).format("DD MMM YYYY"))}`
+                      : "—"}
+                  </div>
+                </div>
+
+                <div className="rounded-xl bg-slate-50/80 p-3 ring-1 ring-slate-200 dark:bg-slate-800/50 dark:ring-slate-700">
+                  <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Journée la plus active</div>
+                  <div className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    {records.bestDay
+                      ? `${formatDistance(records.bestDay.distance, nf)} · ${records.bestDay.count} séance${records.bestDay.count > 1 ? "s" : ""}`
+                      : "—"}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/80 dark:ring-slate-700 dark:bg-slate-900/60">
+              <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">🥧 Répartition par sport</h2>
+              </div>
+              <div className="p-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      Par distance
+                    </div>
+                    <SportSharePie
+                      swimValue={sportTotals.swimSum}
+                      runValue={sportTotals.runSum}
+                      unitLabel="m"
+                      formatValue={(value) => nf.format(value)}
+                      heightClass="h-60 sm:h-44"
+                    />
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      Par séances
+                    </div>
+                    <SportSharePie
+                      swimValue={stats.swimN}
+                      runValue={stats.runN}
+                      unitLabel="séance"
+                      formatValue={(value) => nf.format(value)}
+                      heightClass="h-60 sm:h-44"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
