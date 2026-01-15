@@ -1379,39 +1379,51 @@ export default function App() {
         </section>
 
         <section className="px-4 xl:px-8 pb-4">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className={`grid gap-4 ${mode === "all" ? "md:grid-cols-2" : ""}`}>
             <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/50 dark:ring-slate-700 dark:bg-slate-900/60">
               <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">🏅 Records</h2>
               </div>
               <div className="grid gap-3 p-4 sm:grid-cols-2">
-                <div className="rounded-xl bg-slate-50/80 p-3 ring-1 ring-slate-200 dark:bg-slate-800/50 dark:ring-slate-700">
-                  <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                    <Waves size={14} />
-                    <span>Natation</span>
+                {mode !== "run" && (
+                  <div
+                    className={`rounded-xl bg-slate-50/80 p-3 ring-1 ring-slate-200 dark:bg-slate-800/50 dark:ring-slate-700 ${
+                      mode === "swim" ? "sm:col-span-2" : ""
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      <Waves size={14} />
+                      <span>Natation</span>
+                    </div>
+                    <div className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {records.bestSwim
+                        ? `${formatKmDecimal(records.bestSwim.distance, nfDecimal)} · ${capFirst(
+                            dayjs(records.bestSwim.date).format("DD MMM YYYY")
+                          )}`
+                        : "—"}
+                    </div>
                   </div>
-                  <div className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
-                    {records.bestSwim
-                      ? `${formatKmDecimal(records.bestSwim.distance, nfDecimal)} · ${capFirst(
-                          dayjs(records.bestSwim.date).format("DD MMM YYYY")
-                        )}`
-                      : "—"}
-                  </div>
-                </div>
+                )}
 
-                <div className="rounded-xl bg-slate-50/80 p-3 ring-1 ring-slate-200 dark:bg-slate-800/50 dark:ring-slate-700">
-                  <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                    <PersonStanding size={14} />
-                    <span>Running</span>
+                {mode !== "swim" && (
+                  <div
+                    className={`rounded-xl bg-slate-50/80 p-3 ring-1 ring-slate-200 dark:bg-slate-800/50 dark:ring-slate-700 ${
+                      mode === "run" ? "sm:col-span-2" : ""
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      <PersonStanding size={14} />
+                      <span>Running</span>
+                    </div>
+                    <div className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {records.bestRun
+                        ? `${formatKmDecimal(records.bestRun.distance, nfDecimal)} · ${capFirst(
+                            dayjs(records.bestRun.date).format("DD MMM YYYY")
+                          )}`
+                        : "—"}
+                    </div>
                   </div>
-                  <div className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
-                    {records.bestRun
-                      ? `${formatKmDecimal(records.bestRun.distance, nfDecimal)} · ${capFirst(
-                          dayjs(records.bestRun.date).format("DD MMM YYYY")
-                        )}`
-                      : "—"}
-                  </div>
-                </div>
+                )}
 
                 <div className="rounded-xl bg-slate-50/80 p-3 ring-1 ring-slate-200 dark:bg-slate-800/50 dark:ring-slate-700 sm:col-span-2">
                   <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
@@ -1457,39 +1469,41 @@ export default function App() {
               </div>
             </div>
 
-            <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/50 dark:ring-slate-700 dark:bg-slate-900/60">
-              <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">⚖️ Répartition par sport</h2>
-              </div>
-              <div className="p-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                      Par distance
+            {mode === "all" && (
+              <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/50 dark:ring-slate-700 dark:bg-slate-900/60">
+                <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
+                  <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">⚖️ Répartition par sport</h2>
+                </div>
+                <div className="p-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                        Par distance
+                      </div>
+                      <SportSharePie
+                        swimValue={sportTotals.swimSum}
+                        runValue={sportTotals.runSum}
+                        unitLabel="km"
+                        formatValue={(value) => nfDecimal.format(value / 1000)}
+                        heightClass="h-60 sm:h-44"
+                      />
                     </div>
-                    <SportSharePie
-                      swimValue={sportTotals.swimSum}
-                      runValue={sportTotals.runSum}
-                      unitLabel="km"
-                      formatValue={(value) => nfDecimal.format(value / 1000)}
-                      heightClass="h-60 sm:h-44"
-                    />
-                  </div>
-                  <div>
-                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                      Par séances
+                    <div>
+                      <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                        Par séances
+                      </div>
+                      <SportSharePie
+                        swimValue={stats.swimN}
+                        runValue={stats.runN}
+                        unitLabel="séance"
+                        formatValue={(value) => nf.format(value)}
+                        heightClass="h-60 sm:h-44"
+                      />
                     </div>
-                    <SportSharePie
-                      swimValue={stats.swimN}
-                      runValue={stats.runN}
-                      unitLabel="séance"
-                      formatValue={(value) => nf.format(value)}
-                      heightClass="h-60 sm:h-44"
-                    />
                   </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </section>
 
@@ -1499,7 +1513,7 @@ export default function App() {
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">🗓️ Calendrier d'activité</h2>
             </div>
             <div className="p-4">
-              <CalendarHeatmap sessions={periodSessions} range={range} />
+              <CalendarHeatmap sessions={shownSessions} range={range} />
             </div>
           </div>
         </section>

@@ -2,14 +2,22 @@ import React, { useMemo } from "react";
 import dayjs from "dayjs";
 import { capFirst } from "../utils/strings";
 
-const LEVEL_CLASSES = [
-  "bg-slate-200/60 dark:bg-slate-800/60",
-  "bg-emerald-200 dark:bg-emerald-900/50",
-  "bg-emerald-300 dark:bg-emerald-800/60",
-  "bg-emerald-400 dark:bg-emerald-700/70",
-  "bg-emerald-500 dark:bg-emerald-500",
+const SWIM_COLORS = [
+  "#E0E7FF",
+  "#C7D2FE",
+  "#A5B4FC",
+  "#818CF8",
+  "#6366F1",
 ];
-const OUTSIDE_RANGE_CLASS = "bg-transparent border border-slate-200/60 dark:border-slate-700/60";
+const RUN_COLORS = [
+  "rgb(226 232 240)",
+  "rgb(167 243 208)",
+  "rgb(110 231 183)",
+  "rgb(52 211 153)",
+  "rgb(16 185 129)",
+];
+const OUTSIDE_RANGE_CLASS = "bg-transparent";
+const INACTIVE_CLASS = "bg-slate-200/60 dark:bg-slate-800/60";
 const WEEKDAY_LABELS = [
   "Lundi",
   "Mardi",
@@ -61,12 +69,17 @@ export function CalendarHeatmap({ sessions, range }) {
 
     sessions.forEach((s) => {
       const key = toKey(s.date);
-      counts.set(key, (counts.get(key) || 0) + 1);
+      const type = (s.type || "swim").toLowerCase() === "run" ? "run" : "swim";
+      const prev = counts.get(key) || { swim: 0, run: 0 };
+      if (type === "run") prev.run += 1;
+      else prev.swim += 1;
+      counts.set(key, prev);
     });
 
     let maxCount = 0;
     counts.forEach((value) => {
-      if (value > maxCount) maxCount = value;
+      const total = value.swim + value.run;
+      if (total > maxCount) maxCount = total;
     });
 
     const weekStart = start.startOf("week");
@@ -81,11 +94,12 @@ export function CalendarHeatmap({ sessions, range }) {
       const key = d.format("YYYY-MM-DD");
       const inRange = (d.isSame(start, "day") || d.isAfter(start, "day"))
         && (d.isSame(end, "day") || d.isBefore(end, "day"));
-      const count = counts.get(key) || 0;
+      const dayCounts = counts.get(key) || { swim: 0, run: 0 };
+      const count = dayCounts.swim + dayCounts.run;
       if (inRange && count > 0) {
         maxCount = Math.max(maxCount, count);
       }
-      days.push({ date: d, key, inRange, count });
+      days.push({ date: d, key, inRange, count, swim: dayCounts.swim, run: dayCounts.run });
     }
 
     const weeksList = [];
@@ -129,18 +143,22 @@ export function CalendarHeatmap({ sessions, range }) {
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
         <span>Jours actifs : {activeDays} / {totalDays}</span>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <span className="inline-flex items-center gap-1">
             <span
               className="h-3 w-3 rounded-sm"
-              style={{ backgroundColor: "rgb(16 185 129)" }}
+              style={{ backgroundColor: SWIM_COLORS[4] }}
               aria-hidden="true"
             />
-            Actif
+            Natation
           </span>
           <span className="inline-flex items-center gap-1">
-            <span className="h-3 w-3 rounded-sm bg-slate-200/60 dark:bg-slate-800/60" aria-hidden="true" />
-            Inactif
+            <span
+              className="h-3 w-3 rounded-sm"
+              style={{ backgroundColor: RUN_COLORS[4] }}
+              aria-hidden="true"
+            />
+            Running
           </span>
         </div>
       </div>
@@ -162,12 +180,32 @@ export function CalendarHeatmap({ sessions, range }) {
               {week.map((day) => {
                 const label = capFirst(day.date.format("dddd DD MMM YYYY"));
                 const title = `${label} • ${day.count} seance${day.count > 1 ? "s" : ""}`;
-                const baseClass = day.inRange ? LEVEL_CLASSES[day.level] : OUTSIDE_RANGE_CLASS;
+                const isMix = day.swim > 0 && day.run > 0;
+                const isSwimOnly = day.swim > 0 && day.run === 0;
+                const isRunOnly = day.run > 0 && day.swim === 0;
+                let style = {};
+                if (!day.inRange) {
+                  style = {};
+                } else if (isMix) {
+                  style = {
+                    background: `linear-gradient(135deg, ${SWIM_COLORS[day.level]} 0%, ${RUN_COLORS[day.level]} 100%)`,
+                  };
+                } else if (isSwimOnly) {
+                  style = { backgroundColor: SWIM_COLORS[day.level] };
+                } else if (isRunOnly) {
+                  style = { backgroundColor: RUN_COLORS[day.level] };
+                }
+                const baseClass = day.inRange
+                  ? day.count === 0
+                    ? INACTIVE_CLASS
+                    : ""
+                  : OUTSIDE_RANGE_CLASS;
                 return (
                   <span
                     key={day.key}
                     title={title}
                     className={`w-full h-full rounded-sm ${baseClass}`}
+                    style={style}
                   />
                 );
               })}
