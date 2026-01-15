@@ -45,6 +45,16 @@ const formatDistance = (meters, nf) => {
   return `${nf.format(Math.round(meters))} m`;
 };
 const formatKmDecimal = (meters, nfDecimal) => `${nfDecimal.format(meters / 1000)} km`;
+const weekOfMonthLabel = (date) => {
+  const d = dayjs(date);
+  const weekNum = Math.ceil(d.date() / 7);
+  const ordinal = weekNum === 1 ? "1ere" : `${weekNum}eme`;
+  const monthName = capFirst(d.format("MMMM"));
+  const year = d.format("YYYY");
+  const useApostrophe = /^[aeiouyàâäéèêëîïôöùûüœh]/i.test(monthName);
+  const preposition = useApostrophe ? "d'" : "de ";
+  return `${ordinal} semaine ${preposition}${monthName} ${year}`;
+};
 const getInitialRange = () => {
   if (typeof window === "undefined") return "all";
   const w = window.innerWidth;
@@ -390,7 +400,7 @@ export default function App() {
   const records = useMemo(() => {
     let bestSwim = null;
     let bestRun = null;
-    const dayTotals = new Map();
+    const weekTotals = new Map();
 
     shownSessions.forEach((s) => {
       const d = Number(s.distance) || 0;
@@ -401,19 +411,21 @@ export default function App() {
         if (!bestSwim || d > bestSwim.distance) bestSwim = { distance: d, date: s.date };
       }
 
-      const key = dayjs(s.date).format("YYYY-MM-DD");
-      const prev = dayTotals.get(key) || { distance: 0, count: 0, date: s.date };
-      prev.distance += d;
-      prev.count += 1;
-      dayTotals.set(key, prev);
+      const weekStart = dayjs(s.date).startOf("week");
+      const key = weekStart.format("YYYY-MM-DD");
+      const prev = weekTotals.get(key) || { total: 0, swim: 0, run: 0, weekStart: weekStart.toISOString() };
+      prev.total += d;
+      if (t === "run") prev.run += d;
+      else prev.swim += d;
+      weekTotals.set(key, prev);
     });
 
-    let bestDay = null;
-    dayTotals.forEach((val) => {
-      if (!bestDay || val.distance > bestDay.distance) bestDay = val;
+    let bestWeek = null;
+    weekTotals.forEach((val) => {
+      if (!bestWeek || val.total > bestWeek.total) bestWeek = val;
     });
 
-    return { bestSwim, bestRun, bestDay };
+    return { bestSwim, bestRun, bestWeek };
   }, [shownSessions]);
 
   const progressGoals = useMemo(
@@ -964,7 +976,9 @@ export default function App() {
                   <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Natation</div>
                   <div className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
                     {records.bestSwim
-                      ? `${formatDistance(records.bestSwim.distance, nf)} · ${capFirst(dayjs(records.bestSwim.date).format("DD MMM YYYY"))}`
+                      ? `${formatKmDecimal(records.bestSwim.distance, nfDecimal)} · ${capFirst(
+                          dayjs(records.bestSwim.date).format("DD MMM YYYY")
+                        )}`
                       : "—"}
                   </div>
                 </div>
@@ -973,16 +987,29 @@ export default function App() {
                   <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Running</div>
                   <div className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
                     {records.bestRun
-                      ? `${formatDistance(records.bestRun.distance, nf)} · ${capFirst(dayjs(records.bestRun.date).format("DD MMM YYYY"))}`
+                      ? `${formatKmDecimal(records.bestRun.distance, nfDecimal)} · ${capFirst(
+                          dayjs(records.bestRun.date).format("DD MMM YYYY")
+                        )}`
                       : "—"}
                   </div>
                 </div>
 
-                <div className="rounded-xl bg-slate-50/80 p-3 ring-1 ring-slate-200 dark:bg-slate-800/50 dark:ring-slate-700">
-                  <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Journée la plus active</div>
+                <div className="rounded-xl bg-slate-50/80 p-3 ring-1 ring-slate-200 dark:bg-slate-800/50 dark:ring-slate-700 sm:col-span-2">
+                  <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Meilleure semaine</div>
                   <div className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
-                    {records.bestDay
-                      ? `${formatDistance(records.bestDay.distance, nf)} · ${records.bestDay.count} séance${records.bestDay.count > 1 ? "s" : ""}`
+                    {records.bestWeek
+                      ? `${formatKmDecimal(records.bestWeek.total, nfDecimal)} · ${weekOfMonthLabel(
+                          records.bestWeek.weekStart
+                        )}`
+                      : "—"}
+                  </div>
+                  <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    {records.bestWeek
+                      ? records.bestWeek.run === records.bestWeek.swim
+                        ? "Mixte"
+                        : records.bestWeek.run > records.bestWeek.swim
+                          ? "Running"
+                          : "Natation"
                       : "—"}
                   </div>
                 </div>
@@ -991,7 +1018,7 @@ export default function App() {
 
             <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/80 dark:ring-slate-700 dark:bg-slate-900/60">
               <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">🥧 Répartition par sport</h2>
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">⚖️ Répartition par sport</h2>
               </div>
               <div className="p-4">
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -1002,8 +1029,8 @@ export default function App() {
                     <SportSharePie
                       swimValue={sportTotals.swimSum}
                       runValue={sportTotals.runSum}
-                      unitLabel="m"
-                      formatValue={(value) => nf.format(value)}
+                      unitLabel="km"
+                      formatValue={(value) => nfDecimal.format(value / 1000)}
                       heightClass="h-60 sm:h-44"
                     />
                   </div>

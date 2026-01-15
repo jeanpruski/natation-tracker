@@ -72,7 +72,8 @@ export function SportSharePie({
               <span>{entry.name}</span>
             </div>
             <span className="font-semibold text-slate-700 dark:text-slate-200">
-              {percent(entry.value)}%
+              {percent(entry.value)}% · {formatValue(entry.value)}{" "}
+              {unitLabel === "séance" && entry.value > 1 ? "séances" : unitLabel}
             </span>
           </div>
         ))}
