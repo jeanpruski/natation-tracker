@@ -139,6 +139,24 @@ export function CalendarHeatmap({ sessions, range }) {
     );
   }
 
+  const monthLabels = [];
+  let monthIndex = 0;
+  let lastMonthKey = null;
+  weeks.forEach((week) => {
+    const firstInRange = week.find((day) => day.inRange) || week[0];
+    const monthKey = firstInRange ? firstInRange.date.format("YYYY-MM") : "";
+    const label = monthKey && monthKey !== lastMonthKey
+      ? capFirst(firstInRange.date.format("MMM"))
+      : "";
+    if (label) {
+      monthIndex += 1;
+      monthLabels.push({ label, showOnMobile: monthIndex % 2 === 1 });
+      lastMonthKey = monthKey;
+    } else {
+      monthLabels.push({ label: "", showOnMobile: true });
+    }
+  });
+
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
@@ -163,8 +181,23 @@ export function CalendarHeatmap({ sessions, range }) {
         </div>
       </div>
       <div className="w-full h-32 sm:h-36">
-        <div className="flex h-full" style={{ gap: "0.2rem" }}>
-          <div className="grid grid-rows-7 h-full text-[10px] sm:text-xs text-slate-500 dark:text-slate-400">
+        <div className="flex h-full flex-col" style={{ gap: "0.2rem" }}>
+          <div className="flex items-end text-[10px] sm:text-xs text-slate-500 dark:text-slate-400">
+            <div className="w-16 shrink-0" />
+            {monthLabels.map((entry, idx) => {
+              const hideOnMobile = !entry.showOnMobile;
+              return (
+                <div
+                  key={`${entry.label}-${idx}`}
+                  className={`flex-1 ${hideOnMobile ? "hidden md:block" : ""}`}
+                >
+                  {entry.label}
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex h-full" style={{ gap: "0.2rem" }}>
+            <div className="grid grid-rows-7 h-full w-16 shrink-0 text-[10px] sm:text-xs text-slate-500 dark:text-slate-400">
             {WEEKDAY_LABELS.map((label) => (
               <span key={label} className="flex items-center">
                 {label}
@@ -211,6 +244,7 @@ export function CalendarHeatmap({ sessions, range }) {
               })}
             </div>
           ))}
+          </div>
         </div>
       </div>
     </div>

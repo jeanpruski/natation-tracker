@@ -375,6 +375,18 @@ export default function App() {
   const monthLabel = capFirst(dayjs().format("MMMM YYYY"));
 
   const modeLabel = mode === "swim" ? "Natation" : mode === "run" ? "Running" : null;
+  const rangeLabel =
+    range === "all"
+      ? "tout l'historique"
+      : range === "month"
+        ? "ce mois-ci"
+        : range === "3m"
+          ? "les 3 derniers mois"
+          : range === "6m"
+            ? "les 6 derniers mois"
+            : /^\d{4}$/.test(range)
+              ? `l'annee ${range}`
+              : "cette periode";
   const shoesStart = dayjs("2026-01-13");
   const shoesTargetMeters = 550 * 1000;
 
@@ -740,6 +752,15 @@ export default function App() {
     }, null);
   }, [shownSessions]);
 
+  const firstSessionLabel = useMemo(() => {
+    if (!shownSessions.length) return null;
+    const first = shownSessions.reduce((best, s) => {
+      if (!best) return s;
+      return dayjs(s.date).isBefore(best.date) ? s : best;
+    }, null);
+    return first ? capFirst(dayjs(first.date).format("dddd DD MMM YYYY")) : null;
+  }, [shownSessions]);
+
   const lastSessionDay = useMemo(() => (lastSession ? dayjs(lastSession.date) : null), [lastSession]);
   const daysSinceLast = useMemo(() => (lastSessionDay ? dayjs().diff(lastSessionDay, "day") : null), [lastSessionDay]);
   const lastLabel = lastSessionDay ? capFirst(lastSessionDay.format("dddd DD MMM YYYY")) : "Aucune";
@@ -886,6 +907,7 @@ export default function App() {
 
   const showMonthCardsOnlyWhenAllRange = range === "all";
   const showMonthlyChart = range !== "month";
+  const hasSessions = shownSessions.length > 0;
 
   return (
     <div
@@ -1013,6 +1035,17 @@ export default function App() {
           </div>
         )}
 
+        {!hasSessions ? (
+          <section className="px-4 xl:px-8 pt-4 pb-8">
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-8 text-center text-slate-700 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200">
+              <div className="text-lg font-semibold">Aucune seance</div>
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                Aucune seance pour {mode === "all" ? "tous les sports" : modeLabel.toLowerCase()} sur {rangeLabel}.
+              </p>
+            </div>
+          </section>
+        ) : (
+        <>
         <div className="grid grid-cols-1 xl:grid-cols-[1fr_3fr] gap-4 items-start px-4 xl:px-8 pt-4 pb-4 xl:pt-3 xl:pb-4">
         {/* GAUCHE : KPI */}
         <aside className="self-start">
@@ -1321,9 +1354,9 @@ export default function App() {
 
         <section className="px-4 xl:px-8 pb-4">
           <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/50 dark:ring-slate-700 dark:bg-slate-900/60">
-            <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
+            <div className="flex flex-col gap-1 border-b px-4 py-3 dark:border-slate-700 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">🎯 Objectifs distance</h2>
-              <div className="text-xs text-slate-500 dark:text-slate-400">
+              <div className="text-xs text-slate-500 dark:text-slate-400 sm:text-right">
                 <span className="mr-2">Parcouru :</span>
                 <span className="font-semibold text-slate-700 dark:text-slate-200">
                   {formatKmDecimal(stats.totalMeters, nfDecimal)}
@@ -1509,14 +1542,24 @@ export default function App() {
 
         <section className="px-4 xl:px-8 pb-8">
           <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/50 dark:ring-slate-700 dark:bg-slate-900/60">
-            <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
+            <div className="flex flex-col gap-1 border-b px-4 py-3 dark:border-slate-700 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">🗓️ Calendrier d'activité</h2>
+              {firstSessionLabel && (
+                <span className="text-xs text-slate-500 dark:text-slate-400 sm:text-right">
+                  1ere seance :{" "}
+                  <span className="font-semibold tracking-wide text-slate-700 dark:text-slate-200">
+                    {firstSessionLabel}
+                  </span>
+                </span>
+              )}
             </div>
             <div className="p-4">
               <CalendarHeatmap sessions={shownSessions} range={range} />
             </div>
           </div>
         </section>
+        </>
+        )}
         </main>
       </div>
 
