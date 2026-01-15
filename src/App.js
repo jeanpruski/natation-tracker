@@ -365,6 +365,24 @@ export default function App() {
     return { used, remaining, percent };
   }, [sessions, shoesStart, shoesTargetMeters]);
 
+  const shoesLifeByRange = useMemo(() => {
+    const compute = (list) => {
+      let runMeters = 0;
+      list.forEach((s) => {
+        if (normType(s.type) !== "run") return;
+        if (dayjs(s.date).isBefore(shoesStart, "day")) return;
+        runMeters += Number(s.distance) || 0;
+      });
+      const used = Math.min(runMeters, shoesTargetMeters);
+      const remaining = Math.max(shoesTargetMeters - runMeters, 0);
+      const percent = shoesTargetMeters ? Math.min((runMeters / shoesTargetMeters) * 100, 100) : 0;
+      return { used, remaining, percent };
+    };
+    if (range === "6m") return compute(periodSessions);
+    if (range === "3m") return compute(periodSessions);
+    return shoesLife;
+  }, [periodSessions, range, shoesLife, shoesStart, shoesTargetMeters]);
+
   /* ===== Séances ce mois-ci ===== */
   const monthCounts = useMemo(() => {
     let swimN = 0, runN = 0;
@@ -707,7 +725,7 @@ export default function App() {
               icon={<Gauge />}
             />
 
-            {mode === "run" && showMonthCardsOnlyWhenAllRange && (
+            {mode === "run" && (range === "all" || range === "6m" || range === "3m") && (
               <KpiChip
                 title="Chaussures"
                 subtitle={
@@ -719,15 +737,15 @@ export default function App() {
                 value={
                   <div className="text-right">
                     <div className="font-bold">
-                      {nf.format(Math.ceil(shoesLife.remaining / 1000))}{" "}
+                      {nf.format(Math.ceil(shoesLifeByRange.remaining / 1000))}{" "}
                       <span className="text-xs opacity-70">
-                        km restants ({nf.format(Math.floor(shoesLife.used / 1000))} / 550)
+                        km restants ({nf.format(Math.floor(shoesLifeByRange.used / 1000))} / 550)
                       </span>
                     </div>
                     <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
                       <div
                         className="h-full rounded-full bg-emerald-500"
-                        style={{ width: `${shoesLife.percent}%` }}
+                        style={{ width: `${shoesLifeByRange.percent}%` }}
                       />
                     </div>
                   </div>
