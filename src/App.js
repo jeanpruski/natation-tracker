@@ -142,6 +142,7 @@ function TypeSwitch({ value, onChange }) {
    Filtre période (dropdown)
    ========================= */
 function RangeSelect({ value, onChange }) {
+  const currentMonthLabel = capFirst(dayjs().format("MMM YYYY"));
   return (
     <select
       value={value}
@@ -156,6 +157,7 @@ function RangeSelect({ value, onChange }) {
       "
     >
       <option value="all">Historique complet</option>
+      <option value="month">Mois en cours</option>
       <option value="3m">3 Derniers mois</option>
       <option value="6m">6 Derniers mois</option>
       <option value="2026">Année 2026</option>
@@ -334,7 +336,7 @@ export default function App() {
 
   const [sessions, setSessions] = useState([]);
   const [mode, setMode] = useState("all");   // all | swim | run
-  const [range, setRange] = useState(getInitialRange); // all | 6m | 3m | 2026 | 2025
+  const [range, setRange] = useState(getInitialRange); // all | month | 6m | 3m | 2026 | 2025
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -380,6 +382,9 @@ export default function App() {
     if (range === "all") return sessions;
 
     const now = dayjs();
+    if (range === "month") {
+      return sessions.filter((s) => dayjs(s.date).format("YYYY-MM") === monthKey);
+    }
     if (range === "6m") {
       return sessions.filter((s) => dayjs(s.date).isAfter(now.subtract(6, "month")));
     }
@@ -607,7 +612,7 @@ export default function App() {
   }, [shownSessions]);
 
   const showCompareInline = range === "3m" || range === "6m";
-  const showCompareAbove = range === "all";
+  const showCompareAbove = range === "all" || range === "month";
   const compareTotalWinner =
     monthCompare.currentTotal === monthCompare.lastTotal
       ? "tie"
@@ -879,6 +884,7 @@ export default function App() {
   }
 
   const showMonthCardsOnlyWhenAllRange = range === "all";
+  const showMonthlyChart = range !== "month";
 
   return (
     <div
@@ -1112,7 +1118,7 @@ export default function App() {
             />
 
             {mode === "run" &&
-              (range === "all" || range === "6m" || range === "3m" || range === "2026") && (
+              (range === "all" || range === "month" || range === "6m" || range === "3m" || range === "2026") && (
               <KpiChip
                 title="Chaussures"
                 subtitle={
@@ -1293,14 +1299,16 @@ export default function App() {
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/50 dark:ring-slate-700 dark:bg-slate-900/60">
-            <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">📊 Cumulatif par mois</h2>
+          {showMonthlyChart && (
+            <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/50 dark:ring-slate-700 dark:bg-slate-900/60">
+              <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">📊 Cumulatif par mois</h2>
+              </div>
+              <div className="p-4">
+                <MonthlyBarChart sessions={shownSessions} />
+              </div>
             </div>
-            <div className="p-4">
-              <MonthlyBarChart sessions={shownSessions} />
-            </div>
-          </div>
+          )}
         </section>
         </div>
 

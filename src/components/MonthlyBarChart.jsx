@@ -19,7 +19,7 @@ export function MonthlyBarChart({ sessions }) {
 
     sessions.forEach((s) => {
       const key = dayjs(s.date).format("YYYY-MM");
-      const rawLabel = dayjs(s.date).format("MMMM YYYY");
+      const rawLabel = dayjs(s.date).format("MMM YYYY");
       const label = rawLabel.charAt(0).toUpperCase() + rawLabel.slice(1);
 
       const type = (s.type || "swim").toLowerCase();
