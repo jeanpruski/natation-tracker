@@ -38,9 +38,9 @@ export function AddSessionForm({ onAdd, onExport, onImport, readOnly }) {
   };
 
   return (
-    <form onSubmit={submit} className="space-y-3">
+    <form onSubmit={submit} className="space-y-4">
       {/* ✅ Switch type */}
-      <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white/95 p-2.5 shadow-inner dark:border-slate-700 dark:bg-slate-800/80">
+      <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-inner dark:border-slate-700 dark:bg-slate-800/80">
         <div className="flex flex-col">
           <span className="text-xs font-medium uppercase tracking-wide text-slate-600 dark:text-slate-300">
             Type de séance
@@ -83,7 +83,7 @@ export function AddSessionForm({ onAdd, onExport, onImport, readOnly }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <label className="group relative flex flex-col rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-inner dark:border-slate-700 dark:bg-slate-800/80">
           <span className="text-xs font-medium uppercase tracking-wide text-slate-600 group-hover:text-slate-800 dark:text-slate-300 dark:group-hover:text-slate-100">
             Distance (m)

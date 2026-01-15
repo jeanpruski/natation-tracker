@@ -20,6 +20,70 @@ html, body {
   font-family: 'Inter', sans-serif;
 }
 
+:root {
+  --main-top-padding: calc(110px + env(safe-area-inset-top));
+}
+
+@media (min-width: 640px) {
+  :root {
+    --main-top-padding: calc(112px + env(safe-area-inset-top));
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --main-top-padding: calc(114px + env(safe-area-inset-top));
+  }
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --main-top-padding: calc(80px + env(safe-area-inset-top));
+  }
+}
+
+@media (display-mode: standalone) and (min-width: 1024px) {
+  :root {
+    --main-top-padding: calc(96px + env(safe-area-inset-top));
+  }
+}
+
+@media (display-mode: standalone) and (min-width: 1280px) {
+  :root {
+    --main-top-padding: calc(64px + env(safe-area-inset-top));
+  }
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+html,
+body {
+  background: linear-gradient(to bottom, #f0f9ff 0%, #eef2ff 50%, #ffffff 100%);
+}
+
+html.dark,
+html.dark body {
+  background: linear-gradient(to bottom, #0b1020 0%, #0a1028 50%, #0b1228 100%);
+}
+
+@media (display-mode: standalone) {
+  body {
+    padding-top: 0;
+  }
+}
+
+@supports (-webkit-touch-callout: none) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
 input[type="date"]::-webkit-calendar-picker-indicator {
   opacity: 0;
   display: none;

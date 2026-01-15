@@ -39,6 +39,8 @@ const getInitialRange = () => {
   if (w < 1280) return "6m";
   return "all";
 };
+const HEADER_SURFACE_CLASS = "bg-white/90 backdrop-blur dark:bg-slate-900/90";
+const HEADER_TOP_PADDING_STYLE = { paddingTop: "calc(0.75rem + env(safe-area-inset-top))" };
 
 /* =========================
    Mini segmented control
@@ -165,7 +167,10 @@ function EditModal({
 
       <div className="absolute inset-0">
         <div className="h-full w-full bg-white dark:bg-slate-900">
-          <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
+          <div
+            className={`flex items-center justify-between border-b px-4 pb-3 ${HEADER_SURFACE_CLASS} dark:border-slate-700`}
+            style={HEADER_TOP_PADDING_STYLE}
+          >
             <div className="flex items-center gap-2">
               {isAuth && (
                 <div className="inline-flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800/70">
@@ -212,7 +217,7 @@ function EditModal({
             </div>
           </div>
 
-          <div className="h-[calc(100%-52px)] overflow-auto p-4 sm:p-6">
+          <div className="h-[calc(100%-52px)] overflow-auto px-4 pb-10 pt-4 sm:px-6 sm:pb-10 sm:pt-5">
             {!isAuth ? (
               <form onSubmit={submit} className="mx-auto max-w-md space-y-3">
                 <p className="text-sm text-slate-600 dark:text-slate-300">
@@ -537,16 +542,15 @@ export default function App() {
     >
       {/* HEADER sticky */}
       <header
-        className="
-          sticky top-0 z-40
-          mb-2
+        className={`
+          fixed top-0 left-0 right-0 z-40
           flex flex-col gap-3
           xl:flex-row xl:items-center xl:justify-between
-          bg-white/80 backdrop-blur
-          dark:bg-slate-900/80
+          ${HEADER_SURFACE_CLASS}
           border-b border-slate-200 dark:border-slate-700
-          px-4 xl:px-8 py-3
-        "
+          px-4 xl:px-8 pb-3
+        `}
+        style={HEADER_TOP_PADDING_STYLE}
       >
         {/* Ligne 1 : logo + toggle + éditeur */}
         <div className="flex items-center gap-2 w-full xl:w-auto">
@@ -584,43 +588,44 @@ export default function App() {
         </div>
       </header>
 
-      {error && (
-        <p className="mb-3 rounded-xl bg-rose-100 px-4 py-2 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200">
-          {error}
-        </p>
-      )}
+      <main className="pb-6" style={{ paddingTop: "var(--main-top-padding)" }}>
+        {error && (
+          <p className="mb-3 rounded-xl bg-rose-100 px-4 py-2 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200">
+            {error}
+          </p>
+        )}
 
-      {toast && (
-        <>
-          <style>{`
-            @keyframes toast-slide {
-              0% { opacity: 0; transform: translate(-50%, -16px); }
-              12% { opacity: 1; transform: translate(-50%, 0); }
-              85% { opacity: 1; transform: translate(-50%, 0); }
-              100% { opacity: 0; transform: translate(-50%, -16px); }
-            }
-          `}</style>
-          <div
-            className="fixed left-1/2 top-6 z-50 flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white shadow-lg"
-            style={{ animation: "toast-slide 2.4s ease-in-out" }}
-          >
-            <CheckCircle2 size={16} />
-            <span>{toast}</span>
+        {toast && (
+          <>
+            <style>{`
+              @keyframes toast-slide {
+                0% { opacity: 0; transform: translate(-50%, -16px); }
+                12% { opacity: 1; transform: translate(-50%, 0); }
+                85% { opacity: 1; transform: translate(-50%, 0); }
+                100% { opacity: 0; transform: translate(-50%, -16px); }
+              }
+            `}</style>
+            <div
+              className="fixed left-1/2 top-6 z-50 flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white shadow-lg"
+              style={{ animation: "toast-slide 2.4s ease-in-out" }}
+            >
+              <CheckCircle2 size={16} />
+              <span>{toast}</span>
+            </div>
+          </>
+        )}
+
+        {isBusy && (
+          <div className="fixed inset-0 z-[60] bg-white/50 dark:bg-slate-900/50 backdrop-blur-md flex items-center justify-center">
+            <div className="flex flex-col items-center gap-4">
+              <img src="/apple-touch-icon.png" alt="NaTrack" className="w-16 h-16" />
+              <div className="h-10 w-10 rounded-full border-4 border-slate-300 border-t-indigo-500 dark:border-slate-700 dark:border-t-indigo-400 animate-spin" aria-label="Chargement" />
+              <span className="sr-only">Chargement…</span>
+            </div>
           </div>
-        </>
-      )}
+        )}
 
-      {isBusy && (
-        <div className="fixed inset-0 z-[60] bg-white/50 dark:bg-slate-900/50 backdrop-blur-md flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <img src="/apple-touch-icon.png" alt="NaTrack" className="w-16 h-16" />
-            <div className="h-10 w-10 rounded-full border-4 border-slate-300 border-t-indigo-500 dark:border-slate-700 dark:border-t-indigo-400 animate-spin" aria-label="Chargement" />
-            <span className="sr-only">Chargement…</span>
-          </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_3fr] gap-4 items-start px-4 xl:px-8 py-4 xl:py-4">
+        <div className="grid grid-cols-1 xl:grid-cols-[1fr_3fr] gap-4 items-start px-4 xl:px-8 pt-4 pb-4 xl:pt-3 xl:pb-4">
         {/* GAUCHE : KPI */}
         <aside className="self-start">
           <div className="grid grid-cols-1 min-[800px]:grid-cols-2 xl:grid-cols-1 gap-4">
@@ -725,7 +730,7 @@ export default function App() {
               icon={<Gauge />}
             />
 
-            {mode === "run" && (range === "all" || range === "6m" || range === "3m") && (
+            {mode === "run" && (range === "all" || range === "6m" || range === "3m" || range === "2026") && (
               <KpiChip
                 title="Chaussures"
                 subtitle={
@@ -815,7 +820,8 @@ export default function App() {
             </div>
           </div>
         </section>
-      </div>
+        </div>
+      </main>
 
       <EditModal
         open={showEditModal}

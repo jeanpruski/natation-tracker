@@ -46,7 +46,7 @@ export function History({ sessions, onDelete, onEdit, readOnly }) {
   const [editDistance, setEditDistance] = useState("");
   const [editType, setEditType] = useState("swim");
 
-  const perPage = 15;
+  const perPage = 12;
 
   useEffect(() => {
     setPage(1);
