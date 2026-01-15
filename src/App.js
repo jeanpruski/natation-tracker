@@ -286,6 +286,7 @@ function EditModal({
    App principale
    ========================= */
 export default function App() {
+  const FORCE_LOADING = false;
   const { token: editToken, isAuth, checking, verifyAndLogin, logout: editLogout } = useEditAuth();
   const [showEditModal, setShowEditModal] = useState(false);
   const [toast, setToast] = useState("");
@@ -401,6 +402,8 @@ export default function App() {
     let bestSwim = null;
     let bestRun = null;
     const weekTotals = new Map();
+    const daysSet = new Set();
+    const daySportCounts = new Map();
 
     shownSessions.forEach((s) => {
       const d = Number(s.distance) || 0;
@@ -418,6 +421,13 @@ export default function App() {
       if (t === "run") prev.run += d;
       else prev.swim += d;
       weekTotals.set(key, prev);
+
+      const dayKey = dayjs(s.date).format("YYYY-MM-DD");
+      daysSet.add(dayKey);
+      const dayPrev = daySportCounts.get(dayKey) || { swim: 0, run: 0 };
+      if (t === "run") dayPrev.run += 1;
+      else dayPrev.swim += 1;
+      daySportCounts.set(dayKey, dayPrev);
     });
 
     let bestWeek = null;
@@ -425,7 +435,45 @@ export default function App() {
       if (!bestWeek || val.total > bestWeek.total) bestWeek = val;
     });
 
-    return { bestSwim, bestRun, bestWeek };
+    const days = Array.from(daysSet).sort();
+    let streakBest = null;
+    let streakLen = 0;
+    let streakStart = null;
+    let prevDay = null;
+    let streakSwim = 0;
+    let streakRun = 0;
+
+    days.forEach((day) => {
+      const dayCounts = daySportCounts.get(day) || { swim: 0, run: 0 };
+      if (!prevDay) {
+        streakLen = 1;
+        streakStart = day;
+        streakSwim = dayCounts.swim;
+        streakRun = dayCounts.run;
+      } else if (dayjs(day).diff(dayjs(prevDay), "day") === 1) {
+        streakLen += 1;
+        streakSwim += dayCounts.swim;
+        streakRun += dayCounts.run;
+      } else {
+        streakLen = 1;
+        streakStart = day;
+        streakSwim = dayCounts.swim;
+        streakRun = dayCounts.run;
+      }
+
+      if (!streakBest || streakLen > streakBest.length) {
+        streakBest = {
+          length: streakLen,
+          start: streakStart,
+          end: day,
+          swim: streakSwim,
+          run: streakRun,
+        };
+      }
+      prevDay = day;
+    });
+
+    return { bestSwim, bestRun, bestWeek, streakBest };
   }, [shownSessions]);
 
   const progressGoals = useMemo(
@@ -599,12 +647,33 @@ export default function App() {
     showToast("Export termine");
   };
 
-  if (loading) {
+  if (loading || FORCE_LOADING) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-slate-50 dark:from-[#0b1020] dark:via-[#0a1028] dark:to-[#0b1228] flex items-center justify-center">
+        <style>{`
+          @keyframes orbit-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
         <div className="flex flex-col items-center gap-4">
-          <img src="/apple-touch-icon.png" alt="NaTrack" className="w-16 h-16" />
-          <div className="h-10 w-10 rounded-full border-4 border-slate-300 border-t-indigo-500 dark:border-slate-700 dark:border-t-indigo-400 animate-spin" aria-label="Chargement" />
+          <div className="relative h-32 w-32">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <img src="/apple-touch-icon.png" alt="NaTrack" className="w-24 h-24" />
+            </div>
+            <div
+              className="absolute inset-0"
+              style={{ transform: "scaleY(0.8) rotate(-75deg)", transformOrigin: "center" }}
+            >
+              <div
+                className="absolute inset-0"
+                style={{ animation: "orbit-spin 1.4s linear infinite reverse" }}
+                aria-hidden="true"
+              >
+                <span className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-2 h-3 w-3 rounded-full bg-gradient-to-r from-indigo-500 to-emerald-500 dark:from-indigo-300 dark:to-emerald-300" />
+              </div>
+            </div>
+          </div>
           <span className="sr-only">Chargement…</span>
         </div>
       </div>
@@ -637,7 +706,7 @@ export default function App() {
       >
         {/* Ligne 1 : logo + toggle + éditeur */}
         <div className="flex items-center gap-2 w-full xl:w-auto">
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl text-slate-900 dark:text-slate-100 flex items-center gap-2 whitespace-nowrap">
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl text-slate-900 dark:text-slate-100 flex items-center gap-4 whitespace-nowrap">
             <img src="/apple-touch-icon.png" alt="Logo" className="w-8 h-8" />
             NaTrack
           </h1>
@@ -973,7 +1042,10 @@ export default function App() {
               </div>
               <div className="grid gap-3 p-4 sm:grid-cols-2">
                 <div className="rounded-xl bg-slate-50/80 p-3 ring-1 ring-slate-200 dark:bg-slate-800/50 dark:ring-slate-700">
-                  <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Natation</div>
+                  <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    <Waves size={14} />
+                    <span>Natation</span>
+                  </div>
                   <div className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
                     {records.bestSwim
                       ? `${formatKmDecimal(records.bestSwim.distance, nfDecimal)} · ${capFirst(
@@ -984,7 +1056,10 @@ export default function App() {
                 </div>
 
                 <div className="rounded-xl bg-slate-50/80 p-3 ring-1 ring-slate-200 dark:bg-slate-800/50 dark:ring-slate-700">
-                  <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Running</div>
+                  <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    <PersonStanding size={14} />
+                    <span>Running</span>
+                  </div>
                   <div className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
                     {records.bestRun
                       ? `${formatKmDecimal(records.bestRun.distance, nfDecimal)} · ${capFirst(
@@ -995,7 +1070,10 @@ export default function App() {
                 </div>
 
                 <div className="rounded-xl bg-slate-50/80 p-3 ring-1 ring-slate-200 dark:bg-slate-800/50 dark:ring-slate-700 sm:col-span-2">
-                  <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Meilleure semaine</div>
+                  <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    <CalendarDays size={14} />
+                    <span>Meilleure semaine</span>
+                  </div>
                   <div className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
                     {records.bestWeek
                       ? `${formatKmDecimal(records.bestWeek.total, nfDecimal)} · ${weekOfMonthLabel(
@@ -1010,6 +1088,25 @@ export default function App() {
                         : records.bestWeek.run > records.bestWeek.swim
                           ? "Running"
                           : "Natation"
+                      : "—"}
+                  </div>
+                </div>
+
+                <div className="rounded-xl bg-slate-50/80 p-3 ring-1 ring-slate-200 dark:bg-slate-800/50 dark:ring-slate-700 sm:col-span-2">
+                  <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    <Gauge size={14} />
+                    <span>Série la plus longue</span>
+                  </div>
+                  <div className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    {records.streakBest
+                      ? `${records.streakBest.length} jour${records.streakBest.length > 1 ? "s" : ""} · du ${capFirst(
+                          dayjs(records.streakBest.start).format("DD MMM YYYY")
+                        )} au ${capFirst(dayjs(records.streakBest.end).format("DD MMM YYYY"))}`
+                      : "—"}
+                  </div>
+                  <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    {records.streakBest
+                      ? `${records.streakBest.swim} natation · ${records.streakBest.run} running`
                       : "—"}
                   </div>
                 </div>
