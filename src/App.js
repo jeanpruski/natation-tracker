@@ -11,6 +11,10 @@ import {
   Footprints,
   Gauge,
   CheckCircle2,
+  Car,
+  Train,
+  Plane,
+  Globe,
 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { ThemeToggle } from "./components/ThemeToggle";
@@ -32,6 +36,14 @@ dayjs.locale("fr");
    ========================= */
 const normType = (t) => ((t || "swim").toLowerCase() === "run" ? "run" : "swim");
 const pluralize = (n, word) => `${n} ${word}${n > 1 ? "s" : ""}`;
+const formatDistance = (meters, nf) => {
+  if (meters >= 1000) {
+    const km = Math.round(meters / 100) / 10;
+    return `${nf.format(km)} km`;
+  }
+  return `${nf.format(Math.round(meters))} m`;
+};
+const formatKmDecimal = (meters, nfDecimal) => `${nfDecimal.format(meters / 1000)} km`;
 const getInitialRange = () => {
   if (typeof window === "undefined") return "all";
   const w = window.innerWidth;
@@ -297,6 +309,10 @@ export default function App() {
   }, []);
 
   const nf = useMemo(() => new Intl.NumberFormat("fr-FR"), []);
+  const nfDecimal = useMemo(
+    () => new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
+    []
+  );
   const monthKey = dayjs().format("YYYY-MM");
   const monthLabel = capFirst(dayjs().format("MMMM YYYY"));
 
@@ -355,6 +371,16 @@ export default function App() {
 
     return { swimAvg, runAvg, swimN, runN, totalN, swimSum, runSum, totalMeters };
   }, [shownSessions]);
+
+  const progressGoals = useMemo(
+    () => [
+      { id: "paris-disneyland", label: "Paris → Disneyland", targetMeters: 45000, Icon: Car },
+      { id: "paris-metz", label: "Paris → Metz", targetMeters: 330000, Icon: Train },
+      { id: "paris-athenes", label: "Paris → Athènes", targetMeters: 2100000, Icon: Plane },
+      { id: "tour-du-monde", label: "Tour du monde", targetMeters: 40075000, Icon: Globe },
+    ],
+    []
+  );
 
   /* ===== Chaussures running (Nike Pegasus Premium) ===== */
   const shoesLife = useMemo(() => {
@@ -821,6 +847,65 @@ export default function App() {
           </div>
         </section>
         </div>
+
+        <section className="px-4 xl:px-8 pb-6">
+          <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/80 dark:ring-slate-700 dark:bg-slate-900/60">
+            <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">🎯 Objectifs distance</h2>
+              <div className="text-xs text-slate-500 dark:text-slate-400">
+                <span className="mr-2">Parcouru :</span>
+                <span className="font-semibold text-slate-700 dark:text-slate-200">
+                  {formatKmDecimal(stats.totalMeters, nfDecimal)}
+                </span>
+              </div>
+            </div>
+            <div className="grid gap-4 p-4 sm:grid-cols-2 xl:grid-cols-4">
+              {progressGoals.map((goal) => {
+                const percent = goal.targetMeters
+                  ? (stats.totalMeters / goal.targetMeters) * 100
+                  : 0;
+                const barPercent = Math.min(percent, 100);
+                const target = formatDistance(goal.targetMeters, nf);
+                const completedTimes = goal.targetMeters
+                  ? Math.floor(stats.totalMeters / goal.targetMeters)
+                  : 0;
+                const remainingMeters = goal.targetMeters
+                  ? Math.max(goal.targetMeters - stats.totalMeters, 0)
+                  : 0;
+                const remainingKm = formatKmDecimal(remainingMeters, nfDecimal);
+
+                return (
+                  <div
+                    key={goal.id}
+                    className="rounded-xl bg-slate-50/80 p-3 ring-1 ring-slate-200 dark:bg-slate-800/50 dark:ring-slate-700"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                        <goal.Icon size={16} className="text-slate-700 dark:text-slate-200" />
+                        {goal.label}
+                      </div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">{target}</div>
+                    </div>
+                    <div className="mt-2 h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-indigo-500"
+                        style={{ width: `${barPercent}%` }}
+                      />
+                    </div>
+                    <div className="mt-2 flex items-center justify-between text-xs text-slate-600 dark:text-slate-300">
+                      <span>
+                        {completedTimes > 0
+                          ? `${formatDistance(stats.totalMeters, nf)} · ${completedTimes}× atteint`
+                          : `${remainingKm} restant`}
+                      </span>
+                      <span>{Math.round(percent)}%</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
       </main>
 
       <EditModal

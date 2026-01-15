@@ -65,12 +65,12 @@ export function SwimChart({ sessions, mode = "all" }) {
             tickFormatter={(_v, i) => {
               const d = dayjs(data[i].date);
               if (i === 0) {
-                const label = d.format("MMM YY");
+                const label = d.format("MMM");
                 return label.charAt(0).toUpperCase() + label.slice(1);
               }
               const prev = dayjs(data[i - 1].date);
               if (d.isSame(prev, "month")) return "";
-              const label = d.format("MMM YY");
+              const label = d.format("MMM");
               return label.charAt(0).toUpperCase() + label.slice(1);
             }}
           />

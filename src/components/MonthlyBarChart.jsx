@@ -71,7 +71,7 @@ export function MonthlyBarChart({ sessions }) {
               color: isDark ? "#e5e7eb" : "#0f172a",
             }}
             itemStyle={{ color: isDark ? "#e5e7eb" : "#0f172a" }}
-            labelFormatter={() => ""}
+            labelFormatter={(label) => label}
             formatter={(value, name, props) => {
               const { swimTotal, runTotal, count } = props.payload;
               const total = swimTotal + runTotal;
