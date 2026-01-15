@@ -27,6 +27,9 @@ import { MonthlyBarChart } from "./components/MonthlyBarChart";
 import { History } from "./components/History";
 import { SportSharePie } from "./components/SportSharePie";
 import { CalendarHeatmap } from "./components/CalendarHeatmap";
+import { AnimatedNumber } from "./components/AnimatedNumber";
+import { Reveal } from "./components/Reveal";
+import { motion } from "framer-motion";
 import { useEditAuth } from "./hooks/useEditAuth";
 import { apiGet, apiJson } from "./utils/api";
 import { downloadCSV } from "./utils/downloadCSV";
@@ -625,7 +628,7 @@ export default function App() {
   }, [shownSessions]);
 
   const showCompareInline = range === "3m" || range === "6m";
-  const showCompareAbove = range === "all" || range === "month";
+  const showCompareAbove = range === "all";
   const compareTotalWinner =
     monthCompare.currentTotal === monthCompare.lastTotal
       ? "tie"
@@ -1037,19 +1040,19 @@ export default function App() {
         )}
 
         {!hasSessions ? (
-          <section className="px-4 xl:px-8 pt-4 pb-8">
+          <Reveal as="section" className="px-4 xl:px-8 pt-4 pb-8">
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-8 text-center text-slate-700 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200">
               <div className="text-lg font-semibold">Aucune seance</div>
               <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
                 Aucune seance pour {mode === "all" ? "tous les sports" : modeLabel.toLowerCase()} sur {rangeLabel}.
               </p>
             </div>
-          </section>
+          </Reveal>
         ) : (
         <>
         <div className="grid grid-cols-1 xl:grid-cols-[1fr_3fr] gap-4 items-start px-4 xl:px-8 pt-4 pb-4 xl:pt-3 xl:pb-4">
         {/* GAUCHE : KPI */}
-        <aside className="self-start">
+        <Reveal as="aside" className="self-start">
           <div className="grid grid-cols-1 min-[800px]:grid-cols-2 xl:grid-cols-1 gap-4">
             {/* (AFFICHER UNIQUEMENT SI range === "all") : Dernière séance */}
             {showMonthCardsOnlyWhenAllRange && (
@@ -1093,7 +1096,8 @@ export default function App() {
                 value={
                   <div className="text-right">
                     <div className="font-bold">
-                      {nf.format(monthTotals.all)} <span className="text-xs opacity-70">m</span>
+                      <AnimatedNumber value={monthTotals.all} format={(n) => nf.format(Math.round(n))} />{" "}
+                      <span className="text-xs opacity-70">m</span>
                     </div>
                     {mode === "all" && (
                       <div className="mt-1 flex justify-end gap-2 flex-wrap">
@@ -1115,7 +1119,10 @@ export default function App() {
                 subtitleClassName="capitalize"
                 value={
                   <div className="text-right">
-                    <div className="font-bold">{pluralize(monthCounts.totalN, "Séance")}</div>
+                    <div className="font-bold">
+                      <AnimatedNumber value={monthCounts.totalN} format={(n) => nf.format(Math.round(n))} />{" "}
+                      {monthCounts.totalN > 1 ? "Séances" : "Séance"}
+                    </div>
                     {mode === "all" && (
                       <div className="mt-1 flex justify-end gap-2 flex-wrap">
                         <TypePill type="swim">{pluralize(monthCounts.swimN, "Séance")}</TypePill>
@@ -1144,7 +1151,10 @@ export default function App() {
                   </div>
                 ) : (
                   <div className="text-right font-bold">
-                    {nf.format(mode === "swim" ? stats.swimAvg : stats.runAvg)}{" "}
+                    <AnimatedNumber
+                      value={mode === "swim" ? stats.swimAvg : stats.runAvg}
+                      format={(n) => nf.format(Math.round(n))}
+                    />{" "}
                     <span className="text-xs opacity-70">m</span>
                   </div>
                 )
@@ -1171,9 +1181,12 @@ export default function App() {
                       </span>
                     </div>
                     <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
-                      <div
+                      <motion.div
                         className="h-full rounded-full bg-emerald-500"
-                        style={{ width: `${shoesLifeByRange.percent}%` }}
+                        initial={{ width: 0 }}
+                        whileInView={{ width: `${shoesLifeByRange.percent}%` }}
+                        transition={{ duration: 0.8, ease: "easeOut" }}
+                        viewport={{ once: true, amount: 0.4 }}
                       />
                     </div>
                   </div>
@@ -1189,7 +1202,8 @@ export default function App() {
               value={
                 <div className="text-right">
                   <div className="font-bold">
-                    {nf.format(stats.totalMeters)} <span className="text-xs opacity-70">m</span>
+                    <AnimatedNumber value={stats.totalMeters} format={(n) => nf.format(Math.round(n))} />{" "}
+                    <span className="text-xs opacity-70">m</span>
                   </div>
                   {mode === "all" && (
                     <div className="mt-1 flex justify-end gap-2 flex-wrap">
@@ -1208,7 +1222,10 @@ export default function App() {
               subtitle={mode === "all" ? "Total" : modeLabel}
               value={
                 <div className="text-right">
-                  <div className="font-bold">{pluralize(stats.totalN, "Séance")}</div>
+                  <div className="font-bold">
+                    <AnimatedNumber value={stats.totalN} format={(n) => nf.format(Math.round(n))} />{" "}
+                    {stats.totalN > 1 ? "Séances" : "Séance"}
+                  </div>
                   {mode === "all" && (
                     <div className="mt-1 flex justify-end gap-2 flex-wrap">
                       <TypePill type="swim">{pluralize(stats.swimN, "Séance")}</TypePill>
@@ -1321,10 +1338,10 @@ export default function App() {
               </>
             )}
           </div>
-        </aside>
+        </Reveal>
 
         {/* DROITE : graphes */}
-        <section className="flex flex-col gap-4 self-start">
+        <Reveal as="section" className="flex flex-col gap-4 self-start">
           <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/50 dark:ring-slate-700 dark:bg-slate-900/60">
             <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">📈 Séances</h2>
@@ -1344,23 +1361,23 @@ export default function App() {
               </div>
             </div>
           )}
-        </section>
+        </Reveal>
         </div>
 
         {showCompareAbove && (
-          <section className="px-4 xl:px-8 pb-4">
+          <Reveal as="section" className="px-4 xl:px-8 pb-4">
             {comparePanel}
-          </section>
+          </Reveal>
         )}
 
-        <section className="px-4 xl:px-8 pb-4">
+        <Reveal as="section" className="px-4 xl:px-8 pb-4">
           <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/50 dark:ring-slate-700 dark:bg-slate-900/60">
             <div className="flex flex-col gap-1 border-b px-4 py-3 dark:border-slate-700 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">🎯 Objectifs distance</h2>
               <div className="text-xs text-slate-500 dark:text-slate-400 sm:text-right">
                 <span className="mr-2">Parcouru :</span>
                 <span className="font-semibold text-slate-700 dark:text-slate-200">
-                  {formatKmDecimal(stats.totalMeters, nfDecimal)}
+                  <AnimatedNumber value={stats.totalMeters / 1000} format={(n) => nfDecimal.format(n)} /> km
                 </span>
               </div>
             </div>
@@ -1392,9 +1409,12 @@ export default function App() {
                       <div className="text-xs text-slate-500 dark:text-slate-400">{target}</div>
                     </div>
                     <div className="mt-2 h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
-                      <div
+                      <motion.div
                         className="h-full rounded-full bg-indigo-500"
-                        style={{ width: `${barPercent}%` }}
+                        initial={{ width: 0 }}
+                        whileInView={{ width: `${barPercent}%` }}
+                        transition={{ duration: 0.9, ease: "easeOut" }}
+                        viewport={{ once: true, amount: 0.4 }}
                       />
                     </div>
                     <div className="mt-2 flex items-center justify-between text-xs text-slate-600 dark:text-slate-300">
@@ -1410,9 +1430,9 @@ export default function App() {
               })}
             </div>
           </div>
-        </section>
+        </Reveal>
 
-        <section className="px-4 xl:px-8 pb-4">
+        <Reveal as="section" className="px-4 xl:px-8 pb-4">
           <div className={`grid gap-4 ${mode === "all" ? "md:grid-cols-2" : ""}`}>
             <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/50 dark:ring-slate-700 dark:bg-slate-900/60">
               <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
@@ -1539,9 +1559,9 @@ export default function App() {
               </div>
             )}
           </div>
-        </section>
+        </Reveal>
 
-        <section className="px-4 xl:px-8 pb-8">
+        <Reveal as="section" className="px-4 xl:px-8 pb-8">
           <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/50 dark:ring-slate-700 dark:bg-slate-900/60">
             <div className="flex flex-col gap-1 border-b px-4 py-3 dark:border-slate-700 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">🗓️ Calendrier d'activité</h2>
@@ -1558,7 +1578,7 @@ export default function App() {
               <CalendarHeatmap sessions={shownSessions} range={range} />
             </div>
           </div>
-        </section>
+        </Reveal>
 
         </>
         )}
