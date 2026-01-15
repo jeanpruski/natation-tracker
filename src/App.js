@@ -622,11 +622,11 @@ export default function App() {
         : "last";
   const comparePanel = (
     <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/50 dark:ring-slate-700 dark:bg-slate-900/60">
-      <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
+      <div className="flex flex-col gap-1 border-b px-4 py-3 dark:border-slate-700 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
           📅 Comparatif mensuel — {mode === "all" ? "Mixte" : modeLabel}
         </h2>
-        <span className="text-xs text-slate-500 dark:text-slate-400">
+        <span className="text-xs text-slate-500 dark:text-slate-400 sm:text-right">
           {monthCompare.currentLabel} vs {monthCompare.lastLabel}
         </span>
       </div>
