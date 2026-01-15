@@ -331,7 +331,7 @@ function EditModal({
    App principale
    ========================= */
 export default function App() {
-  const FORCE_LOADING = true;
+  const FORCE_LOADING = false;
   const { token: editToken, isAuth, checking, verifyAndLogin, logout: editLogout } = useEditAuth();
   const [showEditModal, setShowEditModal] = useState(false);
   const [toast, setToast] = useState("");
@@ -342,11 +342,21 @@ export default function App() {
   const [mode, setMode] = useState("all");   // all | swim | run
   const [range, setRange] = useState(getInitialRange); // all | month | 6m | 3m | 2026 | 2025
 
-  const [loading, setLoading] = useState(true);
+  const [loadingPhase, setLoadingPhase] = useState("loading"); // loading | fading | done
   const [error, setError] = useState("");
 
   useEffect(() => {
     let alive = true;
+    let delayTimer = null;
+    let fadeTimer = null;
+    const start = Date.now();
+    const startFade = () => {
+      if (!alive) return;
+      setLoadingPhase("fading");
+      fadeTimer = setTimeout(() => {
+        if (alive) setLoadingPhase("done");
+      }, 500);
+    };
     (async () => {
       try {
         const data = await apiGet("/sessions");
@@ -357,10 +367,21 @@ export default function App() {
       } catch (e) {
         if (alive) setError("Chargement impossible : " + (e?.message || "erreur inconnue"));
       } finally {
-        if (alive) setLoading(false);
+        const elapsed = Date.now() - start;
+        const remaining = Math.max(1500 - elapsed, 0);
+        if (!alive) return;
+        if (remaining === 0) {
+          startFade();
+          return;
+        }
+        delayTimer = setTimeout(startFade, remaining);
       }
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+      if (delayTimer) clearTimeout(delayTimer);
+      if (fadeTimer) clearTimeout(fadeTimer);
+    };
   }, []);
 
   useEffect(() => {
@@ -875,13 +896,23 @@ export default function App() {
     showToast("Export termine");
   };
 
-  if (loading || FORCE_LOADING) {
+  if (loadingPhase !== "done" || FORCE_LOADING) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-slate-50 dark:from-[#0b1020] dark:via-[#0a1028] dark:to-[#0b1228] flex items-center justify-center">
+      <div
+        className={`min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-slate-50 dark:from-[#0b1020] dark:via-[#0a1028] dark:to-[#0b1228] flex items-center justify-center ${
+          loadingPhase === "fading" && !FORCE_LOADING
+            ? "animate-[fade-out_0.5s_ease-in-out_forwards]"
+            : ""
+        }`}
+      >
         <style>{`
           @keyframes orbit-spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+          }
+          @keyframes fade-out {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
           }
           @keyframes opacity-pulse {
             0%, 100% { opacity: 1; transform: scale(1); }
@@ -891,7 +922,13 @@ export default function App() {
         <div className="flex flex-col items-center gap-4">
           <div className="relative h-32 w-32">
             <div className="absolute inset-0 flex items-center justify-center">
-              <img src="/apple-touch-icon.png" alt="NaTrack" className="w-24 h-24" />
+              <img
+                src="/apple-touch-icon.png"
+                alt="NaTrack"
+                className={`w-24 h-24 transition-all duration-700 ease-in-out ${
+                  loadingPhase === "fading" && !FORCE_LOADING ? "scale-[10] blur-sm opacity-0" : ""
+                }`}
+              />
             </div>
             <div
               className="absolute inset-0"
