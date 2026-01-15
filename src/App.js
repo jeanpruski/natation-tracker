@@ -331,7 +331,7 @@ function EditModal({
    App principale
    ========================= */
 export default function App() {
-  const FORCE_LOADING = false;
+  const FORCE_LOADING = true;
   const { token: editToken, isAuth, checking, verifyAndLogin, logout: editLogout } = useEditAuth();
   const [showEditModal, setShowEditModal] = useState(false);
   const [toast, setToast] = useState("");
@@ -883,6 +883,10 @@ export default function App() {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
           }
+          @keyframes opacity-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.2; transform: scale(4); }
+          }
         `}</style>
         <div className="flex flex-col items-center gap-4">
           <div className="relative h-32 w-32">
@@ -898,7 +902,10 @@ export default function App() {
                 style={{ animation: "orbit-spin 1.4s linear infinite reverse" }}
                 aria-hidden="true"
               >
-                <span className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-2 h-3 w-3 rounded-full bg-gradient-to-r from-indigo-500 to-emerald-500 dark:from-indigo-300 dark:to-emerald-300" />
+                <span
+                  className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-2 h-3 w-3 rounded-full blur-[4px] bg-gradient-to-r from-indigo-500 to-emerald-500 dark:from-indigo-300 dark:to-emerald-300"
+                  style={{ animation: "opacity-pulse 1.4s ease-in-out infinite" }}
+                />
               </div>
             </div>
           </div>
@@ -1015,6 +1022,10 @@ export default function App() {
                 0% { transform: rotate(0deg); }
                 100% { transform: rotate(360deg); }
               }
+              @keyframes opacity-pulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.6; }
+              }
             `}</style>
             <div className="flex flex-col items-center gap-4">
               <div className="relative h-32 w-32">
@@ -1030,7 +1041,10 @@ export default function App() {
                     style={{ animation: "orbit-spin 1.4s linear infinite reverse" }}
                     aria-hidden="true"
                   >
-                    <span className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-2 h-3 w-3 rounded-full bg-gradient-to-r from-indigo-500 to-emerald-500 dark:from-indigo-300 dark:to-emerald-300" />
+                    <span
+                      className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-2 h-3 w-3 rounded-full blur-[1px] bg-gradient-to-r from-indigo-500 to-emerald-500 dark:from-indigo-300 dark:to-emerald-300"
+                      style={{ animation: "opacity-pulse 1.5s ease-in-out infinite" }}
+                    />
                   </div>
                 </div>
               </div>
