@@ -128,6 +128,8 @@ src/
 ├── App.js               # Orchestration de l’UI (KPIs, graphiques, historique, modal)
 ├── index.js             # Point d'entrée React
 ├── index.css            # Styles Tailwind
+├── constants/
+│   └── layout.js         # Constantes UI partagées
 ├── components/
 │   ├── AnimatedNumber.jsx
 │   ├── AddSessionForm.jsx
@@ -139,13 +141,23 @@ src/
 │   ├── Reveal.jsx
 │   ├── SportSharePie.jsx
 │   ├── SwimChart.jsx
-│   └── ThemeToggle.jsx
+│   ├── ThemeToggle.jsx
+│   ├── Toast.jsx
+│   └── TypePill.jsx
 ├── hooks/
 │   ├── useEditAuth.js
 │   └── useTheme.js       # useTheme, useLocalStorage, useIsDark
+├── sections/
+│   ├── AppHeader.jsx
+│   ├── BusyOverlay.jsx
+│   ├── Dashboard.jsx
+│   ├── EditModal.jsx
+│   └── LoadingScreen.jsx
 └── utils/
     ├── api.js           # apiGet, apiJson, API_BASE
+    ├── appUtils.js      # helpers format/normalisation sessions
     ├── downloadCSV.js
+    ├── parseCSV.js
     └── strings.js       # capFirst
 ```
 
