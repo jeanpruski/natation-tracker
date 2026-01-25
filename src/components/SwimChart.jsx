@@ -107,7 +107,6 @@ export function SwimChart({ sessions, mode = "all" }) {
             itemStyle={{ color: isDark ? "#e5e7eb" : "#0f172a" }}
             labelFormatter={() => ""}
             formatter={(v, name, p) => {
-              const type = (p?.payload?.type || "swim").toLowerCase() === "run" ? "Running" : "Piscine";
               const label = name === "runDistance" ? "Running" : "Piscine";
               return [`${v} m`, `${label} — ${dayjs(p.payload.date).format("DD/MM/YYYY")}`];
             }}

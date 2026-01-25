@@ -146,7 +146,6 @@ function TypeSwitch({ value, onChange }) {
    Filtre période (dropdown)
    ========================= */
 function RangeSelect({ value, onChange }) {
-  const currentMonthLabel = capFirst(dayjs().format("MMM YYYY"));
   return (
     <select
       value={value}
@@ -196,6 +195,7 @@ function TypePill({ type, children }) {
 function EditModal({
   open,
   onClose,
+  isBusy,
   isAuth,
   verifyAndLogin,
   logout,
@@ -230,9 +230,16 @@ function EditModal({
     }
   };
 
+  const handleClose = () => {
+    if (isBusy) return;
+    onClose();
+  };
+
+  const disabledCls = "opacity-60 cursor-not-allowed";
+
   return (
     <div className="fixed inset-0 z-50">
-      <div className="absolute inset-0 bg-black/35" onClick={onClose} aria-hidden="true" />
+      <div className="absolute inset-0 bg-black/35" onClick={handleClose} aria-hidden="true" />
 
       <div className="absolute inset-0">
         <div className="h-full w-full bg-white dark:bg-slate-900">
@@ -245,21 +252,23 @@ function EditModal({
                 <div className="inline-flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800/70">
                   <button
                     onClick={() => setTab("options")}
+                    disabled={isBusy}
                     className={`px-3 py-1.5 text-sm rounded-lg ${
                       tab === "options"
                         ? "bg-white shadow text-slate-900 dark:bg-slate-900 dark:text-slate-100"
                         : "text-slate-600 dark:text-slate-300"
-                    }`}
+                    } ${isBusy ? disabledCls : ""}`}
                   >
                     Options
                   </button>
                   <button
                     onClick={() => setTab("history")}
+                    disabled={isBusy}
                     className={`px-3 py-1.5 text-sm rounded-lg ${
                       tab === "history"
                         ? "bg-white shadow text-slate-900 dark:bg-slate-900 dark:text-slate-100"
                         : "text-slate-600 dark:text-slate-300"
-                    }`}
+                    } ${isBusy ? disabledCls : ""}`}
                   >
                     Historique
                   </button>
@@ -271,15 +280,21 @@ function EditModal({
               {isAuth && (
                 <button
                   onClick={logout}
-                  className="rounded-xl bg-rose-600 px-3 py-2 text-sm text-white hover:bg-rose-500"
+                  disabled={isBusy}
+                  className={`rounded-xl bg-rose-600 px-3 py-2 text-sm text-white hover:bg-rose-500 ${
+                    isBusy ? disabledCls : ""
+                  }`}
                   title="Repasser en lecture seule"
                 >
                   🔒 <span className="hidden sm:inline">Verrouiller</span>
                 </button>
               )}
               <button
-                onClick={onClose}
-                className="rounded-xl bg-slate-200 px-3 py-2 text-sm text-slate-900 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+                onClick={handleClose}
+                disabled={isBusy}
+                className={`rounded-xl bg-slate-200 px-3 py-2 text-sm text-slate-900 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 ${
+                  isBusy ? disabledCls : ""
+                }`}
               >
                 Fermer
               </button>
@@ -314,13 +329,51 @@ function EditModal({
             ) : (
               <div className="mx-auto w-full max-w-5xl">
                 {tab === "options" ? (
-                  <AddSessionForm onAdd={onAdd} onExport={onExport} onImport={onImport} readOnly={false} />
+                  <AddSessionForm onAdd={onAdd} onExport={onExport} onImport={onImport} readOnly={isBusy} />
                 ) : (
-                  <History sessions={sessions} onDelete={onDelete} onEdit={onEdit} readOnly={false} />
+                  <History sessions={sessions} onDelete={onDelete} onEdit={onEdit} readOnly={isBusy} />
                 )}
               </div>
             )}
           </div>
+
+          {isBusy && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm">
+              <style>{`
+                @keyframes orbit-spin {
+                  0% { transform: rotate(0deg); }
+                  100% { transform: rotate(360deg); }
+                }
+                @keyframes opacity-pulse {
+                  0%, 100% { opacity: 1; }
+                  50% { opacity: 0.6; }
+                }
+              `}</style>
+              <div className="flex flex-col items-center gap-4">
+                <div className="relative h-32 w-32">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <img src="/apple-touch-icon.png" alt="NaTrack" className="w-24 h-24" />
+                  </div>
+                  <div
+                    className="absolute inset-0"
+                    style={{ transform: "scaleY(0.7) rotate(-45deg)", transformOrigin: "center" }}
+                  >
+                    <div
+                      className="absolute inset-0"
+                      style={{ animation: "orbit-spin 1.4s linear infinite reverse" }}
+                      aria-hidden="true"
+                    >
+                      <span
+                        className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-2 h-3 w-3 rounded-full blur-[1px] bg-gradient-to-r from-indigo-500 to-emerald-500 dark:from-indigo-300 dark:to-emerald-300"
+                        style={{ animation: "opacity-pulse 1.5s ease-in-out infinite" }}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <span className="sr-only">Chargement…</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -674,11 +727,9 @@ export default function App() {
       </div>
       <div className="grid gap-4 p-4 lg:grid-cols-2">
         {(() => {
-          const totalMax = Math.max(monthCompare.currentTotal, monthCompare.lastTotal, 1);
           const totalWinner = compareTotalWinner;
           const totalDenom = monthCompare.currentTotal + monthCompare.lastTotal;
           const totalMarker = totalDenom > 0 ? (monthCompare.currentTotal / totalDenom) * 100 : 50;
-          const toDayMax = Math.max(monthCompare.currentToDay, monthCompare.lastToDay, 1);
           const toDayWinner = compareToDayWinner;
           const toDayDenom = monthCompare.currentToDay + monthCompare.lastToDay;
           const toDayMarker = toDayDenom > 0 ? (monthCompare.currentToDay / toDayDenom) * 100 : 50;
@@ -1640,6 +1691,7 @@ export default function App() {
       <EditModal
         open={showEditModal}
         onClose={() => setShowEditModal(false)}
+        isBusy={isBusy}
         isAuth={isAuth}
         verifyAndLogin={verifyAndLogin}
         logout={editLogout}
