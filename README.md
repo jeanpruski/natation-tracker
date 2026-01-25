@@ -1,39 +1,48 @@
-# NaTrack – Suivi Natation & Running
+# NaTrack – Suivi Natation & Running (Multi-User v2)
 
 Application web responsive pour suivre ses séances de natation et de running, visualiser l’évolution des distances parcourues et obtenir des stats détaillées.
 
-- KPIs: total du mois, meilleure semaine, meilleures distances, séries
-- Mode clair/sombre (préférence persistée) et écran de chargement plein écran (logo + spinner)
-- Historique avec pagination, édition et suppression
+- 🚀 Nouvelle version multi-utilisateurs : dashboard global + dashboards individuels
+- KPIs: total du mois, meilleure semaine, meilleures distances, series
+- Mode clair/sombre (preference persistee) et ecran de chargement plein ecran (logo + spinner)
+- Historique avec pagination, edition et suppression
 - Import/Export CSV
-- Édition déverrouillable par clé (token) + overlay de blocage pendant les actions
+- Edition securisee par login (email + mot de passe) + overlay de blocage pendant les actions
 
 ---
 
-## ✨ Fonctionnalités
+## ✨ Fonctionnalites
 
-- **Ajout de séances** avec type (natation/running), distance et date (aujourd’hui par défaut ou date personnalisée)
-- **KPIs**: total du mois, meilleure semaine, meilleure distance, série la plus longue
+- **V2 Multi-User (nouveau)** :
+  - **Dashboard global public** avec comparaison des performances par utilisateur
+  - **Dashboards individuels** (memes fonctionnalites que la V1)
+  - **Acces en lecture** aux dashboards des autres
+  - **Edition reservee** a l'utilisateur connecte ou a l'admin
+  - **Admin** : peut modifier les donnees de tous les utilisateurs
+
+- **Ajout de seances** avec type (natation/running), distance et date (aujourd'hui par defaut ou date personnalisee)
+- **KPIs**: total du mois, meilleure semaine, meilleure distance, serie la plus longue
 - **Graphiques**:
-  - Courbe des séances
+  - Courbe des seances
   - Barres cumul mensuel
   - Répartition par sport
-  - Calendrier d'activité (heatmap)
+  - Calendrier d'activite (heatmap)
+  - Comparatif global (sparklines + classement)
 - **Historique**:
-  - Pagination (12/s page), édition inline, suppression
-  - Tri décroissant par date
-- **Mode clair/sombre**: toggle manuel, préférence persistée; écran de chargement plein écran respectant le thème
+  - Pagination (12/s page), edition inline, suppression
+  - Tri decroissant par date
+- **Mode clair/sombre**: toggle manuel, preference persistee; ecran de chargement plein ecran respectant le theme
 - **Import/Export CSV** des données
-- **Mode édition**: verrouillage/déverrouillage par clé (token) + blocage UI pendant les actions CRUD
+- **Mode edition**: verrouillage/deverrouillage par login + blocage UI pendant les actions CRUD
 
 ---
 
-## 🖼️ Aperçu de l’interface
+## 🖼️ Apercu de l’interface
 
-- **Mobile** : disposition en pile (Options → Graphiques → Historique)
+- **Mobile** : disposition en pile (Global → Dashboards → Historique)
 - **Desktop** :
-  - Colonne gauche : KPIs + actions
-  - Colonne droite : Graphiques, stats, historique
+  - Dashboard global : comparaison utilisateurs + selection
+  - Dashboard perso : KPIs + graphiques + historique
 
 ---
 
@@ -102,16 +111,29 @@ Fichier `src/index.css` :
 ## 🔌 API & Variables d’environnement
 
 - Base API: `REACT_APP_API_BASE` (optionnelle). Par défaut: `"/api"`.
-- Endpoints utilisés:
-  - `GET /sessions` → `[{ id, date: YYYY-MM-DD, distance: number, type: "swim" | "run" }, ...]`
-  - `POST /sessions` (auth requise) → crée une séance
-  - `PUT /sessions/:id` (auth requise) → met à jour une séance
-  - `DELETE /sessions/:id` (auth requise) → supprime une séance
-  - `GET /auth/check` avec header `Authorization: Bearer <token>` → valide la clé d’édition
+- Endpoints utilises:
+  - **Public**:
+    - `GET /sessions` → liste globale
+    - `GET /dashboard/global` → statistiques globales
+    - `GET /users/public` → liste des utilisateurs (id, name)
+  - **Auth**:
+    - `POST /auth/login` → JWT
+    - `GET /auth/me` → utilisateur connecte
+  - **User**:
+    - `GET /me/sessions`
+    - `POST /me/sessions`
+    - `PUT /me/sessions/:id`
+    - `DELETE /me/sessions/:id`
+  - **Admin**:
+    - `GET /users`
+    - `GET /users/:userId/sessions`
+    - `POST /users/:userId/sessions`
+    - `PUT /users/:userId/sessions/:id`
+    - `DELETE /users/:userId/sessions/:id`
 
 Stockages navigateur:
-- `localStorage["theme_dark"]`: préférence de thème
-- `localStorage["edit_token"]`: clé d’édition (si saisie)
+- `localStorage["theme_dark"]`: preference de theme
+- `localStorage["auth_token"]`: JWT (auth)
 
 Exemple `.env`:
 
@@ -163,14 +185,10 @@ src/
 
 ---
 
-## 🔐 Édition & sécurité
+## 🔐 Edition & securite
 
-- L’édition est verrouillée par défaut. Cliquez sur « Éditer » et saisissez la **clé d’édition**.
-- La clé est vérifiée via `GET /auth/check` avec le header `Authorization: Bearer <token>`.
-- Une fois validée, la clé est conservée en local dans `localStorage["edit_token"]` jusqu’à « Verrouiller ».
+- L’edition est verrouillee par defaut. Cliquez sur « Editer » et connectez-vous.
+- Les utilisateurs peuvent consulter tous les dashboards, mais **modifier uniquement leurs donnees**.
+- Les admins peuvent modifier toutes les donnees.
+- Le JWT est stocke dans `localStorage["auth_token"]` jusqu’a « Verrouiller ».
 
----
-
-## 📜 Licence
-
-Ce projet est libre pour usage personnel.
