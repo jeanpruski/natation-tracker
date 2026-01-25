@@ -30,6 +30,7 @@ export default function App() {
   const [toast, setToast] = useState("");
   const [isBusy, setIsBusy] = useState(false);
   const toastTimerRef = useRef(null);
+  const didInitScrollRef = useRef(false);
 
   const [sessions, setSessions] = useState([]);
   const [mode, setMode] = useState("all");   // all | swim | run
@@ -82,6 +83,14 @@ export default function App() {
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (!didInitScrollRef.current) {
+      didInitScrollRef.current = true;
+      return;
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [range, mode]);
 
   const nf = useMemo(() => new Intl.NumberFormat("fr-FR"), []);
   const nfDecimal = useMemo(
