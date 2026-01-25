@@ -403,7 +403,7 @@ export default function App() {
       setSessions((prev) => [...prev, normalizeSession(created)]);
     });
     setShowEditModal(false);
-    showToast("Seance ajoutee");
+    showToast("Seance ajoutée");
   });
 
   const deleteSession = guard(async (id) => {
@@ -413,7 +413,7 @@ export default function App() {
       setSessions((prev) => prev.filter((s) => s.id !== id));
     });
     setShowEditModal(false);
-    showToast("Seance supprimee");
+    showToast("Seance supprimée");
   });
 
   const editSession = guard(async (id, updated) => {
@@ -424,7 +424,7 @@ export default function App() {
       );
     });
     setShowEditModal(false);
-    showToast("Seance modifiee");
+    showToast("Seance modifiée");
   });
 
   const importCSV = guard(async (file) => {
@@ -462,7 +462,7 @@ export default function App() {
 
     if (imported) {
       setShowEditModal(false);
-      showToast("Import termine");
+      showToast("Import terminé");
     }
   });
 
@@ -471,7 +471,7 @@ export default function App() {
       downloadCSV("sessions.csv", sessions);
     });
     setShowEditModal(false);
-    showToast("Export termine");
+    showToast("Export terminé");
   };
 
   if (loadingPhase !== "done" || FORCE_LOADING) {

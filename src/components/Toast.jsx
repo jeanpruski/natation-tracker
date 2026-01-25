@@ -14,7 +14,7 @@ export function Toast({ message }) {
         }
       `}</style>
       <div
-        className="fixed left-1/2 top-6 z-50 flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white shadow-lg"
+        className="fixed left-1/2 top-12 sm:top-6 z-50 flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white shadow-lg"
         style={{ animation: "toast-slide 2.4s ease-in-out" }}
       >
         <CheckCircle2 size={16} />
