@@ -31,7 +31,7 @@ function TypeSelect({ value, onChange }) {
     <select
       value={v}
       onChange={(e) => onChange(e.target.value)}
-      className="appearance-none w-[4.5rem] rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+      className="appearance-none w-[4.5rem] rounded-lg border border-slate-300 bg-white px-2 py-1 text-[16px] sm:text-sm text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
     >
       <option value="swim">Natation</option>
       <option value="run">Running</option>
@@ -123,7 +123,7 @@ export function History({ sessions, onDelete, onEdit, readOnly }) {
                         type="date"
                         value={editDate}
                         onChange={(e) => setEditDate(e.target.value)}
-                        className="w-[6rem] sm:w-auto rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs sm:text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                        className="w-[6rem] sm:w-auto rounded-lg border border-slate-300 bg-white px-2 py-1 text-[16px] sm:text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
                       />
                     ) : (
                       dayjs(s.date).format("DD-MM-YYYY")
@@ -146,7 +146,7 @@ export function History({ sessions, onDelete, onEdit, readOnly }) {
                         type="number"
                         value={editDistance}
                         onChange={(e) => setEditDistance(e.target.value)}
-                        className="w-20 sm:w-24 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs sm:text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                        className="w-20 sm:w-24 rounded-lg border border-slate-300 bg-white px-2 py-1 text-[16px] sm:text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
                       />
                     ) : (
                       `${s.distance} m`
