@@ -1,28 +1,30 @@
-# 🏊‍♂️ Suivi Natation – React + Tailwind + Recharts
+# NaTrack – Suivi Natation & Running
 
-Application web responsive pour suivre ses séances de natation, visualiser l’évolution des distances parcourues et obtenir un cumul mensuel.
+Application web responsive pour suivre ses séances de natation et de running, visualiser l’évolution des distances parcourues et obtenir des stats détaillées.
 
-- KPIs: Total du mois, Moyenne/séance, Dernière séance (jour + date + jours écoulés)
-- Mode clair/sombre (préférence persistée) et écran de chargement plein écran (logo + spinner), compatible dark mode
-- Historique avec pagination, modification et suppression
-- Export CSV
-- Édition déverrouillable par clé (token)
+- KPIs: total du mois, meilleure semaine, meilleures distances, séries
+- Mode clair/sombre (préférence persistée) et écran de chargement plein écran (logo + spinner)
+- Historique avec pagination, édition et suppression
+- Import/Export CSV
+- Édition déverrouillable par clé (token) + overlay de blocage pendant les actions
 
 ---
 
 ## ✨ Fonctionnalités
 
-- **Ajout de séances** avec métrage et date (aujourd’hui par défaut ou date personnalisée)
-- **KPIs**: Total du mois, Moyenne/séance, Dernière séance (ex: « Mercredi 03 janv. 2025 » et « 4 j » depuis)
+- **Ajout de séances** avec type (natation/running), distance et date (aujourd’hui par défaut ou date personnalisée)
+- **KPIs**: total du mois, meilleure semaine, meilleure distance, série la plus longue
 - **Graphiques**:
   - Courbe des séances
   - Barres cumul mensuel
+  - Répartition par sport
+  - Calendrier d'activité (heatmap)
 - **Historique**:
-  - Pagination (5/s page), édition inline, suppression
+  - Pagination (12/s page), édition inline, suppression
   - Tri décroissant par date
 - **Mode clair/sombre**: toggle manuel, préférence persistée; écran de chargement plein écran respectant le thème
-- **Export CSV** des données visibles
-- **Mode édition**: verrouillage/déverrouillage par clé (token)
+- **Import/Export CSV** des données
+- **Mode édition**: verrouillage/déverrouillage par clé (token) + blocage UI pendant les actions CRUD
 
 ---
 
@@ -30,8 +32,8 @@ Application web responsive pour suivre ses séances de natation, visualiser l’
 
 - **Mobile** : disposition en pile (Options → Graphiques → Historique)
 - **Desktop** :
-  - Colonne gauche : Options + Historique
-  - Colonne droite : Graphiques (courbe + cumul mensuel)
+  - Colonne gauche : KPIs + actions
+  - Colonne droite : Graphiques, stats, historique
 
 ---
 
@@ -101,7 +103,7 @@ Fichier `src/index.css` :
 
 - Base API: `REACT_APP_API_BASE` (optionnelle). Par défaut: `"/api"`.
 - Endpoints utilisés:
-  - `GET /sessions` → `[{ id, date: YYYY-MM-DD, distance: number }, ...]`
+  - `GET /sessions` → `[{ id, date: YYYY-MM-DD, distance: number, type: "swim" | "run" }, ...]`
   - `POST /sessions` (auth requise) → crée une séance
   - `PUT /sessions/:id` (auth requise) → met à jour une séance
   - `DELETE /sessions/:id` (auth requise) → supprime une séance
@@ -127,11 +129,15 @@ src/
 ├── index.js             # Point d'entrée React
 ├── index.css            # Styles Tailwind
 ├── components/
+│   ├── AnimatedNumber.jsx
 │   ├── AddSessionForm.jsx
+│   ├── CalendarHeatmap.jsx
 │   ├── EditAuthModal.jsx
 │   ├── History.jsx
 │   ├── KpiChip.jsx
 │   ├── MonthlyBarChart.jsx
+│   ├── Reveal.jsx
+│   ├── SportSharePie.jsx
 │   ├── SwimChart.jsx
 │   └── ThemeToggle.jsx
 ├── hooks/
@@ -156,4 +162,3 @@ src/
 ## 📜 Licence
 
 Ce projet est libre pour usage personnel.
-Créé avec ❤️ pour le suivi sportif.
