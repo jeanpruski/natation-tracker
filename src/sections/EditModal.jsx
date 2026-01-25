@@ -11,19 +11,24 @@ export function EditModal({
   verifyAndLogin,
   logout,
   sessions,
+  readOnly = false,
+  targetName,
+  loggedUserName,
   onAdd,
   onEdit,
   onDelete,
   onExport,
   onImport,
 }) {
-  const [token, setToken] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
   const [tab, setTab] = useState("options"); // options | history
 
   useEffect(() => {
     if (!open) {
-      setToken("");
+      setEmail("");
+      setPassword("");
       setErr("");
       setTab("options");
     }
@@ -35,9 +40,9 @@ export function EditModal({
     e.preventDefault();
     setErr("");
     try {
-      await verifyAndLogin(token);
+      await verifyAndLogin({ email, password });
     } catch {
-      setErr("Mot de passe invalide");
+      setErr("Identifiants invalides");
     }
   };
 
@@ -97,7 +102,10 @@ export function EditModal({
                   }`}
                   title="Repasser en lecture seule"
                 >
-                  🔒 <span className="hidden sm:inline">Verrouiller</span>
+                  🔒{" "}
+                  <span className="sm:inline">
+                    {loggedUserName ? ` ${loggedUserName}` : ""}
+                  </span>
                 </button>
               )}
               <button
@@ -116,13 +124,22 @@ export function EditModal({
             {!isAuth ? (
               <form onSubmit={submit} className="mx-auto max-w-md space-y-3">
                 <p className="text-sm text-slate-600 dark:text-slate-300">
-                  Entre ton mot de passe pour activer l’édition.
+                  Connecte-toi pour activer l'edition.
                 </p>
                 <input
-                  value={token}
-                  onChange={(e) => setToken(e.target.value)}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Email"
+                  type="email"
+                  autoComplete="email"
+                  className="w-full rounded-xl border border-slate-300 bg-white p-2 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                />
+                <input
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="Mot de passe"
                   type="password"
+                  autoComplete="current-password"
                   className="w-full rounded-xl border border-slate-300 bg-white p-2 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                 />
                 {err && (
@@ -139,10 +156,31 @@ export function EditModal({
               </form>
             ) : (
               <div className="mx-auto w-full max-w-5xl">
+                {targetName && (
+                  <div className="mb-4 rounded-2xl bg-slate-50/80 px-4 py-2 text-center text-sm font-semibold text-slate-900 ring-1 ring-slate-200 dark:bg-slate-800/60 dark:text-slate-100 dark:ring-slate-700">
+                    {targetName}
+                  </div>
+                )}
                 {tab === "options" ? (
-                  <AddSessionForm onAdd={onAdd} onExport={onExport} onImport={onImport} readOnly={isBusy} />
+                  <div className="relative">
+                    <div className={readOnly ? "blur-sm pointer-events-none" : ""}>
+                      <AddSessionForm
+                        onAdd={onAdd}
+                        onExport={onExport}
+                        onImport={onImport}
+                        readOnly={isBusy || readOnly}
+                      />
+                    </div>
+                    {readOnly && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="rounded-xl bg-white/90 px-4 py-2 text-sm font-semibold text-slate-900 shadow ring-1 ring-slate-200 dark:bg-slate-900/90 dark:text-slate-100 dark:ring-slate-700">
+                          Options en lecture seule
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 ) : (
-                  <History sessions={sessions} onDelete={onDelete} onEdit={onEdit} readOnly={isBusy} />
+                  <History sessions={sessions} onDelete={onDelete} onEdit={onEdit} readOnly={isBusy || readOnly} />
                 )}
               </div>
             )}

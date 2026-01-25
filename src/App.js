@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from "uuid";
 import { AppHeader } from "./sections/AppHeader";
 import { EditModal } from "./sections/EditModal";
 import { Dashboard } from "./sections/Dashboard";
+import { GlobalDashboard } from "./sections/GlobalDashboard";
 import { LoadingScreen } from "./sections/LoadingScreen";
 import { BusyOverlay } from "./sections/BusyOverlay";
 import { Toast } from "./components/Toast";
@@ -25,7 +26,7 @@ dayjs.extend(customParseFormat);
    ========================= */
 export default function App() {
   const FORCE_LOADING = false;
-  const { token: editToken, isAuth, checking, verifyAndLogin, logout: editLogout } = useEditAuth();
+  const { token: authToken, user, isAuth, checking, login, logout: editLogout } = useEditAuth();
   const [showEditModal, setShowEditModal] = useState(false);
   const [toast, setToast] = useState("");
   const [isBusy, setIsBusy] = useState(false);
@@ -33,6 +34,8 @@ export default function App() {
   const didInitScrollRef = useRef(false);
 
   const [sessions, setSessions] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [users, setUsers] = useState([]);
   const [mode, setMode] = useState("all");   // all | swim | run
   const [range, setRange] = useState(getInitialRange); // all | month | 6m | 3m | 2026 | 2025
 
@@ -79,6 +82,20 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const data = await apiGet("/users/public");
+        if (alive) setUsers(data || []);
+      } catch {
+        if (!alive) return;
+        setUsers([]);
+      }
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  useEffect(() => {
     return () => {
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     };
@@ -103,21 +120,26 @@ export default function App() {
   const modeLabel = mode === "swim" ? "Natation" : mode === "run" ? "Running" : null;
   const rangeLabel =
     range === "all"
-      ? "tout l'historique"
+      ? "Tout l'historique"
       : range === "month"
-        ? "ce mois-ci"
+        ? "Ce mois-ci"
         : range === "3m"
-          ? "les 3 derniers mois"
+          ? "Les 3 derniers mois"
           : range === "6m"
-            ? "les 6 derniers mois"
+            ? "Les 6 derniers mois"
             : /^\d{4}$/.test(range)
-              ? `l'annee ${range}`
-              : "cette periode";
+              ? `L'annee ${range}`
+              : "Cette periode";
   const shoesStart = dayjs("2026-01-13");
   const shoesTargetMeters = 550 * 1000;
+  const isAdmin = user?.role === "admin";
 
-  /* ===== Filtre période ===== */
-  const periodSessions = useMemo(() => {
+  const userSessions = useMemo(() => {
+    if (!selectedUser) return [];
+    return sessions.filter((s) => s.user_id === selectedUser.id);
+  }, [sessions, selectedUser]);
+
+  const globalPeriodSessions = useMemo(() => {
     if (range === "all") return sessions;
 
     const now = dayjs();
@@ -132,7 +154,51 @@ export default function App() {
     }
 
     return sessions.filter((s) => dayjs(s.date).format("YYYY") === range);
-  }, [sessions, range]);
+  }, [sessions, range, monthKey]);
+
+  const globalShownSessions = useMemo(() => {
+    if (mode === "all") return globalPeriodSessions;
+    return globalPeriodSessions.filter((s) => normType(s.type) === mode);
+  }, [globalPeriodSessions, mode]);
+
+  const monthTotalsByUser = useMemo(() => {
+    const map = {};
+    globalShownSessions.forEach((s) => {
+      if (!s.user_id) return;
+      map[s.user_id] = (map[s.user_id] || 0) + (Number(s.distance) || 0);
+    });
+    return map;
+  }, [globalShownSessions]);
+
+  const derivedUsers = useMemo(() => {
+    if (users.length) return users;
+    const map = new Map();
+    sessions.forEach((s) => {
+      if (!s.user_id) return;
+      if (!map.has(s.user_id)) {
+        map.set(s.user_id, { id: s.user_id, name: s.user_name || "Utilisateur" });
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name, "fr"));
+  }, [users, sessions]);
+
+  /* ===== Filtre période ===== */
+  const periodSessions = useMemo(() => {
+    if (range === "all") return userSessions;
+
+    const now = dayjs();
+    if (range === "month") {
+      return userSessions.filter((s) => dayjs(s.date).format("YYYY-MM") === monthKey);
+    }
+    if (range === "6m") {
+      return userSessions.filter((s) => dayjs(s.date).isAfter(now.subtract(6, "month")));
+    }
+    if (range === "3m") {
+      return userSessions.filter((s) => dayjs(s.date).isAfter(now.subtract(3, "month")));
+    }
+
+    return userSessions.filter((s) => dayjs(s.date).format("YYYY") === range);
+  }, [userSessions, range]);
 
   /* ===== Filtre sport ===== */
   const shownSessions = useMemo(() => {
@@ -262,7 +328,7 @@ export default function App() {
   /* ===== Chaussures running (Nike Pegasus Premium) ===== */
   const shoesLife = useMemo(() => {
     let runMeters = 0;
-    sessions.forEach((s) => {
+    userSessions.forEach((s) => {
       if (normType(s.type) !== "run") return;
       if (dayjs(s.date).isBefore(shoesStart, "day")) return;
       runMeters += Number(s.distance) || 0;
@@ -271,7 +337,7 @@ export default function App() {
     const remaining = Math.max(shoesTargetMeters - runMeters, 0);
     const percent = shoesTargetMeters ? Math.min((runMeters / shoesTargetMeters) * 100, 100) : 0;
     return { used, remaining, percent };
-  }, [sessions, shoesStart, shoesTargetMeters]);
+  }, [userSessions, shoesStart, shoesTargetMeters]);
 
   const shoesLifeByRange = useMemo(() => {
     const compute = (list) => {
@@ -402,14 +468,21 @@ export default function App() {
   const guard = (fn) => async (...args) => {
     if (checking) return;
     if (!isAuth) { setShowEditModal(true); return; }
+    if (!selectedUser) return;
+    if (!canEditSelected) { showToast("Edition reservee"); return; }
     return fn(...args);
   };
 
   const addSession = guard(async (payload) => {
+    const basePath =
+      isAdmin && selectedUser && user?.id !== selectedUser.id
+        ? `/users/${selectedUser.id}/sessions`
+        : "/me/sessions";
     await withBusy(async () => {
       const body = { id: payload.id, distance: payload.distance, date: payload.date, type: payload.type };
-      const created = await apiJson("POST", "/sessions", body, editToken);
-      setSessions((prev) => [...prev, normalizeSession(created)]);
+      const created = await apiJson("POST", basePath, body, authToken);
+      const createdWithName = { ...created, user_name: selectedUser?.name };
+      setSessions((prev) => [...prev, normalizeSession(createdWithName)]);
     });
     setShowEditModal(false);
     showToast("Seance ajoutée");
@@ -417,8 +490,12 @@ export default function App() {
 
   const deleteSession = guard(async (id) => {
     if (!window.confirm("Confirmer la suppression de cette seance ?")) return;
+    const basePath =
+      isAdmin && selectedUser && user?.id !== selectedUser.id
+        ? `/users/${selectedUser.id}/sessions`
+        : "/me/sessions";
     await withBusy(async () => {
-      await apiJson("DELETE", `/sessions/${id}`, undefined, editToken);
+      await apiJson("DELETE", `${basePath}/${id}`, undefined, authToken);
       setSessions((prev) => prev.filter((s) => s.id !== id));
     });
     setShowEditModal(false);
@@ -426,8 +503,12 @@ export default function App() {
   });
 
   const editSession = guard(async (id, updated) => {
+    const basePath =
+      isAdmin && selectedUser && user?.id !== selectedUser.id
+        ? `/users/${selectedUser.id}/sessions`
+        : "/me/sessions";
     await withBusy(async () => {
-      await apiJson("PUT", `/sessions/${id}`, updated, editToken);
+      await apiJson("PUT", `${basePath}/${id}`, updated, authToken);
       setSessions((prev) =>
         prev.map((s) => (s.id === id ? normalizeSession({ ...s, ...updated }) : s))
       );
@@ -439,6 +520,10 @@ export default function App() {
   const importCSV = guard(async (file) => {
     if (!file) return;
     if (!window.confirm("Confirmer l'import du fichier CSV ?")) return;
+    const basePath =
+      isAdmin && selectedUser && user?.id !== selectedUser.id
+        ? `/users/${selectedUser.id}/sessions`
+        : "/me/sessions";
     const imported = await withBusy(async () => {
       const text = await file.text();
       const rows = parseCSV(text);
@@ -462,8 +547,8 @@ export default function App() {
       const created = [];
       for (const row of normalized) {
         const body = { id: uuidv4(), distance: row.distance, date: row.date, type: row.type };
-        const item = await apiJson("POST", "/sessions", body, editToken);
-        created.push(item);
+        const item = await apiJson("POST", basePath, body, authToken);
+        created.push({ ...item, user_name: selectedUser?.name });
       }
       if (created.length) setSessions((prev) => [...prev, ...created.map(normalizeSession)]);
       return created.length;
@@ -477,7 +562,7 @@ export default function App() {
 
   const exportCSV = async () => {
     await withBusy(() => {
-      downloadCSV("sessions.csv", sessions);
+      downloadCSV("sessions.csv", userSessions);
     });
     setShowEditModal(false);
     showToast("Export terminé");
@@ -490,6 +575,14 @@ export default function App() {
   const showMonthCardsOnlyWhenAllRange = range === "all";
   const showMonthlyChart = range !== "month";
   const hasSessions = shownSessions.length > 0;
+  const isGlobalView = !selectedUser;
+  const headerTitle = selectedUser ? selectedUser.name : null;
+  const canEditSelected = !!selectedUser && (isAdmin || user?.id === selectedUser.id);
+  const showEditorButton = !isGlobalView && (!user || isAdmin || user?.id === selectedUser?.id);
+
+  const handleSelectUser = (u) => {
+    setSelectedUser(u);
+  };
 
   return (
     <div
@@ -516,9 +609,15 @@ export default function App() {
           range={range}
           mode={mode}
           isAuth={isAuth}
+          showEditor={showEditorButton}
+          showFilters
+          title={headerTitle}
+          editorTargetName={headerTitle}
+          loggedUserName={user?.name}
           onOpenEditor={() => setShowEditModal(true)}
           onModeChange={setMode}
           onRangeChange={setRange}
+          onBack={isGlobalView ? null : () => setSelectedUser(null)}
         />
 
         <main className="pb-6" style={{ paddingTop: "var(--main-top-padding)" }}>
@@ -532,34 +631,47 @@ export default function App() {
             <Toast message={toast} />
             <BusyOverlay open={isBusy} />
 
-            <Dashboard
-              hasSessions={hasSessions}
-              mode={mode}
-              range={range}
-              modeLabel={modeLabel}
-              rangeLabel={rangeLabel}
-              shownSessions={shownSessions}
-              stats={stats}
-              monthTotals={monthTotals}
-              monthCounts={monthCounts}
-              monthLabel={monthLabel}
-              lastLabel={lastLabel}
-              lastType={lastType}
-              daysSinceLast={daysSinceLast}
-              showMonthCardsOnlyWhenAllRange={showMonthCardsOnlyWhenAllRange}
-              showMonthlyChart={showMonthlyChart}
-              showCompareInline={showCompareInline}
-              showCompareAbove={showCompareAbove}
-              monthCompare={monthCompare}
-              compareTotalWinner={compareTotalWinner}
-              compareToDayWinner={compareToDayWinner}
-              records={records}
-              sportTotals={sportTotals}
-              shoesLifeByRange={shoesLifeByRange}
-              firstSessionLabel={firstSessionLabel}
-              nf={nf}
-              nfDecimal={nfDecimal}
-            />
+            {isGlobalView ? (
+              <GlobalDashboard
+                rangeLabel={rangeLabel}
+                modeLabel={modeLabel}
+                mode={mode}
+                users={derivedUsers}
+                totalsByUser={monthTotalsByUser}
+                sessions={globalShownSessions}
+                nfDecimal={nfDecimal}
+                onSelectUser={handleSelectUser}
+              />
+            ) : (
+              <Dashboard
+                hasSessions={hasSessions}
+                mode={mode}
+                range={range}
+                modeLabel={modeLabel}
+                rangeLabel={rangeLabel}
+                shownSessions={shownSessions}
+                stats={stats}
+                monthTotals={monthTotals}
+                monthCounts={monthCounts}
+                monthLabel={monthLabel}
+                lastLabel={lastLabel}
+                lastType={lastType}
+                daysSinceLast={daysSinceLast}
+                showMonthCardsOnlyWhenAllRange={showMonthCardsOnlyWhenAllRange}
+                showMonthlyChart={showMonthlyChart}
+                showCompareInline={showCompareInline}
+                showCompareAbove={showCompareAbove}
+                monthCompare={monthCompare}
+                compareTotalWinner={compareTotalWinner}
+                compareToDayWinner={compareToDayWinner}
+                records={records}
+                sportTotals={sportTotals}
+                shoesLifeByRange={shoesLifeByRange}
+                firstSessionLabel={firstSessionLabel}
+                nf={nf}
+                nfDecimal={nfDecimal}
+              />
+            )}
           </div>
         </main>
       </div>
@@ -569,9 +681,12 @@ export default function App() {
         onClose={() => setShowEditModal(false)}
         isBusy={isBusy}
         isAuth={isAuth}
-        verifyAndLogin={verifyAndLogin}
+        verifyAndLogin={login}
         logout={editLogout}
-        sessions={sessions}
+        sessions={canEditSelected ? userSessions : sessions.filter((s) => s.user_id === user?.id)}
+        readOnly={!canEditSelected}
+        targetName={headerTitle}
+        loggedUserName={user?.name}
         onAdd={addSession}
         onEdit={editSession}
         onDelete={deleteSession}
