@@ -107,24 +107,34 @@ export function Dashboard({
     const y = point.clientY - rect.top;
     const percentX = (x / rect.width) * 2 - 1;
     const percentY = (y / rect.height) * 2 - 1;
+    const rawX = -percentY * MAX_TILT;
+    const rawY = percentX * MAX_TILT;
+    const clampedX = Math.max(-MAX_TILT, Math.min(MAX_TILT, rawX));
+    const clampedY = Math.max(-MAX_TILT, Math.min(MAX_TILT, rawY));
     setCardTilt({
-      x: Math.max(-MAX_TILT, Math.min(MAX_TILT, -percentY * MAX_TILT)),
-      y: Math.max(-MAX_TILT, Math.min(MAX_TILT, percentX * MAX_TILT)),
+      x: clampedX,
+      y: clampedY,
       active: true,
     });
 
-    const pX = (x / rect.width) * 100;
-    const pY = (y / rect.height) * 100;
-    const holoX = 50 + (pX - 50) / 1.5;
-    const holoY = 50 + (pY - 50) / 1.5;
-    const sparkX = 50 + (pX - 50) / 7;
-    const sparkY = 50 + (pY - 50) / 7;
-    const intensity = Math.min(0.9, Math.max(0.35, 0.35 + (Math.abs(50 - pX) + Math.abs(50 - pY)) / 200));
+    const withinXBounds = Math.abs(rawY) <= MAX_TILT;
+    const withinYBounds = Math.abs(rawX) <= MAX_TILT;
     if (holoRef.current) {
-      holoRef.current.style.setProperty("--holo-x", `${holoX}%`);
-      holoRef.current.style.setProperty("--holo-y", `${holoY}%`);
-      holoRef.current.style.setProperty("--spark-x", `${sparkX}%`);
-      holoRef.current.style.setProperty("--spark-y", `${sparkY}%`);
+      const pX = (x / rect.width) * 100;
+      const pY = (y / rect.height) * 100;
+      const holoX = 50 + (pX - 50) / 1.5;
+      const holoY = 50 + (pY - 50) / 1.5;
+      const sparkX = 50 + (pX - 50) / 7;
+      const sparkY = 50 + (pY - 50) / 7;
+      const intensity = Math.min(1, Math.max(0.9, 0.9 + (Math.abs(50 - pX) + Math.abs(50 - pY)) / 200));
+      if (withinXBounds) {
+        holoRef.current.style.setProperty("--holo-x", `${holoX}%`);
+        holoRef.current.style.setProperty("--spark-x", `${sparkX}%`);
+      }
+      if (withinYBounds) {
+        holoRef.current.style.setProperty("--holo-y", `${holoY}%`);
+        holoRef.current.style.setProperty("--spark-y", `${sparkY}%`);
+      }
       holoRef.current.style.setProperty("--spark-opacity", `${intensity}`);
     }
   };
@@ -177,7 +187,7 @@ export function Dashboard({
               background-size: 300% 300%;
               background-position: var(--holo-x, 50%) var(--holo-y, 50%);
               mix-blend-mode: color-dodge;
-              opacity: 0.45;
+              opacity: 0.95;
             }
             .user-card-holo::after {
               background-image:
@@ -187,7 +197,7 @@ export function Dashboard({
               background-position: var(--spark-x, 50%) var(--spark-y, 50%);
               background-blend-mode: overlay;
               mix-blend-mode: color-dodge;
-              opacity: var(--spark-opacity, 0.6);
+              opacity: var(--spark-opacity, 1);
             }
           `}</style>
           <motion.div
@@ -218,7 +228,7 @@ export function Dashboard({
                 isPointerDownRef.current = false;
                 resetTilt();
               }}
-              className="relative select-none touch-none rounded-[28px] bg-gradient-to-br from-emerald-300 via-lime-300 to-sky-300 p-2 shadow-[0_28px_110px_rgba(0,0,0,0.75)] dark:shadow-[0_28px_110px_rgba(255,255,255,0.55)]"
+              className="relative select-none touch-none rounded-[28px] bg-gradient-to-br from-emerald-300 via-lime-300 to-sky-400 p-2 shadow-[0_28px_110px_rgba(0,0,0,0.75)] dark:shadow-[0_28px_110px_rgba(255,255,255,0.55)]"
               style={{
                 transform: `rotateX(${cardTilt.x}deg) rotateY(${cardTilt.y}deg) translateZ(${cardTilt.active ? 18 : 0}px) scale(${cardTilt.active ? 1.03 : 1})`,
                 transformStyle: "preserve-3d",
@@ -229,7 +239,7 @@ export function Dashboard({
               <img
                 src="/na-logo.png"
                 alt="NaTrack"
-                className="pointer-events-none absolute -left-12 -top-14 z-20 h-40 w-auto grayscale-[0.15] drop-shadow-[0_10px_26px_rgba(16,185,129,0.65)]"
+                className="pointer-events-none absolute -left-5 -top-3 z-20 h-28 w-auto grayscale-[0.15] drop-shadow-[0_10px_26px_rgba(16,185,129,0.65)]"
               />
               <div ref={holoRef} className="user-card-holo relative overflow-hidden rounded-[26px] bg-slate-950/95 p-3 text-white">
                 <div className="mt-2 flex items-center justify-end gap-2 text-right text-2xl font-black tracking-tight">
