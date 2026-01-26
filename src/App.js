@@ -721,6 +721,7 @@ export default function App() {
                 range={range}
                 modeLabel={modeLabel}
                 rangeLabel={rangeLabel}
+                userName={headerTitle}
                 shownSessions={shownSessions}
                 stats={stats}
                 monthTotals={monthTotals}

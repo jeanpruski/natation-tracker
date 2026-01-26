@@ -14,6 +14,7 @@ import {
   Plane,
   Globe,
   Trophy,
+  User,
 } from "lucide-react";
 import { KpiChip } from "../components/KpiChip";
 import { SwimChart } from "../components/SwimChart";
@@ -60,17 +61,32 @@ export function Dashboard({
   firstSessionLabel,
   nf,
   nfDecimal,
+  userName,
 }) {
+  const heroBadge = userName ? (
+    <Reveal as="section" className="px-4 xl:px-8 pt-4 md:pt-4 xl:pt-0">
+      <div className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-slate-900 shadow-sm dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100">
+        <div className="flex items-center gap-2 text-xl sm:text-2xl font-black tracking-tight">
+          <User size={18} className="text-slate-500 dark:text-slate-400" />
+          <span>{userName}</span>
+        </div>
+      </div>
+    </Reveal>
+  ) : null;
+
   if (!hasSessions) {
     return (
-      <Reveal as="section" className="px-4 xl:px-8 pt-4 pb-8">
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-8 text-center text-slate-700 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200">
-          <div className="text-lg font-semibold">Aucune seance</div>
-          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            Aucune seance pour {mode === "all" ? "tous les sports" : modeLabel.toLowerCase()} sur {rangeLabel}.
-          </p>
-        </div>
-      </Reveal>
+      <>
+        {heroBadge}
+        <Reveal as="section" className="px-4 xl:px-8 pt-4 pb-8">
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-8 text-center text-slate-700 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200">
+            <div className="text-lg font-semibold">Aucune seance</div>
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+              Aucune seance pour {mode === "all" ? "tous les sports" : modeLabel.toLowerCase()} sur {rangeLabel}.
+            </p>
+          </div>
+        </Reveal>
+      </>
     );
   }
 
@@ -179,6 +195,7 @@ export function Dashboard({
 
   return (
     <>
+      {heroBadge}
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_3fr] gap-4 items-start px-4 xl:px-8 pt-4 pb-4 xl:pt-3 xl:pb-4">
         <Reveal as="aside" className="self-start">
           <div className="grid grid-cols-1 min-[800px]:grid-cols-2 xl:grid-cols-1 gap-4">
