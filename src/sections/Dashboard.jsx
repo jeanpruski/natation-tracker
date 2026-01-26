@@ -70,6 +70,8 @@ export function Dashboard({
   const cardRef = useRef(null);
   const holoRef = useRef(null);
   const isPointerDownRef = useRef(false);
+  const bodyOverflowRef = useRef("");
+  const htmlOverflowRef = useRef("");
   const MAX_TILT = 18;
   const PERSPECTIVE = 700;
   const [cardImageReady, setCardImageReady] = useState(false);
@@ -97,6 +99,22 @@ export function Dashboard({
     const timer = setTimeout(() => setShowCardSpinner(false), 1000);
     return () => clearTimeout(timer);
   }, [cardImageReady]);
+
+  useEffect(() => {
+    if (!showUserCard) {
+      document.body.style.overflow = bodyOverflowRef.current || "";
+      document.documentElement.style.overflow = htmlOverflowRef.current || "";
+      return;
+    }
+    bodyOverflowRef.current = document.body.style.overflow;
+    htmlOverflowRef.current = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = bodyOverflowRef.current || "";
+      document.documentElement.style.overflow = htmlOverflowRef.current || "";
+    };
+  }, [showUserCard]);
   const handleTiltMove = (evt) => {
     const rect = cardRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -228,7 +246,7 @@ export function Dashboard({
                 isPointerDownRef.current = false;
                 resetTilt();
               }}
-              className="relative select-none touch-none rounded-[28px] bg-gradient-to-br from-emerald-300 via-lime-300 to-sky-400 p-2 shadow-[0_28px_110px_rgba(0,0,0,0.75)] dark:shadow-[0_28px_110px_rgba(255,255,255,0.55)]"
+              className="relative select-none touch-none sm:touch-auto rounded-[28px] bg-gradient-to-br from-emerald-300 via-lime-300 to-sky-400 p-2 shadow-[0_28px_110px_rgba(0,0,0,0.75)] dark:shadow-[0_28px_110px_rgba(255,255,255,0.55)]"
               style={{
                 transform: `rotateX(${cardTilt.x}deg) rotateY(${cardTilt.y}deg) translateZ(${cardTilt.active ? 18 : 0}px) scale(${cardTilt.active ? 1.03 : 1})`,
                 transformStyle: "preserve-3d",
@@ -244,7 +262,7 @@ export function Dashboard({
               <img
                 src="/nacards-logo.png"
                 alt="NaCards"
-                className="pointer-events-none absolute -left-6 top-3 z-20 h-14 w-auto drop-shadow-[0_6px_16px_rgba(16,185,129,0.5)]"
+                className="pointer-events-none absolute -left-3 top-3 z-20 h-14 w-auto drop-shadow-[0_6px_16px_rgba(16,185,129,0.5)]"
               />
               <div ref={holoRef} className="user-card-holo relative overflow-hidden rounded-[26px] bg-slate-950/95 p-3 text-white">
                 <div className="mt-2 flex items-center justify-end gap-2 text-right text-2xl font-black tracking-tight">
@@ -323,11 +341,18 @@ export function Dashboard({
       <button
         type="button"
         onClick={() => setShowUserCard(true)}
-        className="w-full text-left rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-slate-900 shadow-sm transition hover:bg-white dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100 dark:hover:bg-slate-900/80"
+        className="relative w-full overflow-hidden text-left rounded-2xl border border-emerald-300/70 bg-white/90 px-4 py-3 text-slate-900 shadow-sm transition hover:bg-emerald-50/60 hover:border-emerald-400/80 dark:border-emerald-400/30 dark:bg-slate-900/70 dark:text-slate-100 dark:hover:bg-emerald-400/10 dark:hover:border-emerald-300/50"
       >
-        <div className="flex items-center gap-2 text-xl sm:text-2xl font-black tracking-tight">
-          <User size={18} className="text-slate-500 dark:text-slate-400" />
-          <span>{displayName}</span>
+        <div className="relative flex items-center justify-between gap-2 text-xl sm:text-2xl font-black tracking-tight">
+          <div className="flex items-center gap-2">
+            <User size={18} className="text-slate-500 dark:text-slate-400" />
+            <span>{displayName}</span>
+          </div>
+          <img
+            src="/nacards-logo.png"
+            alt="NaCards"
+            className="absolute right-0 top-1 h-6 w-auto opacity-80"
+          />
         </div>
       </button>
     </Reveal>
