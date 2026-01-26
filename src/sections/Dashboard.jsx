@@ -287,12 +287,17 @@ export function Dashboard({
             />
 
             {mode === "run" &&
+              shoesLifeByRange &&
               (range === "all" || range === "month" || range === "6m" || range === "3m" || range === "2026") && (
                 <KpiChip
                   title="Chaussures"
                   subtitle={
                     <span className="block">
-                      <span className="block">Pegasus</span>
+                      <span className="block">{shoesLifeByRange.name}</span>
+                      {/* <span className="text-xs opacity-70">
+                        Début: {dayjs(shoesLifeByRange.startDate).format("DD/MM/YYYY")} ·{" "}
+                        {nfDecimal.format(shoesLifeByRange.targetKm)} km
+                      </span> */}
                     </span>
                   }
                   subtitleClassName="whitespace-normal leading-tight"
@@ -301,8 +306,12 @@ export function Dashboard({
                       <div className="font-bold">
                         {nfDecimal.format(shoesLifeByRange.remaining / 1000)}{" "}
                         <span className="text-xs opacity-70">
-                          km restants ({nfDecimal.format(shoesLifeByRange.used / 1000)} / 550)
+                          km restants
                         </span>
+                        <div className="text-xs opacity-70 mb-2">  
+                          ({nfDecimal.format(shoesLifeByRange.used / 1000)}km /{" "}
+                          {nfDecimal.format(shoesLifeByRange.targetKm)}km)
+                        </div>
                       </div>
                       <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
                         <motion.div
@@ -536,7 +545,7 @@ export function Dashboard({
                     <span>
                       {completedTimes > 0
                         ? `${formatDistance(stats.totalMeters, nf)} · ${completedTimes}× atteint`
-                        : `${remainingKm} restant`}
+                        : `${remainingKm}`}
                     </span>
                     <span>{Math.round(percent)}%</span>
                   </div>

@@ -38,7 +38,7 @@ export default function App() {
   const [sessions, setSessions] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [users, setUsers] = useState([]);
-  const [mode, setMode] = useState("all");   // all | swim | run
+  const [mode, setMode] = useState("run");   // all | swim | run
   const [range, setRange] = useState(getInitialRange); // all | month | 6m | 3m | 2026 | 2025
 
   const [loadingPhase, setLoadingPhase] = useState("loading"); // loading | fading | done
@@ -132,8 +132,6 @@ export default function App() {
             : /^\d{4}$/.test(range)
               ? `L'annee ${range}`
               : "Cette periode";
-  const shoesStart = dayjs("2026-01-13");
-  const shoesTargetMeters = 550 * 1000;
   const isAdmin = String(user?.role || "").toLowerCase() === "admin";
 
   useEffect(() => {
@@ -352,36 +350,74 @@ export default function App() {
   }, [shownSessions]);
 
   /* ===== Chaussures running (Nike Pegasus Premium) ===== */
+  const shoesConfig = useMemo(() => {
+    const baseSource = selectedUser || user;
+    if (!baseSource) return null;
+    const enrichedSource =
+      baseSource.shoe_name && baseSource.shoe_start_date && baseSource.shoe_target_km != null
+        ? baseSource
+        : users.find((u) => u.id === baseSource.id) || baseSource;
+    const source = enrichedSource;
+    if (!source) return null;
+    const name = String(source.shoe_name || "").trim();
+    const startRaw = source.shoe_start_date;
+    const targetKm = Number(source.shoe_target_km);
+    if (!name || !startRaw || !Number.isFinite(targetKm) || targetKm <= 0) return null;
+    const startDate = dayjs(startRaw);
+    if (!startDate.isValid()) return null;
+    return { name, startDate, targetKm, targetMeters: targetKm * 1000 };
+  }, [selectedUser, user]);
+
   const shoesLife = useMemo(() => {
+    if (!shoesConfig) return null;
     let runMeters = 0;
     userSessions.forEach((s) => {
       if (normType(s.type) !== "run") return;
-      if (dayjs(s.date).isBefore(shoesStart, "day")) return;
+      if (dayjs(s.date).isBefore(shoesConfig.startDate, "day")) return;
       runMeters += Number(s.distance) || 0;
     });
-    const used = Math.min(runMeters, shoesTargetMeters);
-    const remaining = Math.max(shoesTargetMeters - runMeters, 0);
-    const percent = shoesTargetMeters ? Math.min((runMeters / shoesTargetMeters) * 100, 100) : 0;
-    return { used, remaining, percent };
-  }, [userSessions, shoesStart, shoesTargetMeters]);
+    const used = Math.min(runMeters, shoesConfig.targetMeters);
+    const remaining = Math.max(shoesConfig.targetMeters - runMeters, 0);
+    const percent = shoesConfig.targetMeters
+      ? Math.min((runMeters / shoesConfig.targetMeters) * 100, 100)
+      : 0;
+    return {
+      used,
+      remaining,
+      percent,
+      name: shoesConfig.name,
+      targetKm: shoesConfig.targetKm,
+      startDate: shoesConfig.startDate.format("YYYY-MM-DD"),
+    };
+  }, [userSessions, shoesConfig]);
 
   const shoesLifeByRange = useMemo(() => {
+    if (!shoesConfig) return null;
     const compute = (list) => {
       let runMeters = 0;
       list.forEach((s) => {
         if (normType(s.type) !== "run") return;
-        if (dayjs(s.date).isBefore(shoesStart, "day")) return;
+        if (dayjs(s.date).isBefore(shoesConfig.startDate, "day")) return;
         runMeters += Number(s.distance) || 0;
       });
-      const used = Math.min(runMeters, shoesTargetMeters);
-      const remaining = Math.max(shoesTargetMeters - runMeters, 0);
-      const percent = shoesTargetMeters ? Math.min((runMeters / shoesTargetMeters) * 100, 100) : 0;
-      return { used, remaining, percent };
+      const used = Math.min(runMeters, shoesConfig.targetMeters);
+      const remaining = Math.max(shoesConfig.targetMeters - runMeters, 0);
+      const percent = shoesConfig.targetMeters
+        ? Math.min((runMeters / shoesConfig.targetMeters) * 100, 100)
+        : 0;
+      return {
+        used,
+        remaining,
+        percent,
+        name: shoesConfig.name,
+        targetKm: shoesConfig.targetKm,
+        startDate: shoesConfig.startDate.format("YYYY-MM-DD"),
+      };
     };
     if (range === "6m") return compute(periodSessions);
     if (range === "3m") return compute(periodSessions);
     return shoesLife;
-  }, [periodSessions, range, shoesLife, shoesStart, shoesTargetMeters]);
+  }, [periodSessions, range, shoesLife, shoesConfig]);
 
   /* ===== Séances ce mois-ci ===== */
   const monthCounts = useMemo(() => {

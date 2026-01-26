@@ -5,9 +5,9 @@ import { HEADER_SURFACE_CLASS, HEADER_TOP_PADDING_STYLE } from "../constants/lay
 
 function TypeSwitch({ value, onChange }) {
   const items = [
+    { key: "run", label: "Running" },
     { key: "all", label: "Mixte" },
     { key: "swim", label: "Natation" },
-    { key: "run", label: "Running" },
   ];
 
   return (
