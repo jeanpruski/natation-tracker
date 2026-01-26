@@ -83,11 +83,13 @@ export function GlobalDashboard({
                     const sparkValues = sparklineMap.get(u.id) || [];
                     const points = buildSparklinePoints(sparkValues, 120, 32);
                     const isPodium = index < 3;
-                    const podium = [
-                      { img: "/na-first.png", label: "1" },
-                      { img: "/na-second.png", label: "2" },
-                      { img: "/na-third.png", label: "3" },
-                    ][index];
+                    const podium = isPodium
+                      ? [
+                          { img: "/na-first.png", label: "1" },
+                          { img: "/na-second.png", label: "2" },
+                          { img: "/na-third.png", label: "3" },
+                        ][index]
+                      : { img: "/na-null.png", label: "" };
                     const podiumClass =
                       index === 0
                         ? "ring-amber-300/70 dark:ring-amber-300/40"
@@ -106,15 +108,14 @@ export function GlobalDashboard({
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-center gap-3">
-                            {isPodium && (
-                              <div className={`flex items-center rounded-lg ${podiumClass}`}>
-                                <img
-                                  src={podium.img}
-                                  alt={`Podium ${podium.label}`}
-                                  className="h-full max-h-12 w-auto object-contain"
-                                />
-                              </div>
-                            )}
+                            <div className={`flex items-center rounded-lg ${isPodium ? podiumClass : ""}`}>
+                              <img
+                                src={podium.img}
+                                alt={podium.label ? `Podium ${podium.label}` : ""}
+                                aria-hidden={!podium.label}
+                                className={`h-full max-h-12 w-auto object-contain ${isPodium ? "" : "opacity-10 blur-[3px]"}`}
+                              />
+                            </div>
                             <div className="flex flex-col">
                               <div className="flex items-center gap-2">
                                 <User size={16} className="text-slate-500 dark:text-slate-400" />
