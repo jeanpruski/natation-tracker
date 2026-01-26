@@ -79,9 +79,21 @@ export function GlobalDashboard({
             ) : (
               <>
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  {totals.map((u) => {
+                  {totals.map((u, index) => {
                     const sparkValues = sparklineMap.get(u.id) || [];
                     const points = buildSparklinePoints(sparkValues, 120, 32);
+                    const isPodium = index < 3;
+                    const podium = [
+                      { medal: "", cup: "🏆", label: "1" },
+                      { medal: "🥈", cup: "", label: "2" },
+                      { medal: "🥉", cup: "", label: "3" },
+                    ][index];
+                    const podiumClass =
+                      index === 0
+                        ? "bg-amber-200 text-amber-900 dark:bg-amber-400/30 dark:text-amber-100"
+                        : index === 1
+                          ? "bg-slate-200 text-slate-800 dark:bg-slate-500/30 dark:text-slate-100"
+                          : "bg-orange-200 text-orange-900 dark:bg-orange-500/30 dark:text-orange-100";
                     return (
                       <button
                         key={u.id}
@@ -89,7 +101,18 @@ export function GlobalDashboard({
                         className="text-left rounded-xl bg-slate-50/80 p-3 ring-1 ring-slate-200 hover:bg-slate-100 dark:bg-slate-800/50 dark:ring-slate-700 dark:hover:bg-slate-800"
                       >
                         <div className="flex items-center justify-between">
-                          <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{u.name}</div>
+                          <div className="flex items-center gap-2">
+                            {isPodium && (
+                              <div
+                                className={`flex items-center gap-1 rounded-lg px-2 py-1 ${podiumClass}`}
+                              >
+                                <span className="text-lg font-black leading-none">{podium.label}</span>
+                                {podium.medal && <span aria-hidden="true">{podium.medal}</span>}
+                                {podium.cup && <span aria-hidden="true">{podium.cup}</span>}
+                              </div>
+                            )}
+                            <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{u.name}</div>
+                          </div>
                           <User size={16} className="text-slate-500 dark:text-slate-400" />
                         </div>
                         <div className="mt-2 flex items-center justify-between gap-3">
