@@ -13,14 +13,15 @@ export function AddSessionForm({ onAdd, onExport, onImport, readOnly, isAdmin })
   const submit = async (e) => {
     e.preventDefault();
     if (readOnly) return;
-    if (!distance || isNaN(distance)) return;
+    const distNum = Number(distance);
+    if (!Number.isFinite(distNum) || distNum <= 0) return;
 
     const finalDate = useCustomDate ? date : dayjs().format("YYYY-MM-DD");
 
     // ✅ on envoie maintenant le type
     await onAdd({
       id: uuidv4(),
-      distance: Number(distance),
+      distance: distNum,
       date: finalDate,
       type,
     });
@@ -35,6 +36,13 @@ export function AddSessionForm({ onAdd, onExport, onImport, readOnly, isAdmin })
     const file = e.target.files && e.target.files[0];
     if (file && onImport) onImport(file);
     e.target.value = "";
+  };
+
+  const handleDistanceChange = (e) => {
+    const value = e.target.value;
+    if (value === "" || /^\d+$/.test(value)) {
+      setDistance(value);
+    }
   };
 
   return (
@@ -91,9 +99,13 @@ export function AddSessionForm({ onAdd, onExport, onImport, readOnly, isAdmin })
           <input
             type="number"
             value={distance}
-            onChange={(e) => setDistance(e.target.value)}
+            onChange={handleDistanceChange}
             placeholder={type === "run" ? "ex: 5000" : "ex: 1000"}
             disabled={readOnly}
+            min="0"
+            step="1"
+            inputMode="numeric"
+            pattern="[0-9]*"
             className={`mt-1 w-full rounded-xl bg-transparent p-1.5 text-slate-900 outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 dark:text-slate-100 dark:placeholder:text-slate-400 ${
               readOnly ? disabledCls : ""
             }`}

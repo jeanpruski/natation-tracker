@@ -77,9 +77,11 @@ export function History({ sessions, onDelete, onEdit, readOnly }) {
 
   const saveEdit = async () => {
     if (!editId) return;
+    const distNum = Number(editDistance);
+    if (!Number.isFinite(distNum) || distNum <= 0) return;
     await onEdit(editId, {
       date: editDate,
-      distance: Number(editDistance),
+      distance: distNum,
       type: normType(editType),
     });
     setEditId(null);
@@ -145,7 +147,16 @@ export function History({ sessions, onDelete, onEdit, readOnly }) {
                       <input
                         type="number"
                         value={editDistance}
-                        onChange={(e) => setEditDistance(e.target.value)}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === "" || /^\d+$/.test(value)) {
+                            setEditDistance(value);
+                          }
+                        }}
+                        min="0"
+                        step="1"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         className="w-20 sm:w-24 rounded-lg border border-slate-300 bg-white px-2 py-1 text-[16px] sm:text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
                       />
                     ) : (
