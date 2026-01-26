@@ -32,6 +32,8 @@ export default function App() {
   const [isBusy, setIsBusy] = useState(false);
   const toastTimerRef = useRef(null);
   const didInitScrollRef = useRef(false);
+  const prevAuthRef = useRef(isAuth);
+  const prevUserIdRef = useRef(user?.id || null);
 
   const [sessions, setSessions] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -133,6 +135,23 @@ export default function App() {
   const shoesStart = dayjs("2026-01-13");
   const shoesTargetMeters = 550 * 1000;
   const isAdmin = String(user?.role || "").toLowerCase() === "admin";
+
+  useEffect(() => {
+    const wasAuth = prevAuthRef.current;
+    const prevUserId = prevUserIdRef.current;
+    if (!isAuth || isAdmin || !user) {
+      prevAuthRef.current = isAuth;
+      prevUserIdRef.current = user?.id || null;
+      return;
+    }
+    const justLoggedIn = !wasAuth && isAuth;
+    const userChanged = prevUserId && prevUserId !== user.id;
+    if ((justLoggedIn || userChanged) && selectedUser?.id !== user.id) {
+      setSelectedUser(user);
+    }
+    prevAuthRef.current = isAuth;
+    prevUserIdRef.current = user.id;
+  }, [isAuth, isAdmin, user, selectedUser]);
 
   const getSessionsBasePath = () => {
     if (isAdmin && selectedUser && user?.id !== selectedUser.id) {
