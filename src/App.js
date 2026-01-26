@@ -212,6 +212,11 @@ export default function App() {
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name, "fr"));
   }, [users, sessions]);
 
+  const selectedUserInfo = useMemo(() => {
+    if (!selectedUser) return null;
+    return users.find((u) => u.id === selectedUser.id) || selectedUser;
+  }, [selectedUser, users]);
+
   /* ===== Filtre période ===== */
   const periodSessions = useMemo(() => {
     if (range === "all") return userSessions;
@@ -722,6 +727,7 @@ export default function App() {
                 modeLabel={modeLabel}
                 rangeLabel={rangeLabel}
                 userName={headerTitle}
+                userInfo={selectedUserInfo}
                 shownSessions={shownSessions}
                 stats={stats}
                 monthTotals={monthTotals}

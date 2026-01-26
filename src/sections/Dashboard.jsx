@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import dayjs from "dayjs";
 import { motion } from "framer-motion";
 import {
@@ -62,15 +62,83 @@ export function Dashboard({
   nf,
   nfDecimal,
   userName,
+  userInfo,
 }) {
-  const heroBadge = userName ? (
-    <Reveal as="section" className="px-4 xl:px-8 pt-4 md:pt-4 xl:pt-0">
-      <div className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-slate-900 shadow-sm dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100">
-        <div className="flex items-center gap-2 text-xl sm:text-2xl font-black tracking-tight">
-          <User size={18} className="text-slate-500 dark:text-slate-400" />
-          <span>{userName}</span>
+  const [showUserCard, setShowUserCard] = useState(false);
+  const displayName = userName || userInfo?.name || "";
+  const userShoeName = userInfo?.shoe_name || "";
+  const userShoeStart = userInfo?.shoe_start_date || "";
+  const userShoeTarget = userInfo?.shoe_target_km;
+  const hasShoeInfo = userShoeName && userShoeStart && Number.isFinite(Number(userShoeTarget));
+  const userCardImage = userInfo?.card_image || "";
+  const userCard = showUserCard ? (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+      <div
+        className="absolute inset-0 bg-black/40"
+        onClick={() => setShowUserCard(false)}
+        aria-hidden="true"
+      />
+      <div className="relative w-full max-w-sm">
+        <div className="rounded-[28px] bg-gradient-to-br from-emerald-300 via-lime-300 to-sky-300 p-2 shadow-2xl">
+          <div className="relative rounded-[26px] bg-slate-950/95 p-3 text-white">
+            <img
+              src="/na-logo.png"
+              alt="NaTrack"
+              className="pointer-events-none absolute -left-12 -top-14 h-40 w-auto drop-shadow-[0_10px_26px_rgba(16,185,129,0.65)]"
+            />
+            <div className="mt-2 flex items-center justify-end gap-2 text-right text-2xl font-black tracking-tight">
+              <User size={18} className="text-emerald-200" />
+              <span>{displayName}</span>
+            </div>
+            <div
+              className="mt-3 aspect-[4/3] w-full overflow-hidden rounded-[22px] border border-emerald-200/40 bg-gradient-to-br from-slate-900 via-emerald-900/40 to-slate-900"
+              style={
+                userCardImage
+                  ? {
+                      backgroundImage: `url(${userCardImage})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                    }
+                  : undefined
+              }
+            >
+              {!userCardImage && (
+                <div className="h-full w-full">
+                  <div className="h-full w-full bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.35),transparent_60%)]" />
+                </div>
+              )}
+            </div>
+            <div className="mt-3 rounded-2xl border border-emerald-200/30 bg-emerald-950/50 px-3 py-2 text-sm">
+              <div className="text-xs uppercase tracking-wide text-emerald-200">Chaussures</div>
+              {hasShoeInfo ? (
+                <div className="mt-1">
+                  <div className="font-semibold">{userShoeName}</div>
+                  <div className="text-xs text-emerald-100/70">
+                    Debut: {dayjs(userShoeStart).format("DD/MM/YYYY")} · {nfDecimal.format(userShoeTarget)} km
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-1 text-emerald-100/70">Non renseigne</div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
+    </div>
+  ) : null;
+
+  const heroBadge = displayName ? (
+    <Reveal as="section" className="px-4 xl:px-8 pt-4 md:pt-4 xl:pt-0">
+      <button
+        type="button"
+        onClick={() => setShowUserCard(true)}
+        className="w-full text-left rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-slate-900 shadow-sm transition hover:bg-white dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100 dark:hover:bg-slate-900/80"
+      >
+        <div className="flex items-center gap-2 text-xl sm:text-2xl font-black tracking-tight">
+          <User size={18} className="text-slate-500 dark:text-slate-400" />
+          <span>{displayName}</span>
+        </div>
+      </button>
     </Reveal>
   ) : null;
 
@@ -78,6 +146,7 @@ export function Dashboard({
     return (
       <>
         {heroBadge}
+        {userCard}
         <Reveal as="section" className="px-4 xl:px-8 pt-4 pb-8">
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-8 text-center text-slate-700 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200">
             <div className="text-lg font-semibold">Aucune seance</div>
@@ -196,6 +265,7 @@ export function Dashboard({
   return (
     <>
       {heroBadge}
+      {userCard}
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_3fr] gap-4 items-start px-4 xl:px-8 pt-4 pb-4 xl:pt-3 xl:pb-4">
         <Reveal as="aside" className="self-start">
           <div className="grid grid-cols-1 min-[800px]:grid-cols-2 xl:grid-cols-1 gap-4">
