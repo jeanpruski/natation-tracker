@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import dayjs from "dayjs";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   CalendarDays,
   CalendarCheck,
@@ -71,61 +71,80 @@ export function Dashboard({
   const userShoeTarget = userInfo?.shoe_target_km;
   const hasShoeInfo = userShoeName && userShoeStart && Number.isFinite(Number(userShoeTarget));
   const userCardImage = userInfo?.card_image || "";
-  const userCard = showUserCard ? (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-      <div
-        className="absolute inset-0 bg-black/40"
-        onClick={() => setShowUserCard(false)}
-        aria-hidden="true"
-      />
-      <div className="relative w-full max-w-sm">
-        <div className="rounded-[28px] bg-gradient-to-br from-emerald-300 via-lime-300 to-sky-300 p-2 shadow-2xl">
-          <div className="relative rounded-[26px] bg-slate-950/95 p-3 text-white">
-            <img
-              src="/na-logo.png"
-              alt="NaTrack"
-              className="pointer-events-none absolute -left-12 -top-14 h-40 w-auto drop-shadow-[0_10px_26px_rgba(16,185,129,0.65)]"
-            />
-            <div className="mt-2 flex items-center justify-end gap-2 text-right text-2xl font-black tracking-tight">
-              <User size={18} className="text-emerald-200" />
-              <span>{displayName}</span>
-            </div>
-            <div
-              className="mt-3 aspect-[4/3] w-full overflow-hidden rounded-[22px] border border-emerald-200/40 bg-gradient-to-br from-slate-900 via-emerald-900/40 to-slate-900"
-              style={
-                userCardImage
-                  ? {
-                      backgroundImage: `url(${userCardImage})`,
-                      backgroundSize: "cover",
-                      backgroundPosition: "center",
-                    }
-                  : undefined
-              }
-            >
-              {!userCardImage && (
-                <div className="h-full w-full">
-                  <div className="h-full w-full bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.35),transparent_60%)]" />
+  const userCard = (
+    <AnimatePresence>
+      {showUserCard && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <motion.div
+            className="absolute inset-0 bg-black/80"
+            onClick={() => setShowUserCard(false)}
+            aria-hidden="true"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          />
+          <motion.div
+            className="relative w-full max-w-sm"
+            initial={{ opacity: 0, scale: 0.9, rotateX: 18, y: -12 }}
+            animate={{ opacity: 1, scale: 1, rotateX: 0, y: 0 }}
+            exit={{ opacity: 0, scale: 5, rotateX: -6 }}
+            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+            style={{ transformStyle: "preserve-3d" }}
+          >
+            <div className="rounded-[28px] bg-gradient-to-br from-emerald-300 via-lime-300 to-sky-300 p-2 shadow-[0_28px_110px_rgba(0,0,0,0.75)] dark:shadow-[0_28px_110px_rgba(255,255,255,0.55)]">
+              <div className="relative rounded-[26px] bg-slate-950/95 p-3 text-white">
+                <img
+                  src="/na-logo.png"
+                  alt="NaTrack"
+                  className="pointer-events-none absolute -left-12 -top-14 h-40 w-auto grayscale-[0.15] drop-shadow-[0_10px_26px_rgba(16,185,129,0.65)]"
+                />
+                <div className="mt-2 flex items-center justify-end gap-2 text-right text-2xl font-black tracking-tight">
+                  <User size={18} className="text-emerald-200" />
+                  <span>{displayName}</span>
                 </div>
-              )}
-            </div>
-            <div className="mt-3 rounded-2xl border border-emerald-200/30 bg-emerald-950/50 px-3 py-2 text-sm">
-              <div className="text-xs uppercase tracking-wide text-emerald-200">Chaussures</div>
-              {hasShoeInfo ? (
-                <div className="mt-1">
-                  <div className="font-semibold">{userShoeName}</div>
-                  <div className="text-xs text-emerald-100/70">
-                    Debut: {dayjs(userShoeStart).format("DD/MM/YYYY")} · {nfDecimal.format(userShoeTarget)} km
-                  </div>
+                <div
+                  className="mt-3 aspect-[4/3] w-full overflow-hidden rounded-[22px] border border-emerald-200/40 bg-gradient-to-br from-slate-900 via-emerald-900/40 to-slate-900"
+                  style={
+                    userCardImage
+                      ? {
+                          backgroundImage: `url(${userCardImage})`,
+                          backgroundSize: "cover",
+                          backgroundPosition: "center",
+                        }
+                      : undefined
+                  }
+                >
+                  {!userCardImage && (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <img
+                        src="/big-logo.png"
+                        alt=""
+                        aria-hidden="true"
+                        className="h-20 w-auto opacity-70 drop-shadow-[0_8px_18px_rgba(16,185,129,0.5)]"
+                      />
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div className="mt-1 text-emerald-100/70">Non renseigne</div>
-              )}
+                <div className="mt-3 rounded-2xl border border-emerald-200/30 bg-emerald-950/50 px-3 py-2 text-sm">
+                  <div className="text-xs uppercase tracking-wide text-emerald-200">Chaussures</div>
+                  {hasShoeInfo ? (
+                    <div className="mt-1">
+                      <div className="font-semibold">{userShoeName}</div>
+                      <div className="text-xs text-emerald-100/70">
+                        Debut: {dayjs(userShoeStart).format("DD/MM/YYYY")} · {nfDecimal.format(userShoeTarget)} km
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-1 text-emerald-100/70">Non renseigne</div>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
+          </motion.div>
         </div>
-      </div>
-    </div>
-  ) : null;
+      )}
+    </AnimatePresence>
+  );
 
   const heroBadge = displayName ? (
     <Reveal as="section" className="px-4 xl:px-8 pt-4 md:pt-4 xl:pt-0">
