@@ -415,32 +415,8 @@ export default function App() {
   }, [userSessions, shoesConfig]);
 
   const shoesLifeByRange = useMemo(() => {
-    if (!shoesConfig) return null;
-    const compute = (list) => {
-      let runMeters = 0;
-      list.forEach((s) => {
-        if (normType(s.type) !== "run") return;
-        if (dayjs(s.date).isBefore(shoesConfig.startDate, "day")) return;
-        runMeters += Number(s.distance) || 0;
-      });
-      const used = Math.min(runMeters, shoesConfig.targetMeters);
-      const remaining = Math.max(shoesConfig.targetMeters - runMeters, 0);
-      const percent = shoesConfig.targetMeters
-        ? Math.min((runMeters / shoesConfig.targetMeters) * 100, 100)
-        : 0;
-      return {
-        used,
-        remaining,
-        percent,
-        name: shoesConfig.name,
-        targetKm: shoesConfig.targetKm,
-        startDate: shoesConfig.startDate.format("YYYY-MM-DD"),
-      };
-    };
-    if (range === "6m") return compute(periodSessions);
-    if (range === "3m") return compute(periodSessions);
     return shoesLife;
-  }, [periodSessions, range, shoesLife, shoesConfig]);
+  }, [shoesLife]);
 
   /* ===== Séances ce mois-ci ===== */
   const monthCounts = useMemo(() => {

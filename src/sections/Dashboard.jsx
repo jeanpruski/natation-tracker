@@ -70,8 +70,6 @@ export function Dashboard({
   const cardRef = useRef(null);
   const holoRef = useRef(null);
   const isPointerDownRef = useRef(false);
-  const bodyOverflowRef = useRef("");
-  const htmlOverflowRef = useRef("");
   const MAX_TILT = 18;
   const PERSPECTIVE = 700;
   const [cardImageReady, setCardImageReady] = useState(false);
@@ -102,19 +100,20 @@ export function Dashboard({
 
   useEffect(() => {
     if (!showUserCard) {
-      document.body.style.overflow = bodyOverflowRef.current || "";
-      document.documentElement.style.overflow = htmlOverflowRef.current || "";
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
       return;
     }
-    bodyOverflowRef.current = document.body.style.overflow;
-    htmlOverflowRef.current = document.documentElement.style.overflow;
+    const isMobile = window.matchMedia("(max-width: 768px)").matches;
+    if (!isMobile) return;
     document.body.style.overflow = "hidden";
     document.documentElement.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = bodyOverflowRef.current || "";
-      document.documentElement.style.overflow = htmlOverflowRef.current || "";
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
     };
   }, [showUserCard]);
+
   const handleTiltMove = (evt) => {
     const rect = cardRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -171,7 +170,10 @@ export function Dashboard({
   const userCard = (
     <AnimatePresence>
       {showUserCard && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-[30px] sm:px-4">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-[30px] sm:px-4"
+          onTouchMove={(e) => e.preventDefault()}
+        >
           <motion.div
             className="absolute inset-0 bg-black/80"
             onClick={() => setShowUserCard(false)}
@@ -246,7 +248,7 @@ export function Dashboard({
                 isPointerDownRef.current = false;
                 resetTilt();
               }}
-              className="relative select-none touch-none sm:touch-auto rounded-[28px] bg-gradient-to-br from-emerald-300 via-lime-300 to-sky-400 p-2 shadow-[0_28px_110px_rgba(0,0,0,0.75)] dark:shadow-[0_28px_110px_rgba(255,255,255,0.55)]"
+              className="relative select-none rounded-[28px] bg-gradient-to-br from-emerald-300 via-lime-300 to-sky-400 p-2 shadow-[0_28px_110px_rgba(0,0,0,0.75)] dark:shadow-[0_28px_110px_rgba(255,255,255,0.55)]"
               style={{
                 transform: `rotateX(${cardTilt.x}deg) rotateY(${cardTilt.y}deg) translateZ(${cardTilt.active ? 18 : 0}px) scale(${cardTilt.active ? 1.03 : 1})`,
                 transformStyle: "preserve-3d",

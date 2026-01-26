@@ -113,7 +113,7 @@ export function GlobalDashboard({
                                 src={podium.img}
                                 alt={podium.label ? `Podium ${podium.label}` : ""}
                                 aria-hidden={!podium.label}
-                                className={`h-full max-h-12 w-auto object-contain ${isPodium ? "" : "opacity-10 blur-[3px]"}`}
+                                className={`h-full max-h-12 w-auto object-contain ${isPodium ? "" : "opacity-25 blur-[4px]"}`}
                               />
                             </div>
                             <div className="flex flex-col">
