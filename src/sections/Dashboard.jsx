@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import dayjs from "dayjs";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -65,16 +65,40 @@ export function Dashboard({
   userInfo,
 }) {
   const [showUserCard, setShowUserCard] = useState(false);
+  const [cardTilt, setCardTilt] = useState({ x: 0, y: 0, active: false });
+  const cardRef = useRef(null);
+  const isPointerDownRef = useRef(false);
+  const MAX_TILT = 18;
+  const PERSPECTIVE = 700;
   const displayName = userName || userInfo?.name || "";
   const userShoeName = userInfo?.shoe_name || "";
   const userShoeStart = userInfo?.shoe_start_date || "";
   const userShoeTarget = userInfo?.shoe_target_km;
   const hasShoeInfo = userShoeName && userShoeStart && Number.isFinite(Number(userShoeTarget));
   const userCardImage = userInfo?.card_image || "";
+  const handleTiltMove = (evt) => {
+    const rect = cardRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const point = evt;
+    if (!point) return;
+    if (!isPointerDownRef.current) return;
+    const x = point.clientX - rect.left;
+    const y = point.clientY - rect.top;
+    const percentX = (x / rect.width) * 2 - 1;
+    const percentY = (y / rect.height) * 2 - 1;
+    setCardTilt({
+      x: Math.max(-MAX_TILT, Math.min(MAX_TILT, -percentY * MAX_TILT)),
+      y: Math.max(-MAX_TILT, Math.min(MAX_TILT, percentX * MAX_TILT)),
+      active: true,
+    });
+  };
+
+  const resetTilt = () => setCardTilt({ x: 0, y: 0, active: false });
+
   const userCard = (
     <AnimatePresence>
       {showUserCard && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-[30px] sm:px-4">
           <motion.div
             className="absolute inset-0 bg-black/80"
             onClick={() => setShowUserCard(false)}
@@ -87,11 +111,38 @@ export function Dashboard({
             className="relative w-full max-w-sm"
             initial={{ opacity: 0, scale: 0.9, rotateX: 18, y: -12 }}
             animate={{ opacity: 1, scale: 1, rotateX: 0, y: 0 }}
-            exit={{ opacity: 0, scale: 5, rotateX: -6 }}
+            exit={{ opacity: 0, scale: 0.9, rotateX: -6 }}
             transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-            style={{ transformStyle: "preserve-3d" }}
+            style={{ transformStyle: "preserve-3d", perspective: `${PERSPECTIVE}px` }}
           >
-            <div className="rounded-[28px] bg-gradient-to-br from-emerald-300 via-lime-300 to-sky-300 p-2 shadow-[0_28px_110px_rgba(0,0,0,0.75)] dark:shadow-[0_28px_110px_rgba(255,255,255,0.55)]">
+            <div
+              ref={cardRef}
+              onPointerDown={(evt) => {
+                isPointerDownRef.current = true;
+                evt.currentTarget.setPointerCapture?.(evt.pointerId);
+                handleTiltMove(evt);
+              }}
+              onPointerMove={handleTiltMove}
+              onPointerUp={(evt) => {
+                isPointerDownRef.current = false;
+                evt.currentTarget.releasePointerCapture?.(evt.pointerId);
+                resetTilt();
+              }}
+              onPointerLeave={() => {
+                if (!isPointerDownRef.current) resetTilt();
+              }}
+              onPointerCancel={() => {
+                isPointerDownRef.current = false;
+                resetTilt();
+              }}
+              className="select-none touch-none rounded-[28px] bg-gradient-to-br from-emerald-300 via-lime-300 to-sky-300 p-2 shadow-[0_28px_110px_rgba(0,0,0,0.75)] dark:shadow-[0_28px_110px_rgba(255,255,255,0.55)]"
+              style={{
+                transform: `rotateX(${cardTilt.x}deg) rotateY(${cardTilt.y}deg) translateZ(${cardTilt.active ? 18 : 0}px) scale(${cardTilt.active ? 1.03 : 1})`,
+                transformStyle: "preserve-3d",
+                transition: cardTilt.active ? "transform 50ms linear" : "transform 220ms ease",
+                willChange: "transform",
+              }}
+            >
               <div className="relative rounded-[26px] bg-slate-950/95 p-3 text-white">
                 <img
                   src="/na-logo.png"
