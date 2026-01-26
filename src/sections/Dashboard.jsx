@@ -239,7 +239,12 @@ export function Dashboard({
               <img
                 src="/na-logo.png"
                 alt="NaTrack"
-                className="pointer-events-none absolute -left-5 -top-3 z-20 h-28 w-auto grayscale-[0.15] drop-shadow-[0_10px_26px_rgba(16,185,129,0.65)]"
+                className="pointer-events-none absolute right-3 top-[53%] z-20 h-14 w-auto -translate-y-1/2 grayscale-[0.15] drop-shadow-[0_10px_26px_rgba(16,185,129,0.65)]"
+              />
+              <img
+                src="/nacards-logo.png"
+                alt="NaCards"
+                className="pointer-events-none absolute -left-6 top-3 z-20 h-14 w-auto drop-shadow-[0_6px_16px_rgba(16,185,129,0.5)]"
               />
               <div ref={holoRef} className="user-card-holo relative overflow-hidden rounded-[26px] bg-slate-950/95 p-3 text-white">
                 <div className="mt-2 flex items-center justify-end gap-2 text-right text-2xl font-black tracking-tight">
