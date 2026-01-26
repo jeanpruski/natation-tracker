@@ -301,6 +301,7 @@ export function Dashboard({
                     </span>
                   }
                   subtitleClassName="whitespace-normal leading-tight"
+                  tone={shoesLifeByRange.remaining <= 0 ? "danger" : "default"}
                   value={
                     <div className="text-right">
                       <div className="font-bold">
@@ -315,7 +316,9 @@ export function Dashboard({
                       </div>
                       <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
                         <motion.div
-                          className="h-full rounded-full bg-emerald-500"
+                          className={`h-full rounded-full ${
+                            shoesLifeByRange.remaining <= 0 ? "bg-rose-500" : "bg-emerald-500"
+                          }`}
                           initial={{ width: 0 }}
                           whileInView={{ width: `${shoesLifeByRange.percent}%` }}
                           transition={{ duration: 0.8, ease: "easeOut" }}
