@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import dayjs from "dayjs";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -63,6 +63,7 @@ export function Dashboard({
   nfDecimal,
   userName,
   userInfo,
+  userRankInfo,
 }) {
   const [showUserCard, setShowUserCard] = useState(false);
   const [cardTilt, setCardTilt] = useState({ x: 0, y: 0, active: false });
@@ -71,12 +72,31 @@ export function Dashboard({
   const isPointerDownRef = useRef(false);
   const MAX_TILT = 18;
   const PERSPECTIVE = 700;
+  const [cardImageReady, setCardImageReady] = useState(false);
+  const [showCardSpinner, setShowCardSpinner] = useState(false);
+
   const displayName = userName || userInfo?.name || "";
   const userShoeName = userInfo?.shoe_name || "";
   const userShoeStart = userInfo?.shoe_start_date || "";
   const userShoeTarget = userInfo?.shoe_target_km;
   const hasShoeInfo = userShoeName && userShoeStart && Number.isFinite(Number(userShoeTarget));
   const userCardImage = userInfo?.card_image || "";
+
+  useEffect(() => {
+    if (!showUserCard || !userCardImage) {
+      setCardImageReady(false);
+      setShowCardSpinner(false);
+      return;
+    }
+    setCardImageReady(false);
+    setShowCardSpinner(true);
+  }, [showUserCard, userCardImage]);
+
+  useEffect(() => {
+    if (!cardImageReady) return;
+    const timer = setTimeout(() => setShowCardSpinner(false), 1000);
+    return () => clearTimeout(timer);
+  }, [cardImageReady]);
   const handleTiltMove = (evt) => {
     const rect = cardRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -171,7 +191,7 @@ export function Dashboard({
             }
           `}</style>
           <motion.div
-            className="relative w-full max-w-sm"
+            className="relative w-full max-w-[360px]"
             initial={{ opacity: 0, scale: 0.9, rotateX: 18, y: -12 }}
             animate={{ opacity: 1, scale: 1, rotateX: 0, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, rotateX: -6 }}
@@ -217,7 +237,7 @@ export function Dashboard({
                   <span>{displayName}</span>
                 </div>
                 <div
-                  className="mt-3 aspect-[4/3] w-full overflow-hidden rounded-[22px] border border-emerald-200/40 bg-gradient-to-br from-slate-900 via-emerald-900/40 to-slate-900"
+                  className="relative mt-3 aspect-[6/4] w-full overflow-hidden rounded-[22px] border border-emerald-200/40 bg-gradient-to-br from-slate-900 via-emerald-900/40 to-slate-900"
                   style={
                     userCardImage
                       ? {
@@ -228,6 +248,20 @@ export function Dashboard({
                       : undefined
                   }
                 >
+                  {userCardImage && (
+                    <img
+                      src={userCardImage}
+                      alt=""
+                      className="hidden"
+                      onLoad={() => setCardImageReady(true)}
+                      onError={() => setCardImageReady(true)}
+                    />
+                  )}
+                  {showCardSpinner && !cardImageReady && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-slate-950/70">
+                      <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-200/70 border-t-transparent" />
+                    </div>
+                  )}
                   {!userCardImage && (
                     <div className="flex h-full w-full items-center justify-center">
                       <img
@@ -239,7 +273,7 @@ export function Dashboard({
                     </div>
                   )}
                 </div>
-                <div className="mt-3 rounded-2xl border border-emerald-200/30 bg-emerald-950/50 px-3 py-2 text-sm">
+                <div className="mt-3 min-h-[10rem] rounded-2xl border border-emerald-200/30 bg-emerald-950/50 px-3 py-2 text-sm">
                   <div className="text-xs uppercase tracking-wide text-emerald-200">Chaussures</div>
                   {hasShoeInfo ? (
                     <div className="mt-1">
@@ -251,6 +285,15 @@ export function Dashboard({
                   ) : (
                     <div className="mt-1 text-emerald-100/70">Non renseigne</div>
                   )}
+                </div>
+                <div className="mt-3 flex items-center rounded-2xl border border-emerald-200/20 bg-emerald-950/40 px-3 py-2 text-xs text-emerald-200">
+                  <div className="flex items-center gap-2 text-[10px]">
+                    NaTrack™ {dayjs().format("YYYY")}
+                  </div>
+                  <span className="ml-auto inline-flex items-center gap-1 text-[10px] opacity-70">
+                    <span aria-hidden="true">★</span>
+                    {userRankInfo ? `${userRankInfo.index}/${userRankInfo.total}` : "—"}
+                  </span>
                 </div>
               </div>
             </div>

@@ -217,6 +217,18 @@ export default function App() {
     return users.find((u) => u.id === selectedUser.id) || selectedUser;
   }, [selectedUser, users]);
 
+  const userRankInfo = useMemo(() => {
+    if (!selectedUserInfo || !users.length) return null;
+    const sorted = [...users].sort((a, b) => {
+      const aTime = new Date(a.created_at || 0).getTime();
+      const bTime = new Date(b.created_at || 0).getTime();
+      return aTime - bTime;
+    });
+    const idx = sorted.findIndex((u) => u.id === selectedUserInfo.id);
+    if (idx === -1) return null;
+    return { index: idx + 1, total: sorted.length };
+  }, [selectedUserInfo, users]);
+
   /* ===== Filtre période ===== */
   const periodSessions = useMemo(() => {
     if (range === "all") return userSessions;
@@ -728,6 +740,7 @@ export default function App() {
                 rangeLabel={rangeLabel}
                 userName={headerTitle}
                 userInfo={selectedUserInfo}
+                userRankInfo={userRankInfo}
                 shownSessions={shownSessions}
                 stats={stats}
                 monthTotals={monthTotals}
