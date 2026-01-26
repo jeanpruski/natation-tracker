@@ -1,6 +1,14 @@
 import React, { useMemo } from "react";
 import { User } from "lucide-react";
 import { Reveal } from "../components/Reveal";
+import { useIsDark } from "../hooks/useTheme";
+import {
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+} from "recharts";
 
 function buildMonthKeys(sessions) {
   const set = new Set();
@@ -34,6 +42,7 @@ export function GlobalDashboard({
   nfDecimal,
   onSelectUser,
 }) {
+  const isDark = useIsDark();
   const subtitle = mode === "all" ? rangeLabel : `${rangeLabel} · ${modeLabel || ""}`.trim();
   const totals = useMemo(() => {
     return users
@@ -44,9 +53,6 @@ export function GlobalDashboard({
       }))
       .sort((a, b) => b.total - a.total);
   }, [users, totalsByUser]);
-
-  const totalSum = totals.reduce((acc, u) => acc + u.total, 0);
-  const totalSumSafe = totalSum || 0;
 
   const monthKeys = useMemo(() => buildMonthKeys(sessions), [sessions]);
   const sparklineMap = useMemo(() => {
@@ -64,90 +70,156 @@ export function GlobalDashboard({
     });
     return map;
   }, [sessions, users, monthKeys]);
+
+  const runByUser = useMemo(() => {
+    const map = new Map();
+    sessions.forEach((s) => {
+      if (!s.user_id) return;
+      if (String(s.type || "").toLowerCase() !== "run") return;
+      map.set(s.user_id, (map.get(s.user_id) || 0) + (Number(s.distance) || 0));
+    });
+    return users
+      .map((u) => ({
+        id: u.id,
+        name: u.name,
+        value: map.get(u.id) || 0,
+      }))
+      .filter((u) => u.value > 0)
+      .sort((a, b) => b.value - a.value);
+  }, [sessions, users]);
+
+  const pieColors = [
+    "#10b981",
+    "#38bdf8",
+    "#f59e0b",
+    "#f43f5e",
+    "#a855f7",
+    "#22c55e",
+    "#14b8a6",
+    "#3b82f6",
+  ];
+
+  const runColorByUserId = useMemo(() => {
+    const map = new Map();
+    runByUser.forEach((entry, idx) => {
+      map.set(entry.id, pieColors[idx % pieColors.length]);
+    });
+    return map;
+  }, [runByUser, pieColors]);
   return (
     <div className="grid gap-4 px-4 xl:px-8 pt-4 pb-8">
-      <Reveal as="section">
-        <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/50 dark:ring-slate-700 dark:bg-slate-900/60">
-          <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-              🌍 Global - {subtitle}
-            </h2>
-          </div>
-          <div className="p-4">
-            {!users.length ? (
-              <p className="text-sm text-slate-600 dark:text-slate-300">Aucune donnee disponible.</p>
-            ) : (
-              <>
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  {totals.map((u, index) => {
-                    const sparkValues = sparklineMap.get(u.id) || [];
-                    const points = buildSparklinePoints(sparkValues, 120, 32);
-                    const isPodium = index < 3;
-                    const podium = isPodium
-                      ? [
-                          { img: "/na-first.png", label: "1" },
-                          { img: "/na-second.png", label: "2" },
-                          { img: "/na-third.png", label: "3" },
-                        ][index]
-                      : { img: "/na-null.png", label: "" };
-                    const podiumClass =
-                      index === 0
-                        ? "ring-amber-300/70 dark:ring-amber-300/40"
-                        : index === 1
-                          ? "ring-slate-200/70 dark:ring-slate-400/30"
-                          : "ring-orange-300/70 dark:ring-orange-300/45";
-                    return (
-                      <button
-                        key={u.id}
-                        onClick={() => onSelectUser(u)}
-                        className={`text-left rounded-xl p-3 ring-1 hover:bg-slate-100 dark:hover:bg-slate-800 ${
-                          isPodium
-                            ? `${podiumClass} bg-slate-50/80 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100`
-                            : "bg-slate-50/80 ring-slate-200 dark:bg-slate-800/50 dark:ring-slate-700"
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-center gap-3">
-                            <div className={`flex items-center rounded-lg ${isPodium ? podiumClass : ""}`}>
-                              <img
-                                src={podium.img}
-                                alt={podium.label ? `Podium ${podium.label}` : ""}
-                                aria-hidden={!podium.label}
-                                className={`h-full max-h-12 w-auto object-contain ${isPodium ? "" : "opacity-25 blur-[4px]"}`}
-                              />
-                            </div>
-                            <div className="flex flex-col">
+      <div className="grid gap-4 xl:grid-cols-[1fr_4fr]">
+        <Reveal as="section" className="order-2 xl:order-none">
+          {!runByUser.length ? (
+            <p className="text-sm text-slate-600 dark:text-slate-300">Aucune donnée running.</p>
+          ) : (
+            <div className="flex h-[250px] items-center justify-center text-slate-900 dark:text-slate-100">
+              <ResponsiveContainer>
+                <PieChart>
+                  <Pie
+                    data={runByUser}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={50}
+                    outerRadius={80}
+                    paddingAngle={2}
+                  >
+                    {runByUser.map((entry, idx) => (
+                      <Cell key={entry.id} fill={pieColors[idx % pieColors.length]} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </Reveal>
+
+        <Reveal as="section" className="order-1 xl:order-none">
+          <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/50 dark:ring-slate-700 dark:bg-slate-900/60">
+            <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                🌍 Global - {subtitle}
+              </h2>
+            </div>
+            <div className="p-4">
+              {!users.length ? (
+                <p className="text-sm text-slate-600 dark:text-slate-300">Aucune donnee disponible.</p>
+              ) : (
+                <>
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    {totals.map((u, index) => {
+                      const sparkValues = sparklineMap.get(u.id) || [];
+                      const points = buildSparklinePoints(sparkValues, 96, 40);
+                      const isPodium = index < 3;
+                      const podium = isPodium
+                        ? [
+                            { img: "/na-first.png", label: "1" },
+                            { img: "/na-second.png", label: "2" },
+                            { img: "/na-third.png", label: "3" },
+                          ][index]
+                        : { img: "/na-null.png", label: "" };
+                      const podiumClass =
+                        index === 0
+                          ? "ring-amber-300/70 dark:ring-amber-300/40"
+                          : index === 1
+                            ? "ring-slate-400/70 dark:ring-slate-300/50"
+                            : "ring-orange-300/70 dark:ring-orange-300/45";
+                      return (
+                        <button
+                          key={u.id}
+                          onClick={() => onSelectUser(u)}
+                          className={`text-left rounded-xl p-3 ring-1 hover:bg-slate-100 dark:hover:bg-slate-800 ${
+                            isPodium
+                              ? `${podiumClass} bg-slate-50/80 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100`
+                              : "bg-slate-50/80 ring-slate-200 dark:bg-slate-800/50 dark:ring-slate-700"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className={`flex items-center rounded-lg ${isPodium ? podiumClass : ""}`}>
+                                <img
+                                  src={podium.img}
+                                  alt={podium.label ? `Podium ${podium.label}` : ""}
+                                  aria-hidden={!podium.label}
+                                  className={`h-12 w-12 shrink-0 object-contain ${isPodium ? "" : "opacity-40 blur-[4px]"}`}
+                                />
+                              </div>
+                              <div className="flex flex-col">
                               <div className="flex items-center gap-2">
-                                <User size={16} className="text-slate-500 dark:text-slate-400" />
+                                <User
+                                  size={16}
+                                  className="text-slate-500 dark:text-slate-400"
+                                  style={{ color: runColorByUserId.get(u.id) || "#94a3b8" }}
+                                />
                                 <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{u.name}</div>
                               </div>
-                              <div className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                              <div className="text-xl font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
                                 {nfDecimal.format(u.total / 1000)} km
                               </div>
+                              </div>
+                            </div>
+                            <div className="flex flex-col items-end gap-2">
+                            <svg width="96" height="40" viewBox="0 0 96 40" aria-hidden="true">
+                                <polyline
+                                  points={points}
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  className="text-emerald-500"
+                                />
+                              </svg>
                             </div>
                           </div>
-                          <div className="flex flex-col items-end gap-2">
-                            <svg width="120" height="32" viewBox="0 0 120 32" aria-hidden="true">
-                              <polyline
-                                points={points}
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                className="text-emerald-500"
-                              />
-                            </svg>
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </>
-            )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
-        </div>
-      </Reveal>
-
+        </Reveal>
+      </div>
     </div>
   );
 }
