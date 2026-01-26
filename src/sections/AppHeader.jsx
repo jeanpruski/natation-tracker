@@ -110,10 +110,7 @@ export function AppHeader({
           >
             <span className="inline-flex items-center gap-1.5">
               {isAuth ? "✏️" : "🔓"}
-
-              <span className="sm:inline">
-                {editorTargetName ? ` ${editorTargetName}` : ""}
-              </span>
+              {isAuth && loggedUserName && <span className="sm:inline">{` ${loggedUserName}`}</span>}
             </span>
           </button>
         )}

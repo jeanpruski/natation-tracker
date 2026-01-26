@@ -144,12 +144,18 @@ export default function App() {
     }
     const justLoggedIn = !wasAuth && isAuth;
     const userChanged = prevUserId && prevUserId !== user.id;
-    if ((justLoggedIn || userChanged) && selectedUser?.id !== user.id) {
-      setSelectedUser(user);
+    if (justLoggedIn || userChanged) {
+      setShowEditModal(false);
     }
     prevAuthRef.current = isAuth;
     prevUserIdRef.current = user.id;
   }, [isAuth, isAdmin, user, selectedUser]);
+
+  useEffect(() => {
+    if (showEditModal && isAuth && !selectedUser) {
+      setShowEditModal(false);
+    }
+  }, [showEditModal, isAuth, selectedUser]);
 
   const getSessionsBasePath = () => {
     if (isAdmin && selectedUser && user?.id !== selectedUser.id) {
@@ -638,7 +644,7 @@ export default function App() {
   const isGlobalView = !selectedUser;
   const headerTitle = selectedUser ? selectedUser.name : null;
   const canEditSelected = !!selectedUser && (isAdmin || user?.id === selectedUser.id);
-  const showEditorButton = !isGlobalView && (!user || isAdmin || user?.id === selectedUser?.id);
+  const showEditorButton = isGlobalView || (!user || isAdmin || user?.id === selectedUser?.id);
 
   const handleSelectUser = (u) => {
     setSelectedUser(u);
@@ -674,7 +680,13 @@ export default function App() {
           title={headerTitle}
           editorTargetName={headerTitle}
           loggedUserName={user?.name}
-          onOpenEditor={() => setShowEditModal(true)}
+          onOpenEditor={() => {
+            if (isGlobalView && isAuth && user) {
+              setSelectedUser(user);
+              return;
+            }
+            setShowEditModal(true);
+          }}
           onModeChange={setMode}
           onRangeChange={setRange}
           onBack={isGlobalView ? null : () => setSelectedUser(null)}
