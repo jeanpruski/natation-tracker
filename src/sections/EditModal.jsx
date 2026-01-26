@@ -19,6 +19,7 @@ export function EditModal({
   onDelete,
   onExport,
   onImport,
+  isAdmin,
 }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -169,6 +170,7 @@ export function EditModal({
                         onExport={onExport}
                         onImport={onImport}
                         readOnly={isBusy || readOnly}
+                        isAdmin={isAdmin}
                       />
                     </div>
                     {readOnly && (

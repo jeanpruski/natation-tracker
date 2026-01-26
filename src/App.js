@@ -132,7 +132,14 @@ export default function App() {
               : "Cette periode";
   const shoesStart = dayjs("2026-01-13");
   const shoesTargetMeters = 550 * 1000;
-  const isAdmin = user?.role === "admin";
+  const isAdmin = String(user?.role || "").toLowerCase() === "admin";
+
+  const getSessionsBasePath = () => {
+    if (isAdmin && selectedUser && user?.id !== selectedUser.id) {
+      return `/users/${selectedUser.id}/sessions`;
+    }
+    return "/me/sessions";
+  };
 
   const userSessions = useMemo(() => {
     if (!selectedUser) return [];
@@ -474,10 +481,7 @@ export default function App() {
   };
 
   const addSession = guard(async (payload) => {
-    const basePath =
-      isAdmin && selectedUser && user?.id !== selectedUser.id
-        ? `/users/${selectedUser.id}/sessions`
-        : "/me/sessions";
+    const basePath = getSessionsBasePath();
     await withBusy(async () => {
       const body = { id: payload.id, distance: payload.distance, date: payload.date, type: payload.type };
       const created = await apiJson("POST", basePath, body, authToken);
@@ -490,10 +494,7 @@ export default function App() {
 
   const deleteSession = guard(async (id) => {
     if (!window.confirm("Confirmer la suppression de cette seance ?")) return;
-    const basePath =
-      isAdmin && selectedUser && user?.id !== selectedUser.id
-        ? `/users/${selectedUser.id}/sessions`
-        : "/me/sessions";
+    const basePath = getSessionsBasePath();
     await withBusy(async () => {
       await apiJson("DELETE", `${basePath}/${id}`, undefined, authToken);
       setSessions((prev) => prev.filter((s) => s.id !== id));
@@ -503,10 +504,7 @@ export default function App() {
   });
 
   const editSession = guard(async (id, updated) => {
-    const basePath =
-      isAdmin && selectedUser && user?.id !== selectedUser.id
-        ? `/users/${selectedUser.id}/sessions`
-        : "/me/sessions";
+    const basePath = getSessionsBasePath();
     await withBusy(async () => {
       await apiJson("PUT", `${basePath}/${id}`, updated, authToken);
       setSessions((prev) =>
@@ -520,10 +518,7 @@ export default function App() {
   const importCSV = guard(async (file) => {
     if (!file) return;
     if (!window.confirm("Confirmer l'import du fichier CSV ?")) return;
-    const basePath =
-      isAdmin && selectedUser && user?.id !== selectedUser.id
-        ? `/users/${selectedUser.id}/sessions`
-        : "/me/sessions";
+    const basePath = getSessionsBasePath();
     const imported = await withBusy(async () => {
       const text = await file.text();
       const rows = parseCSV(text);
@@ -561,8 +556,18 @@ export default function App() {
   });
 
   const exportCSV = async () => {
+    const sanitizeFilenamePart = (value) => {
+      const clean = String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^A-Za-z0-9_-]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+      return clean || "user";
+    };
+    const namePart = sanitizeFilenamePart(headerTitle || user?.name);
+    const datePart = dayjs().format("YYYY-MM-DD");
     await withBusy(() => {
-      downloadCSV("sessions.csv", userSessions);
+      downloadCSV(`sessions-${namePart}-${datePart}.csv`, userSessions);
     });
     setShowEditModal(false);
     showToast("Export terminé");
@@ -687,6 +692,7 @@ export default function App() {
         readOnly={!canEditSelected}
         targetName={headerTitle}
         loggedUserName={user?.name}
+        isAdmin={isAdmin}
         onAdd={addSession}
         onEdit={editSession}
         onDelete={deleteSession}
