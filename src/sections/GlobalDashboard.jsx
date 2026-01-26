@@ -108,10 +108,12 @@ export function GlobalDashboard({
   }, [runByUser, pieColors]);
   return (
     <div className="grid gap-4 px-4 xl:px-8 pt-4 pb-8">
-      <div className="grid gap-4 min-[850px]:grid-cols-[1fr_4fr]">
-        <Reveal as="section" className="order-2 min-[850px]:order-none">
+      <div className="grid gap-4 min-[1024px]:grid-cols-[1fr_4fr]">
+        <Reveal as="section" className="hidden min-[1024px]:block order-2 min-[1024px]:order-none">
           {!runByUser.length ? (
-            <p className="text-sm text-slate-600 dark:text-slate-300">Aucune donnée running.</p>
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              {mode === "run" ? "Aucune donnée running." : "Camembert disponible en mode Running."}
+            </p>
           ) : (
             <div className="flex h-[250px] items-center justify-center text-slate-900 dark:text-slate-100">
               <ResponsiveContainer>
@@ -134,7 +136,7 @@ export function GlobalDashboard({
           )}
         </Reveal>
 
-        <Reveal as="section" className="order-1 min-[850px]:order-none">
+        <Reveal as="section" className="order-1 min-[1024px]:order-none">
           <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/50 dark:ring-slate-700 dark:bg-slate-900/60">
             <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
@@ -188,7 +190,11 @@ export function GlobalDashboard({
                               <div className="flex items-center gap-2">
                                 <User
                                   size={16}
-                                  className="text-slate-500 dark:text-slate-400"
+                                  className="text-slate-500 dark:text-slate-400 min-[1024px]:hidden"
+                                />
+                                <User
+                                  size={16}
+                                  className="hidden min-[1024px]:block"
                                   style={{ color: runColorByUserId.get(u.id) || "#94a3b8" }}
                                 />
                                 <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{u.name}</div>
