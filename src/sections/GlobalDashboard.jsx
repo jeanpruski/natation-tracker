@@ -1,12 +1,6 @@
 import React, { useMemo } from "react";
 import { Bot, User } from "lucide-react";
 import { Reveal } from "../components/Reveal";
-import {
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts";
 
 function buildMonthKeys(sessions) {
   const set = new Set();
@@ -71,72 +65,10 @@ export function GlobalDashboard({
     return map;
   }, [sessions, users, monthKeys]);
 
-  const runByUser = useMemo(() => {
-    const map = new Map();
-    sessions.forEach((s) => {
-      if (!s.user_id) return;
-      if (String(s.type || "").toLowerCase() !== "run") return;
-      map.set(s.user_id, (map.get(s.user_id) || 0) + (Number(s.distance) || 0));
-    });
-    return users
-      .map((u) => ({
-        id: u.id,
-        name: u.name,
-        value: map.get(u.id) || 0,
-      }))
-      .filter((u) => u.value > 0)
-      .sort((a, b) => b.value - a.value);
-  }, [sessions, users]);
-
-  const pieColors = [
-    "#10b981",
-    "#38bdf8",
-    "#f59e0b",
-    "#f43f5e",
-    "#a855f7",
-    "#22c55e",
-    "#14b8a6",
-    "#3b82f6",
-  ];
-
-  const runColorByUserId = useMemo(() => {
-    const map = new Map();
-    runByUser.forEach((entry, idx) => {
-      map.set(entry.id, pieColors[idx % pieColors.length]);
-    });
-    return map;
-  }, [runByUser, pieColors]);
   return (
     <div className="grid gap-4 px-4 xl:px-8 pt-4 pb-8">
-      <div className="grid gap-4 min-[1024px]:grid-cols-[1fr_4fr]">
-        <Reveal as="section" className="hidden min-[1024px]:block order-2 min-[1024px]:order-none">
-          {!runByUser.length ? (
-            <p className="text-sm text-slate-600 dark:text-slate-300">
-              {mode === "run" ? "Aucune donnée running." : "Camembert disponible en mode Running."}
-            </p>
-          ) : (
-            <div className="flex h-[250px] items-center justify-center text-slate-900 dark:text-slate-100">
-              <ResponsiveContainer>
-                <PieChart>
-                  <Pie
-                    data={runByUser}
-                    dataKey="value"
-                    nameKey="name"
-                    innerRadius={50}
-                    outerRadius={80}
-                    paddingAngle={2}
-                  >
-                    {runByUser.map((entry, idx) => (
-                      <Cell key={entry.id} fill={pieColors[idx % pieColors.length]} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </Reveal>
-
-        <Reveal as="section" className="order-1 min-[1024px]:order-none">
+      <div className="grid gap-4">
+        <Reveal as="section">
           <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/50 dark:ring-slate-700 dark:bg-slate-900/60">
             <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
@@ -197,29 +129,15 @@ export function GlobalDashboard({
                               <div className="flex flex-col">
                               <div className="flex items-center gap-2">
                                 {u.isBot ? (
-                                  <>
-                                    <Bot
-                                      size={16}
-                                      className="text-slate-500 dark:text-slate-400 min-[1024px]:hidden"
-                                    />
-                                    <Bot
-                                      size={16}
-                                      className="hidden min-[1024px]:block"
-                                      style={{ color: runColorByUserId.get(u.id) || "#94a3b8" }}
-                                    />
-                                  </>
+                                  <Bot
+                                    size={16}
+                                    className="text-slate-500 dark:text-slate-400"
+                                  />
                                 ) : (
-                                  <>
-                                    <User
-                                      size={16}
-                                      className="text-slate-500 dark:text-slate-400 min-[1024px]:hidden"
-                                    />
-                                    <User
-                                      size={16}
-                                      className="hidden min-[1024px]:block"
-                                      style={{ color: runColorByUserId.get(u.id) || "#94a3b8" }}
-                                    />
-                                  </>
+                                  <User
+                                    size={16}
+                                    className="text-slate-500 dark:text-slate-400"
+                                  />
                                 )}
                                 <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{u.name}</div>
                               </div>
