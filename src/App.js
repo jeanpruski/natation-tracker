@@ -752,6 +752,7 @@ export default function App() {
                   nfDecimal={nfDecimal}
                   userRunningAvgById={userRunningAvgById}
                   filter={cardsFilter}
+                  isAdmin={isAdmin}
                   onSelectUser={(u) => {
                     setShowCardsPage(false);
                     handleSelectUser(u);
@@ -769,6 +770,7 @@ export default function App() {
                 onSelectUser={handleSelectUser}
                 onOpenCards={() => setShowCardsPage(true)}
                 isAdmin={isAdmin}
+                isAuth={isAuth}
               />
               )
             ) : (

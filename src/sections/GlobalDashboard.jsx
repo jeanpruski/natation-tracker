@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Bot, User } from "lucide-react";
 import { Reveal } from "../components/Reveal";
 
@@ -35,7 +35,35 @@ export function GlobalDashboard({
   onSelectUser,
   onOpenCards,
   isAdmin,
+  isAuth,
 }) {
+  const [newsImageReady, setNewsImageReady] = useState(false);
+  const [newsImageReady2, setNewsImageReady2] = useState(false);
+  useEffect(() => {
+    const img = new Image();
+    const done = () => setNewsImageReady(true);
+    img.onload = done;
+    img.onerror = done;
+    img.src = "/news/adidas10k-2026.jpg";
+    if (img.complete) setNewsImageReady(true);
+    return () => {
+      img.onload = null;
+      img.onerror = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const img = new Image();
+    const done = () => setNewsImageReady2(true);
+    img.onload = done;
+    img.onerror = done;
+    img.src = "/news/mcdo5-10k-2026.jpg";
+    if (img.complete) setNewsImageReady2(true);
+    return () => {
+      img.onload = null;
+      img.onerror = null;
+    };
+  }, []);
   const subtitle = mode === "all" ? rangeLabel : `${rangeLabel} · ${modeLabel || ""}`.trim();
   const totals = useMemo(() => {
     return users
@@ -66,22 +94,88 @@ export function GlobalDashboard({
   }, [sessions, users, monthKeys]);
 
   return (
-    <div className="grid gap-4 px-4 xl:px-8 pt-4 pb-8">
+    <div className="grid gap-4 px-4 xl:px-8 pt-0 pb-8">
       <div className="grid gap-4">
+        {isAuth && onOpenCards && (
+          <Reveal as="section">
+            <button
+              onClick={onOpenCards}
+              className="w-full overflow-hidden rounded-2xl border border-emerald-300/70 bg-white/90 px-4 py-3 text-left text-slate-900 shadow-sm transition hover:bg-emerald-50/60 hover:border-emerald-400/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 dark:border-emerald-400/30 dark:bg-slate-900/70 dark:text-slate-100 dark:hover:bg-emerald-400/10 dark:hover:border-emerald-300/50"
+            >
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-semibold text-slate-900 dark:text-slate-100"></div>
+                <img src="/nacards-logo.png" alt="NaCards" className="h-7 w-auto" />
+              </div>
+            </button>
+          </Reveal>
+        )}
+        <Reveal as="section">
+          <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/50 dark:ring-slate-700 dark:bg-slate-900/60">
+            <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                📰 Événements spéciaux
+              </h2>
+            </div>
+            <div className="p-4">
+              <div className="grid gap-3 md:grid-cols-2">
+              <a
+                href="https://www.adidas10kparis.fr/fr/participer/s-inscrire"
+                target="_blank"
+                rel="noreferrer"
+                className="relative min-h-[180px] overflow-hidden rounded-2xl border border-slate-200 px-5 pt-5 pb-10 text-slate-900 shadow-sm transition hover:opacity-70 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 dark:border-slate-700 dark:text-slate-100"
+                style={{
+                  backgroundImage: newsImageReady ? "url(/news/adidas10k-2026.jpg)" : undefined,
+                  backgroundSize: "cover",
+                  backgroundPosition: "50% 20%",
+                }}
+              >
+                {!newsImageReady && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-slate-50/80 dark:bg-slate-900/60">
+                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-emerald-400/70 border-t-transparent" />
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-slate-950/30" aria-hidden="true" />
+                <div className="relative text-slate-100">
+                  <div className="text-sm font-semibold uppercase tracking-wide text-slate-100/80">Adidas 10k Paris</div>
+                  <div className="mt-1 text-xl font-semibold">
+                    Dimanche 7 Juin 2026 <span className="italic font-normal">(Paris)</span>
+                  </div>
+                </div>
+            </a>
+              <a
+                href="https://www.protiming.fr/runnings/detail/7930"
+                target="_blank"
+                rel="noreferrer"
+                className="relative min-h-[180px] overflow-hidden rounded-2xl border border-slate-200 px-5 pt-5 pb-10 text-slate-900 shadow-sm transition hover:opacity-70 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 dark:border-slate-700 dark:text-slate-100"
+                style={{
+                  backgroundImage: newsImageReady2 ? "url(/news/mcdo5-10k-2026.jpg)" : undefined,
+                  backgroundSize: "cover",
+                  backgroundPosition: "50% 20%",
+                }}
+              >
+                {!newsImageReady2 && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-slate-50/80 dark:bg-slate-900/60">
+                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-emerald-400/70 border-t-transparent" />
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-slate-950/30" aria-hidden="true" />
+                <div className="relative text-slate-100">
+                  <div className="text-sm font-semibold uppercase tracking-wide text-slate-100/80">La Foulée des Sacres by Mc Donalds 5/10k</div>
+                  <div className="mt-1 text-xl font-semibold">
+                    Dimanche 14 Juin 2026 <span className="italic font-normal">(Reims)</span>
+                  </div>
+                </div>
+              </a>
+              </div>
+            </div>
+          </div>
+        </Reveal>
         <Reveal as="section">
           <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/50 dark:ring-slate-700 dark:bg-slate-900/60">
             <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                 🌍 Global - {subtitle}
               </h2>
-              {onOpenCards && isAdmin && (
-                <button
-                  onClick={onOpenCards}
-                  className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-500"
-                >
-                  Cartes
-                </button>
-              )}
             </div>
             <div className="p-4">
               {!users.length ? (

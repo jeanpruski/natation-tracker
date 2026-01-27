@@ -7,6 +7,7 @@ export function UserCardsPage({
   onSelectUser,
   filter = "mixte",
   userRunningAvgById,
+  isAdmin = false,
 }) {
   const sorted = useMemo(() => {
     return [...users].sort((a, b) => {
@@ -59,6 +60,7 @@ export function UserCardsPage({
               showBotAverage
               minSpinnerMs={500}
               userRunningAvgKm={!u?.is_bot ? userRunningAvgById?.get(u.id) : null}
+              showBackOnly={!isAdmin && u?.is_bot}
               userRankInfo={{
                 index: u?.is_bot ? botRankById.get(u.id) : userRankById.get(u.id),
                 total: u?.is_bot ? botsOnly.length : usersOnly.length,

@@ -173,7 +173,7 @@ export function Dashboard({
           <img
             src="/nacards-logo.png"
             alt="NaCards"
-            className="absolute right-0 top-1 h-6 w-auto opacity-80"
+            className="absolute right-0 top-1 h-7 w-auto opacity-85"
           />
         </div>
       </button>
