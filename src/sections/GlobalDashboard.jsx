@@ -100,9 +100,10 @@ export function GlobalDashboard({
           <Reveal as="section">
             <button
               onClick={onOpenCards}
-              className="w-full overflow-hidden rounded-2xl border border-emerald-300/70 bg-white/90 px-4 py-3 text-left text-slate-900 shadow-sm transition hover:bg-emerald-50/60 hover:border-emerald-400/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 dark:border-emerald-400/30 dark:bg-slate-900/70 dark:text-slate-100 dark:hover:bg-emerald-400/10 dark:hover:border-emerald-300/50"
+              className="relative w-full overflow-hidden rounded-2xl border border-emerald-300/70 bg-gradient-to-r from-emerald-500/35 to-transparent px-4 py-3 text-left text-slate-900 shadow-sm transition-colors duration-200 hover:border-emerald-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 dark:border-emerald-400/30 dark:text-slate-100"
             >
-              <div className="flex items-center justify-between">
+              <span className="pointer-events-none absolute inset-0 bg-emerald-500/35 opacity-0 transition-opacity duration-300 hover:opacity-100" />
+              <div className="relative z-10 flex items-center justify-between">
                 <div className="text-sm font-semibold text-slate-900 dark:text-slate-100"></div>
                 <img src="/nacards-logo.png" alt="NaCards" className="h-7 w-auto" />
               </div>
