@@ -33,6 +33,36 @@ function TypeSwitch({ value, onChange }) {
   );
 }
 
+function CardsFilterSwitch({ value, onChange }) {
+  const items = [
+    { key: "mixte", label: "Mixte" },
+    { key: "users", label: "Users" },
+    { key: "bots", label: "Bots" },
+  ];
+
+  return (
+    <div className="inline-flex rounded-xl bg-slate-100 p-1 ring-1 ring-slate-200 dark:bg-slate-800/70 dark:ring-slate-700">
+      {items.map((it) => {
+        const active = value === it.key;
+        return (
+          <button
+            key={it.key}
+            onClick={() => onChange(it.key)}
+            className={`px-3 py-1.5 text-xs sm:text-sm rounded-lg transition
+              ${
+                active
+                  ? "bg-white text-slate-900 shadow ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-100 dark:ring-slate-700"
+                  : "text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100"
+              }`}
+          >
+            {it.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function RangeSelect({ value, onChange }) {
   return (
     <select
@@ -70,6 +100,7 @@ export function AppHeader({
   onModeChange,
   onRangeChange,
   onBack,
+  cardsFilter,
 }) {
   return (
     <header
@@ -127,6 +158,18 @@ export function AppHeader({
         <div className="hidden xl:flex items-center justify-end gap-3">
           <RangeSelect value={range} onChange={onRangeChange} />
           <TypeSwitch value={mode} onChange={onModeChange} />
+        </div>
+      )}
+
+      {!showFilters && cardsFilter && (
+        <div className="flex items-center justify-center gap-3 xl:hidden">
+          <CardsFilterSwitch value={cardsFilter.value} onChange={cardsFilter.onChange} />
+        </div>
+      )}
+
+      {!showFilters && cardsFilter && (
+        <div className="hidden xl:flex items-center justify-end gap-3">
+          <CardsFilterSwitch value={cardsFilter.value} onChange={cardsFilter.onChange} />
         </div>
       )}
     </header>

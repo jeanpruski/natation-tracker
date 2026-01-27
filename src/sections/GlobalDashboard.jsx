@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { User } from "lucide-react";
+import { Bot, User } from "lucide-react";
 import { Reveal } from "../components/Reveal";
 import {
   ResponsiveContainer,
@@ -49,6 +49,7 @@ export function GlobalDashboard({
         id: u.id,
         name: u.name,
         total: totalsByUser?.[u.id] || 0,
+        isBot: Boolean(u?.is_bot),
       }))
       .sort((a, b) => b.total - a.total);
   }, [users, totalsByUser]);
@@ -195,15 +196,31 @@ export function GlobalDashboard({
                               </div>
                               <div className="flex flex-col">
                               <div className="flex items-center gap-2">
-                                <User
-                                  size={16}
-                                  className="text-slate-500 dark:text-slate-400 min-[1024px]:hidden"
-                                />
-                                <User
-                                  size={16}
-                                  className="hidden min-[1024px]:block"
-                                  style={{ color: runColorByUserId.get(u.id) || "#94a3b8" }}
-                                />
+                                {u.isBot ? (
+                                  <>
+                                    <Bot
+                                      size={16}
+                                      className="text-slate-500 dark:text-slate-400 min-[1024px]:hidden"
+                                    />
+                                    <Bot
+                                      size={16}
+                                      className="hidden min-[1024px]:block"
+                                      style={{ color: runColorByUserId.get(u.id) || "#94a3b8" }}
+                                    />
+                                  </>
+                                ) : (
+                                  <>
+                                    <User
+                                      size={16}
+                                      className="text-slate-500 dark:text-slate-400 min-[1024px]:hidden"
+                                    />
+                                    <User
+                                      size={16}
+                                      className="hidden min-[1024px]:block"
+                                      style={{ color: runColorByUserId.get(u.id) || "#94a3b8" }}
+                                    />
+                                  </>
+                                )}
                                 <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{u.name}</div>
                               </div>
                               <div className="text-xl font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">

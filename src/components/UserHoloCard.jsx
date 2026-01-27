@@ -2,17 +2,32 @@ import React, { useEffect, useRef, useState } from "react";
 import dayjs from "dayjs";
 import { Bot, Diamond, User } from "lucide-react";
 
-export function UserHoloCard({ user, nfDecimal, userRankInfo }) {
+export function UserHoloCard({
+  user,
+  nfDecimal,
+  userRankInfo,
+  elevated = false,
+  showBotAverage = false,
+  userRunningAvgKm,
+}) {
   const displayName = user?.name || "Utilisateur";
   const userShoeName = user?.shoe_name || "";
   const userShoeStart = user?.shoe_start_date || "";
   const userShoeTarget = user?.shoe_target_km;
   const userCardImage = user?.card_image || "";
+  const userDescription = user?.description || "";
+  const botAvgDistance = user?.avg_distance_m;
   const isBot = Boolean(user?.is_bot);
   const botColor = user?.bot_color || "";
   const botBorderColor = user?.bot_border_color || (isBot ? "#992929" : "");
-  const showShoeDetails = Boolean(userShoeName && userShoeStart);
+  const showShoeDetails = Boolean(userShoeName);
   const showShoeTarget = !isBot && Number.isFinite(Number(userShoeTarget));
+  const showDescription = Boolean(userDescription);
+  const showBotAverageValue = showBotAverage && isBot && Number.isFinite(Number(botAvgDistance));
+  const showUserAverageValue = !isBot && Number.isFinite(Number(userRunningAvgKm));
+  const showAverage = showBotAverageValue || showUserAverageValue;
+  const averageLabel = "Moyenne";
+  const averageValue = showBotAverageValue ? Number(botAvgDistance) : Number(userRunningAvgKm);
 
   const [cardTilt, setCardTilt] = useState({ x: 0, y: 0, active: false });
   const [cardImageReady, setCardImageReady] = useState(false);
@@ -109,6 +124,8 @@ export function UserHoloCard({ user, nfDecimal, userRankInfo }) {
     }
   };
 
+  const showShadow = elevated || cardTilt.active;
+
   return (
     <div
       className={`relative w-full max-w-[360px] ${cardTilt.active ? "z-30" : "z-0"}`}
@@ -135,7 +152,7 @@ export function UserHoloCard({ user, nfDecimal, userRankInfo }) {
           resetTilt();
         }}
         className={`relative select-none rounded-[28px] bg-gradient-to-br from-emerald-300 via-lime-300 to-sky-400 p-2 ${
-          cardTilt.active ? "shadow-[0_28px_110px_rgba(0,0,0,0.75)] dark:shadow-[0_28px_110px_rgba(255,255,255,0.55)]" : ""
+          showShadow ? "shadow-[0_28px_110px_rgba(0,0,0,0.75)] dark:shadow-[0_28px_110px_rgba(255,255,255,0.55)]" : ""
         }`}
         style={{
           backgroundImage: botBorderGradient || undefined,
@@ -208,18 +225,31 @@ export function UserHoloCard({ user, nfDecimal, userRankInfo }) {
               </div>
             )}
           </div>
-          <div className="mt-3 min-h-[10rem] rounded-2xl border border-emerald-200/30 bg-emerald-950/50 px-3 py-2 text-sm">
-            <div className="text-xs uppercase tracking-wide text-emerald-200">Chaussures</div>
-            {showShoeDetails ? (
-              <div className="mt-1">
-                <div className="font-semibold">{userShoeName}</div>
-                <div className="text-xs text-emerald-100/70">
-                  Debut: {dayjs(userShoeStart).format("DD/MM/YYYY")}
-                  {showShoeTarget ? ` · ${nfDecimal.format(userShoeTarget)} km` : ""}
-                </div>
+          <div className="mt-3 min-h-[10rem] rounded-2xl border border-emerald-200/30 bg-emerald-950/50 px-3 py-2 text-sm flex flex-col">
+            {showShoeDetails && (
+              <div>
+                <span className="text-xs uppercase tracking-wide text-emerald-200">Chaussures</span>
+                <span className="ml-2 font-semibold">{userShoeName}</span>
               </div>
-            ) : (
-              <div className="mt-1 text-emerald-100/70">Non renseigne</div>
+            )}
+            {showAverage && (
+              <div className={showShoeDetails ? "mt-2" : ""}>
+                <span className="text-xs uppercase tracking-wide text-emerald-200">{averageLabel}</span>
+                <span className="ml-2 text-[14px] font-semibold text-white">
+                  {nfDecimal.format(averageValue)} km
+                  {showUserAverageValue && (
+                    <span className="ml-1 italic text-white font-normal text-[13px]">(3 derniers mois)</span>
+                  )}
+                  {showBotAverageValue && (
+                    <span className="ml-1 italic text-white font-normal text-[13px]">(total)</span>
+                  )}
+                </span>
+              </div>
+            )}
+            {showDescription && (
+              <div className="mt-auto text-xs text-emerald-100/80 self-end text-right italic">
+                {userDescription}
+              </div>
             )}
           </div>
           <div className="mt-3 flex items-center rounded-2xl border border-emerald-200/20 bg-emerald-950/40 px-3 py-2 text-xs text-emerald-200">

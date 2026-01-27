@@ -30,6 +30,7 @@ export default function App() {
   const { token: authToken, user, isAuth, checking, login, logout: editLogout } = useEditAuth();
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCardsPage, setShowCardsPage] = useState(false);
+  const [cardsFilter, setCardsFilter] = useState("mixte");
   const [toast, setToast] = useState("");
   const [isBusy, setIsBusy] = useState(false);
   const toastTimerRef = useRef(null);
@@ -218,6 +219,26 @@ export default function App() {
     if (!derivedUsers.length) return derivedUsers;
     return derivedUsers.filter((u) => !u.is_bot || (monthTotalsByUser?.[u.id] || 0) > 0);
   }, [derivedUsers, monthTotalsByUser]);
+
+  const userRunningAvgById = useMemo(() => {
+    const cutoff = dayjs().subtract(3, "month").startOf("day").valueOf();
+    const totals = new Map();
+    const counts = new Map();
+    sessions.forEach((s) => {
+      if (!s?.user_id) return;
+      if (String(s.type || "").toLowerCase() !== "run") return;
+      if (dayjs(s.date).valueOf() < cutoff) return;
+      const dist = Number(s.distance) || 0;
+      totals.set(s.user_id, (totals.get(s.user_id) || 0) + dist);
+      counts.set(s.user_id, (counts.get(s.user_id) || 0) + 1);
+    });
+    const avg = new Map();
+    totals.forEach((totalDist, userId) => {
+      const count = counts.get(userId) || 0;
+      if (count > 0) avg.set(userId, totalDist / count / 1000);
+    });
+    return avg;
+  }, [sessions]);
 
   const selectedUserInfo = useMemo(() => {
     if (!selectedUser) return null;
@@ -677,8 +698,16 @@ export default function App() {
           range={range}
           mode={mode}
           isAuth={isAuth}
-          showEditor={showEditorButton}
+          showEditor={!showCardsPage && showEditorButton}
           showFilters={!showCardsPage}
+          cardsFilter={
+            showCardsPage
+              ? {
+                  value: cardsFilter,
+                  onChange: setCardsFilter,
+                }
+              : null
+          }
           title={headerTitle}
           editorTargetName={headerTitle}
           loggedUserName={user?.name}
@@ -716,6 +745,8 @@ export default function App() {
                 <UserCardsPage
                   users={users}
                   nfDecimal={nfDecimal}
+                  userRunningAvgById={userRunningAvgById}
+                  filter={cardsFilter}
                   onSelectUser={(u) => {
                     setShowCardsPage(false);
                     handleSelectUser(u);
@@ -736,18 +767,19 @@ export default function App() {
               />
               )
             ) : (
-              <Dashboard
-                hasSessions={hasSessions}
-                mode={mode}
-                range={range}
-                modeLabel={modeLabel}
-                rangeLabel={rangeLabel}
-                userName={headerTitle}
-                userInfo={selectedUserInfo}
-                userRankInfo={userRankInfo}
-                shownSessions={shownSessions}
-                stats={stats}
-                monthTotals={monthTotals}
+                <Dashboard
+                  hasSessions={hasSessions}
+                  mode={mode}
+                  range={range}
+                  modeLabel={modeLabel}
+                  rangeLabel={rangeLabel}
+                  userName={headerTitle}
+                  userInfo={selectedUserInfo}
+                  userRankInfo={userRankInfo}
+                  userRunningAvgById={userRunningAvgById}
+                  shownSessions={shownSessions}
+                  stats={stats}
+                  monthTotals={monthTotals}
                 monthCounts={monthCounts}
                 monthLabel={monthLabel}
                 lastLabel={lastLabel}
