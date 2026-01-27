@@ -114,6 +114,11 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [range, mode]);
 
+  useEffect(() => {
+    if (!selectedUser) return;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [selectedUser]);
+
   const nf = useMemo(() => new Intl.NumberFormat("fr-FR"), []);
   const nfDecimal = useMemo(
     () => new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }),

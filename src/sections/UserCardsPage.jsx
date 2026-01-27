@@ -57,6 +57,7 @@ export function UserCardsPage({
               user={u}
               nfDecimal={nfDecimal}
               showBotAverage
+              minSpinnerMs={500}
               userRunningAvgKm={!u?.is_bot ? userRunningAvgById?.get(u.id) : null}
               userRankInfo={{
                 index: u?.is_bot ? botRankById.get(u.id) : userRankById.get(u.id),

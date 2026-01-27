@@ -134,6 +134,7 @@ export function Dashboard({
               elevated
               showBotAverage
               userRunningAvgKm={userRunningAvgKm}
+              minSpinnerMs={500}
             />
           </motion.div>
         </div>

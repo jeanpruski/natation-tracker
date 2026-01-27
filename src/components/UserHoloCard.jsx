@@ -9,6 +9,7 @@ export function UserHoloCard({
   elevated = false,
   showBotAverage = false,
   userRunningAvgKm,
+  minSpinnerMs = 0,
 }) {
   const displayName = user?.name || "Utilisateur";
   const userShoeName = user?.shoe_name || "";
@@ -31,11 +32,15 @@ export function UserHoloCard({
 
   const [cardTilt, setCardTilt] = useState({ x: 0, y: 0, active: false });
   const [cardImageReady, setCardImageReady] = useState(false);
-  const [showCardSpinner, setShowCardSpinner] = useState(false);
+  const [showCardSpinner, setShowCardSpinner] = useState(minSpinnerMs > 0);
+  const isCardLoading = showCardSpinner;
 
   const cardRef = useRef(null);
   const holoRef = useRef(null);
   const isPointerDownRef = useRef(false);
+  const loadedImagesRef = useRef(new Set());
+  const spinnerStartRef = useRef(0);
+  const spinnerTimerRef = useRef(null);
 
   const MAX_TILT = 18;
   const PERSPECTIVE = 700;
@@ -61,20 +66,69 @@ export function UserHoloCard({
     isBot && botBorderColor ? `linear-gradient(135deg, ${botBorderColor}, #000000)` : "";
 
   useEffect(() => {
+    if (spinnerTimerRef.current) {
+      clearTimeout(spinnerTimerRef.current);
+      spinnerTimerRef.current = null;
+    }
+    spinnerStartRef.current = Date.now();
+
+    if (minSpinnerMs > 0) {
+      setShowCardSpinner(true);
+    }
+
     if (!userCardImage) {
-      setCardImageReady(false);
-      setShowCardSpinner(false);
+      setCardImageReady(true);
+      if (minSpinnerMs > 0) {
+        spinnerTimerRef.current = setTimeout(() => setShowCardSpinner(false), minSpinnerMs);
+      } else {
+        setShowCardSpinner(false);
+      }
       return;
     }
+
+    if (loadedImagesRef.current.has(userCardImage)) {
+      setCardImageReady(true);
+      if (minSpinnerMs > 0) {
+        spinnerTimerRef.current = setTimeout(() => setShowCardSpinner(false), minSpinnerMs);
+      } else {
+        setShowCardSpinner(false);
+      }
+      return;
+    }
+
     setCardImageReady(false);
-    setShowCardSpinner(true);
-  }, [userCardImage]);
+    const img = new Image();
+    const handleDone = () => setCardImageReady(true);
+    img.onload = handleDone;
+    img.onerror = handleDone;
+    img.src = userCardImage;
+    if (img.complete) {
+      setCardImageReady(true);
+    }
+    return () => {
+      img.onload = null;
+      img.onerror = null;
+    };
+  }, [userCardImage, minSpinnerMs]);
 
   useEffect(() => {
     if (!cardImageReady) return;
-    const timer = setTimeout(() => setShowCardSpinner(false), 1000);
-    return () => clearTimeout(timer);
-  }, [cardImageReady]);
+    if (userCardImage) loadedImagesRef.current.add(userCardImage);
+    if (minSpinnerMs <= 0) {
+      setShowCardSpinner(false);
+      return;
+    }
+    const elapsed = Date.now() - spinnerStartRef.current;
+    const remaining = Math.max(minSpinnerMs - elapsed, 0);
+    if (spinnerTimerRef.current) clearTimeout(spinnerTimerRef.current);
+    spinnerTimerRef.current = setTimeout(() => setShowCardSpinner(false), remaining);
+    return () => {
+      if (spinnerTimerRef.current) {
+        clearTimeout(spinnerTimerRef.current);
+        spinnerTimerRef.current = null;
+      }
+    };
+  }, [cardImageReady, userCardImage, minSpinnerMs]);
 
   const handleTiltMove = (evt) => {
     const rect = cardRef.current?.getBoundingClientRect();
@@ -165,12 +219,16 @@ export function UserHoloCard({
         <img
           src="/na-logo.png"
           alt="NaTrack"
-          className="pointer-events-none absolute right-3 top-[53%] z-20 h-14 w-auto -translate-y-1/2 grayscale-[0.15] drop-shadow-[0_10px_26px_rgba(16,185,129,0.65)]"
+          className={`pointer-events-none absolute right-3 top-[53%] z-20 h-14 w-auto -translate-y-1/2 grayscale-[0.15] drop-shadow-[0_10px_26px_rgba(16,185,129,0.65)] ${
+            isCardLoading ? "opacity-0" : "opacity-100"
+          }`}
         />
         <img
           src="/nacards-logo.png"
           alt="NaCards"
-          className="pointer-events-none absolute -left-3 top-3 z-20 h-14 w-auto drop-shadow-[0_6px_16px_rgba(16,185,129,0.5)]"
+          className={`pointer-events-none absolute -left-3 top-3 z-20 h-14 w-auto drop-shadow-[0_6px_16px_rgba(16,185,129,0.5)] ${
+            isCardLoading ? "opacity-0" : "opacity-100"
+          }`}
         />
         <div
           ref={holoRef}
@@ -180,15 +238,16 @@ export function UserHoloCard({
             backgroundColor: isBot && botColor ? toRgba(botColor, 0.5) : undefined,
           }}
         >
-          <div className="mt-2 flex items-center justify-end gap-2 text-right text-2xl font-black tracking-tight">
+          <div className={`transition-opacity duration-300 ${isCardLoading ? "opacity-0" : "opacity-100"}`}>
+            <div className="mt-2 flex items-center justify-end gap-2 text-right text-2xl font-black tracking-tight">
             {isBot ? (
               <Bot size={18} className="text-emerald-200" />
             ) : (
               <User size={18} className="text-emerald-200" />
             )}
             <span>{displayName}</span>
-          </div>
-          <div
+            </div>
+            <div
             className="relative mt-3 aspect-[6/4] w-full overflow-hidden rounded-[22px] border border-emerald-200/40 bg-gradient-to-br from-slate-900 via-emerald-900/40 to-slate-900"
             style={
               userCardImage
@@ -209,11 +268,6 @@ export function UserHoloCard({
                 onError={() => setCardImageReady(true)}
               />
             )}
-            {showCardSpinner && !cardImageReady && (
-              <div className="absolute inset-0 flex items-center justify-center bg-slate-950/70">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-200/70 border-t-transparent" />
-              </div>
-            )}
             {!userCardImage && (
               <div className="flex h-full w-full items-center justify-center">
                 <img
@@ -224,8 +278,8 @@ export function UserHoloCard({
                 />
               </div>
             )}
-          </div>
-          <div className="mt-3 min-h-[10rem] rounded-2xl border border-emerald-200/30 bg-emerald-950/50 px-3 py-2 text-sm flex flex-col">
+            </div>
+            <div className="mt-3 min-h-[10rem] rounded-2xl border border-emerald-200/30 bg-emerald-950/50 px-3 py-2 text-sm flex flex-col">
             {showShoeDetails && (
               <div>
                 <span className="text-xs uppercase tracking-wide text-emerald-200">Chaussures</span>
@@ -251,8 +305,8 @@ export function UserHoloCard({
                 {userDescription}
               </div>
             )}
-          </div>
-          <div className="mt-3 flex items-center rounded-2xl border border-emerald-200/20 bg-emerald-950/40 px-3 py-2 text-xs text-emerald-200">
+            </div>
+            <div className="mt-3 flex items-center rounded-2xl border border-emerald-200/20 bg-emerald-950/40 px-3 py-2 text-xs text-emerald-200">
             <div className="flex items-center gap-2 text-[10px]">
               NaTrack™ {dayjs().format("YYYY")}
             </div>
@@ -264,7 +318,21 @@ export function UserHoloCard({
               )}
               {userRankInfo ? `${userRankInfo.index}/${userRankInfo.total}` : "—"}
             </span>
+            </div>
           </div>
+          {isCardLoading && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="absolute inset-4 rounded-[22px] border border-emerald-200/30" aria-hidden="true" />
+              <div className="relative flex flex-col items-center gap-4">
+                <img
+                  src="/nacards-logo.png"
+                  alt="NaCards"
+                  className="h-20 w-auto opacity-90 drop-shadow-[0_8px_18px_rgba(16,185,129,0.5)]"
+                />
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-200/70 border-t-transparent" />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
