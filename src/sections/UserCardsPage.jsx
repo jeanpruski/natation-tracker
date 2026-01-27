@@ -17,29 +17,37 @@ export function UserCardsPage({
     });
   }, [users]);
 
-  const { usersOnly, botsOnly } = useMemo(() => {
+  const { usersOnlyByDate, botsOnlyByDate, botsOnlyByAvg } = useMemo(() => {
     const realUsers = [];
     const bots = [];
     sorted.forEach((u) => {
       if (u?.is_bot) bots.push(u);
       else realUsers.push(u);
     });
-    return { usersOnly: realUsers, botsOnly: bots };
+    const botsByAvg = [...bots].sort((a, b) => {
+      const aVal = Number.isFinite(Number(a?.avg_distance_m)) ? Number(a.avg_distance_m) : null;
+      const bVal = Number.isFinite(Number(b?.avg_distance_m)) ? Number(b.avg_distance_m) : null;
+      if (aVal === null && bVal === null) return 0;
+      if (aVal === null) return 1;
+      if (bVal === null) return -1;
+      return aVal - bVal;
+    });
+    return { usersOnlyByDate: realUsers, botsOnlyByDate: bots, botsOnlyByAvg: botsByAvg };
   }, [sorted]);
 
   const { userRankById, botRankById } = useMemo(() => {
     const userRanks = new Map();
     const botRanks = new Map();
-    usersOnly.forEach((u, idx) => userRanks.set(u.id, idx + 1));
-    botsOnly.forEach((u, idx) => botRanks.set(u.id, idx + 1));
+    usersOnlyByDate.forEach((u, idx) => userRanks.set(u.id, idx + 1));
+    botsOnlyByDate.forEach((u, idx) => botRanks.set(u.id, idx + 1));
     return { userRankById: userRanks, botRankById: botRanks };
-  }, [usersOnly, botsOnly]);
+  }, [usersOnlyByDate, botsOnlyByDate]);
 
   const filteredUsers = useMemo(() => {
-    if (filter === "users") return usersOnly;
-    if (filter === "bots") return botsOnly;
+    if (filter === "users") return usersOnlyByDate;
+    if (filter === "bots") return botsOnlyByAvg;
     return sorted;
-  }, [filter, usersOnly, botsOnly, sorted]);
+  }, [filter, usersOnlyByDate, botsOnlyByAvg, sorted]);
 
   if (!users.length) {
     return (
@@ -63,7 +71,7 @@ export function UserCardsPage({
               showBackOnly={!isAdmin && u?.is_bot}
               userRankInfo={{
                 index: u?.is_bot ? botRankById.get(u.id) : userRankById.get(u.id),
-                total: u?.is_bot ? botsOnly.length : usersOnly.length,
+                total: u?.is_bot ? botsOnlyByDate.length : usersOnlyByDate.length,
               }}
             />
             <button
@@ -78,7 +86,7 @@ export function UserCardsPage({
       </div>
       <div className="fixed bottom-4 right-4 z-40 text-xs text-slate-500 dark:text-slate-400">
         <span className="rounded-full bg-slate-200 px-2 py-1 shadow-sm dark:bg-slate-800">
-          Users {usersOnly.length} · Bots {botsOnly.length}
+          Users {usersOnlyByDate.length} · Bots {botsOnlyByDate.length}
         </span>
       </div>
     </div>

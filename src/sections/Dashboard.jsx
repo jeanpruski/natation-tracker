@@ -418,7 +418,7 @@ export function Dashboard({
                   title="Chaussures"
                   subtitle={
                     <span className="block">
-                      <span className="block">{shoesLifeByRange.name}</span>
+                      <span className="block break-words">{shoesLifeByRange.name}</span>
                       {/* <span className="text-xs opacity-70">
                         Début: {dayjs(shoesLifeByRange.startDate).format("DD/MM/YYYY")} ·{" "}
                         {nfDecimal.format(shoesLifeByRange.targetKm)} km
@@ -429,7 +429,7 @@ export function Dashboard({
                   tone={shoesLifeByRange.remaining <= 0 ? "danger" : "default"}
                   value={
                     <div className="text-right">
-                      <div className="font-bold">
+                      <div className="font-bold whitespace-nowrap">
                         {nfDecimal.format(shoesLifeByRange.remaining / 1000)}{" "}
                         <span className="text-xs opacity-70">
                           km restants

@@ -291,7 +291,7 @@ export function UserHoloCard({
             {showShoeDetails && (
               <div>
                 <span className="text-xs uppercase tracking-wide text-emerald-200">Chaussures</span>
-                <span className="ml-2 font-semibold">{userShoeName}</span>
+                <span className="ml-2 font-semibold break-words">{userShoeName}</span>
               </div>
             )}
             {showAverage && (
@@ -301,9 +301,6 @@ export function UserHoloCard({
                   {nfDecimal.format(averageValue)} km
                   {showUserAverageValue && (
                     <span className="ml-1 italic text-white font-normal text-[13px]">(3 derniers mois)</span>
-                  )}
-                  {showBotAverageValue && (
-                    <span className="ml-1 italic text-white font-normal text-[13px]">(total)</span>
                   )}
                 </span>
               </div>
