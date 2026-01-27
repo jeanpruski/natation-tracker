@@ -214,6 +214,11 @@ export default function App() {
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name, "fr"));
   }, [users, sessions]);
 
+  const globalUsers = useMemo(() => {
+    if (!derivedUsers.length) return derivedUsers;
+    return derivedUsers.filter((u) => !u.is_bot || (monthTotalsByUser?.[u.id] || 0) > 0);
+  }, [derivedUsers, monthTotalsByUser]);
+
   const selectedUserInfo = useMemo(() => {
     if (!selectedUser) return null;
     return users.find((u) => u.id === selectedUser.id) || selectedUser;
@@ -721,7 +726,7 @@ export default function App() {
                 rangeLabel={rangeLabel}
                 modeLabel={modeLabel}
                 mode={mode}
-                users={derivedUsers}
+                users={globalUsers}
                 totalsByUser={monthTotalsByUser}
                 sessions={globalShownSessions}
                 nfDecimal={nfDecimal}
