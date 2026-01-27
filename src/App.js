@@ -10,6 +10,7 @@ import { Dashboard } from "./sections/Dashboard";
 import { GlobalDashboard } from "./sections/GlobalDashboard";
 import { LoadingScreen } from "./sections/LoadingScreen";
 import { BusyOverlay } from "./sections/BusyOverlay";
+import { UserCardsPage } from "./sections/UserCardsPage";
 import { Toast } from "./components/Toast";
 import { useEditAuth } from "./hooks/useEditAuth";
 import { apiGet, apiJson } from "./utils/api";
@@ -28,6 +29,7 @@ export default function App() {
   const FORCE_LOADING = false;
   const { token: authToken, user, isAuth, checking, login, logout: editLogout } = useEditAuth();
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showCardsPage, setShowCardsPage] = useState(false);
   const [toast, setToast] = useState("");
   const [isBusy, setIsBusy] = useState(false);
   const toastTimerRef = useRef(null);
@@ -219,7 +221,9 @@ export default function App() {
 
   const userRankInfo = useMemo(() => {
     if (!selectedUserInfo || !users.length) return null;
-    const sorted = [...users].sort((a, b) => {
+    const isSelectedBot = Boolean(selectedUserInfo.is_bot);
+    const baseUsers = users.filter((u) => Boolean(u.is_bot) === isSelectedBot);
+    const sorted = [...baseUsers].sort((a, b) => {
       const aTime = new Date(a.created_at || 0).getTime();
       const bTime = new Date(b.created_at || 0).getTime();
       return aTime - bTime;
@@ -669,7 +673,7 @@ export default function App() {
           mode={mode}
           isAuth={isAuth}
           showEditor={showEditorButton}
-          showFilters
+          showFilters={!showCardsPage}
           title={headerTitle}
           editorTargetName={headerTitle}
           loggedUserName={user?.name}
@@ -682,11 +686,17 @@ export default function App() {
           }}
           onModeChange={setMode}
           onRangeChange={setRange}
-          onBack={isGlobalView ? null : () => setSelectedUser(null)}
+          onBack={
+            showCardsPage
+              ? () => setShowCardsPage(false)
+              : isGlobalView
+                ? null
+                : () => setSelectedUser(null)
+          }
         />
 
         <main className="pb-6" style={{ paddingTop: "var(--main-top-padding)" }}>
-          <div className="mx-auto max-w-[1550px]">
+          <div className={showCardsPage ? "mx-auto" : "mx-auto max-w-[1550px]"}>
             {error && (
               <p className="mb-3 rounded-xl bg-rose-100 px-4 py-2 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200">
                 {error}
@@ -697,6 +707,16 @@ export default function App() {
             <BusyOverlay open={isBusy} />
 
             {isGlobalView ? (
+              showCardsPage ? (
+                <UserCardsPage
+                  users={users}
+                  nfDecimal={nfDecimal}
+                  onSelectUser={(u) => {
+                    setShowCardsPage(false);
+                    handleSelectUser(u);
+                  }}
+                />
+              ) : (
               <GlobalDashboard
                 rangeLabel={rangeLabel}
                 modeLabel={modeLabel}
@@ -706,7 +726,10 @@ export default function App() {
                 sessions={globalShownSessions}
                 nfDecimal={nfDecimal}
                 onSelectUser={handleSelectUser}
+                onOpenCards={() => setShowCardsPage(true)}
+                isAdmin={isAdmin}
               />
+              )
             ) : (
               <Dashboard
                 hasSessions={hasSessions}

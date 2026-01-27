@@ -1,13 +1,11 @@
 import React, { useMemo } from "react";
 import { User } from "lucide-react";
 import { Reveal } from "../components/Reveal";
-import { useIsDark } from "../hooks/useTheme";
 import {
   ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
-  Tooltip,
 } from "recharts";
 
 function buildMonthKeys(sessions) {
@@ -41,8 +39,9 @@ export function GlobalDashboard({
   sessions,
   nfDecimal,
   onSelectUser,
+  onOpenCards,
+  isAdmin,
 }) {
-  const isDark = useIsDark();
   const subtitle = mode === "all" ? rangeLabel : `${rangeLabel} · ${modeLabel || ""}`.trim();
   const totals = useMemo(() => {
     return users
@@ -142,6 +141,14 @@ export function GlobalDashboard({
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                 🌍 Global - {subtitle}
               </h2>
+              {onOpenCards && isAdmin && (
+                <button
+                  onClick={onOpenCards}
+                  className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-500"
+                >
+                  Cartes
+                </button>
+              )}
             </div>
             <div className="p-4">
               {!users.length ? (

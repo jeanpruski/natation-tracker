@@ -15,6 +15,8 @@ import {
   Globe,
   Trophy,
   User,
+  Bot,
+  Diamond,
 } from "lucide-react";
 import { KpiChip } from "../components/KpiChip";
 import { SwimChart } from "../components/SwimChart";
@@ -79,8 +81,32 @@ export function Dashboard({
   const userShoeName = userInfo?.shoe_name || "";
   const userShoeStart = userInfo?.shoe_start_date || "";
   const userShoeTarget = userInfo?.shoe_target_km;
-  const hasShoeInfo = userShoeName && userShoeStart && Number.isFinite(Number(userShoeTarget));
+  const isBot = Boolean(userInfo?.is_bot);
+  const botColor = userInfo?.bot_color || "";
+  const botBorderColor = userInfo?.bot_border_color || (isBot ? "#992929" : "");
+  const showShoeDetails = Boolean(userShoeName && userShoeStart);
+  const showShoeTarget = !isBot && Number.isFinite(Number(userShoeTarget));
   const userCardImage = userInfo?.card_image || "";
+
+  const toRgba = (hex, alpha) => {
+    if (!hex) return "";
+    const clean = hex.replace("#", "").trim();
+    if (![3, 6].includes(clean.length)) return "";
+    const full = clean.length === 3 ? clean.split("").map((c) => c + c).join("") : clean;
+    const num = Number.parseInt(full, 16);
+    if (Number.isNaN(num)) return "";
+    const r = (num >> 16) & 255;
+    const g = (num >> 8) & 255;
+    const b = num & 255;
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  };
+
+  const botGradient =
+    isBot && botColor
+      ? `linear-gradient(135deg, ${toRgba(botColor, 0.35)}, ${toRgba(botColor, 0.7)}, ${toRgba(botColor, 0.95)})`
+      : "";
+  const botBorderGradient =
+    isBot && botBorderColor ? `linear-gradient(135deg, ${botBorderColor}, #000000)` : "";
 
   useEffect(() => {
     if (!showUserCard || !userCardImage) {
@@ -250,6 +276,7 @@ export function Dashboard({
               }}
               className="relative select-none rounded-[28px] bg-gradient-to-br from-emerald-300 via-lime-300 to-sky-400 p-2 shadow-[0_28px_110px_rgba(0,0,0,0.75)] dark:shadow-[0_28px_110px_rgba(255,255,255,0.55)]"
               style={{
+                backgroundImage: botBorderGradient || undefined,
                 transform: `rotateX(${cardTilt.x}deg) rotateY(${cardTilt.y}deg) translateZ(${cardTilt.active ? 18 : 0}px) scale(${cardTilt.active ? 1.03 : 1})`,
                 transformStyle: "preserve-3d",
                 transition: cardTilt.active ? "transform 50ms linear" : "transform 220ms ease",
@@ -266,9 +293,20 @@ export function Dashboard({
                 alt="NaCards"
                 className="pointer-events-none absolute -left-3 top-3 z-20 h-14 w-auto drop-shadow-[0_6px_16px_rgba(16,185,129,0.5)]"
               />
-              <div ref={holoRef} className="user-card-holo relative overflow-hidden rounded-[26px] bg-slate-950/95 p-3 text-white">
+              <div
+                ref={holoRef}
+                className="user-card-holo relative overflow-hidden rounded-[26px] bg-slate-950/95 p-3 text-white"
+                style={{
+                  backgroundImage: botGradient || undefined,
+                  backgroundColor: isBot && botColor ? toRgba(botColor, 0.5) : undefined,
+                }}
+              >
                 <div className="mt-2 flex items-center justify-end gap-2 text-right text-2xl font-black tracking-tight">
-                  <User size={18} className="text-emerald-200" />
+                  {isBot ? (
+                    <Bot size={18} className="text-emerald-200" />
+                  ) : (
+                    <User size={18} className="text-emerald-200" />
+                  )}
                   <span>{displayName}</span>
                 </div>
                 <div
@@ -310,11 +348,12 @@ export function Dashboard({
                 </div>
                 <div className="mt-3 min-h-[10rem] rounded-2xl border border-emerald-200/30 bg-emerald-950/50 px-3 py-2 text-sm">
                   <div className="text-xs uppercase tracking-wide text-emerald-200">Chaussures</div>
-                  {hasShoeInfo ? (
+                  {showShoeDetails ? (
                     <div className="mt-1">
                       <div className="font-semibold">{userShoeName}</div>
                       <div className="text-xs text-emerald-100/70">
-                        Debut: {dayjs(userShoeStart).format("DD/MM/YYYY")} · {nfDecimal.format(userShoeTarget)} km
+                        Debut: {dayjs(userShoeStart).format("DD/MM/YYYY")}
+                        {showShoeTarget ? ` · ${nfDecimal.format(userShoeTarget)} km` : ""}
                       </div>
                     </div>
                   ) : (
@@ -326,7 +365,11 @@ export function Dashboard({
                     NaTrack™ {dayjs().format("YYYY")}
                   </div>
                   <span className="ml-auto inline-flex items-center gap-1 text-[10px] opacity-70">
-                    <span aria-hidden="true">★</span>
+                    {isBot ? (
+                      <Diamond size={10} className="text-emerald-200" aria-hidden="true" />
+                    ) : (
+                      <span aria-hidden="true">★</span>
+                    )}
                     {userRankInfo ? `${userRankInfo.index}/${userRankInfo.total}` : "—"}
                   </span>
                 </div>
