@@ -94,7 +94,7 @@ export function GlobalDashboard({
   }, [sessions, users, monthKeys]);
 
   return (
-    <div className="grid gap-4 px-4 xl:px-8 pt-0 pb-8">
+    <div className="grid gap-4 px-4 xl:px-8 pt-4 md:pt-4 xl:pt-0 pb-8">
       <div className="grid gap-4">
         {isAuth && onOpenCards && (
           <Reveal as="section">
