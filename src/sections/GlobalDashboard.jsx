@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Bot, User } from "lucide-react";
+import { Bot, User, Swords } from "lucide-react";
 import { Reveal } from "../components/Reveal";
 
 function buildMonthKeys(sessions) {
@@ -100,11 +100,13 @@ export function GlobalDashboard({
           <Reveal as="section">
             <button
               onClick={onOpenCards}
-              className="relative w-full overflow-hidden rounded-2xl border border-emerald-300/70 bg-gradient-to-r from-emerald-500/35 to-transparent px-4 py-3 text-left text-slate-900 shadow-sm transition-colors duration-200 hover:border-emerald-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 dark:border-emerald-400/30 dark:text-slate-100"
+              className="relative w-full overflow-hidden rounded-2xl border border-emerald-300/70 bg-gradient-to-r from-emerald-500/35 to-transparent px-4 py-3 text-left text-slate-900 shadow-sm transition-colors duration-200 hover:border-emerald-500 hover:ring-1 hover:ring-emerald-400/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 dark:border-emerald-400/30 dark:text-slate-100"
             >
-              <span className="pointer-events-none absolute inset-0 bg-emerald-500/35 opacity-0 transition-opacity duration-300 hover:opacity-100" />
+              <span className="pointer-events-none absolute inset-0 z-0 bg-emerald-500/35 opacity-0 transition-opacity duration-300 hover:opacity-100" />
               <div className="relative z-10 flex items-center justify-between">
-                <div className="text-sm font-semibold text-slate-900 dark:text-slate-100"></div>
+                <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  <Swords size={20} className="text-slate-900 dark:text-slate-100" />
+                </div>
                 <img src="/nacards-logo.png" alt="NaCards" className="h-7 w-auto" />
               </div>
             </button>
