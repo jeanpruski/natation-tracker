@@ -11,6 +11,8 @@ export function UserHoloCard({
   userRunningAvgKm,
   minSpinnerMs = 0,
   showBackOnly = false,
+  autoTiltOnMobile = true,
+  autoTiltVariant = "default",
 }) {
   const displayName = user?.name || "Utilisateur";
   const userShoeName = user?.shoe_name || "";
@@ -32,6 +34,7 @@ export function UserHoloCard({
   const averageValue = showBotAverageValue ? Number(botAvgDistance) : Number(userRunningAvgKm);
 
   const [cardTilt, setCardTilt] = useState({ x: 0, y: 0, active: false });
+  const [autoTilt, setAutoTilt] = useState(false);
   const [cardImageReady, setCardImageReady] = useState(false);
   const [showCardSpinner, setShowCardSpinner] = useState(minSpinnerMs > 0);
   const isCardLoading = showCardSpinner;
@@ -45,6 +48,18 @@ export function UserHoloCard({
 
   const MAX_TILT = 18;
   const PERSPECTIVE = 700;
+
+  useEffect(() => {
+    if (!autoTiltOnMobile) {
+      setAutoTilt(false);
+      return;
+    }
+    const mq = window.matchMedia("(max-width: 768px), (pointer: coarse)");
+    const update = () => setAutoTilt(mq.matches);
+    update();
+    mq.addEventListener?.("change", update);
+    return () => mq.removeEventListener?.("change", update);
+  }, [autoTiltOnMobile]);
 
   const toRgba = (hex, alpha) => {
     if (!hex) return "";
@@ -195,32 +210,44 @@ export function UserHoloCard({
     >
       <div
         ref={cardRef}
-        onPointerDown={(evt) => {
-          isPointerDownRef.current = true;
-          evt.currentTarget.setPointerCapture?.(evt.pointerId);
-          handleTiltMove(evt);
-        }}
-        onPointerMove={handleTiltMove}
-        onPointerUp={(evt) => {
-          isPointerDownRef.current = false;
-          evt.currentTarget.releasePointerCapture?.(evt.pointerId);
-          resetTilt();
-        }}
-        onPointerLeave={() => {
-          if (!isPointerDownRef.current) resetTilt();
-        }}
-        onPointerCancel={() => {
-          isPointerDownRef.current = false;
-          resetTilt();
-        }}
+        {...(!autoTilt
+          ? {
+              onPointerDown: (evt) => {
+                isPointerDownRef.current = true;
+                evt.currentTarget.setPointerCapture?.(evt.pointerId);
+                handleTiltMove(evt);
+              },
+              onPointerMove: handleTiltMove,
+              onPointerUp: (evt) => {
+                isPointerDownRef.current = false;
+                evt.currentTarget.releasePointerCapture?.(evt.pointerId);
+                resetTilt();
+              },
+              onPointerLeave: () => {
+                if (!isPointerDownRef.current) resetTilt();
+              },
+              onPointerCancel: () => {
+                isPointerDownRef.current = false;
+                resetTilt();
+              },
+            }
+          : {})}
         className={`relative select-none rounded-[28px] bg-gradient-to-br from-emerald-300 via-lime-300 to-sky-400 p-2 ${
           showShadow ? "shadow-[0_28px_110px_rgba(0,0,0,0.75)] dark:shadow-[0_28px_110px_rgba(255,255,255,0.55)]" : ""
+        } ${
+          autoTilt
+            ? autoTiltVariant === "soft"
+              ? "user-card-auto-tilt-soft"
+              : "user-card-auto-tilt"
+            : ""
         }`}
         style={{
           backgroundImage: botBorderGradient || undefined,
-          transform: `rotateX(${cardTilt.x}deg) rotateY(${cardTilt.y}deg) translateZ(${cardTilt.active ? 18 : 0}px) scale(${cardTilt.active ? 1.03 : 1})`,
+          transform: autoTilt
+            ? undefined
+            : `rotateX(${cardTilt.x}deg) rotateY(${cardTilt.y}deg) translateZ(${cardTilt.active ? 18 : 0}px) scale(${cardTilt.active ? 1.03 : 1})`,
           transformStyle: "preserve-3d",
-          transition: cardTilt.active ? "transform 50ms linear" : "transform 220ms ease",
+          transition: autoTilt ? undefined : cardTilt.active ? "transform 50ms linear" : "transform 220ms ease",
           willChange: "transform",
         }}
       >

@@ -52,6 +52,41 @@ code {
   opacity: var(--spark-opacity, 1);
 }
 
+.user-card-auto-tilt {
+  animation: user-card-auto-tilt 6s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.user-card-auto-tilt-soft {
+  animation: user-card-auto-tilt-soft 7.5s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes user-card-auto-tilt {
+  0% { transform: rotateX(0deg) rotateY(0deg); }
+  25% { transform: rotateX(7deg) rotateY(-8deg); }
+  50% { transform: rotateX(0deg) rotateY(8deg); }
+  75% { transform: rotateX(-7deg) rotateY(5deg); }
+  100% { transform: rotateX(0deg) rotateY(0deg); }
+}
+
+@keyframes user-card-auto-tilt-soft {
+  0% { transform: rotateX(0deg) rotateY(0deg); }
+  25% { transform: rotateX(3deg) rotateY(-4deg); }
+  50% { transform: rotateX(0deg) rotateY(4deg); }
+  75% { transform: rotateX(-3deg) rotateY(2deg); }
+  100% { transform: rotateX(0deg) rotateY(0deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .user-card-auto-tilt {
+    animation: none;
+  }
+  .user-card-auto-tilt-soft {
+    animation: none;
+  }
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -103,6 +138,7 @@ body,
 html,
 body {
   background: linear-gradient(to bottom, #f0f9ff 0%, #eef2ff 50%, #ffffff 100%);
+  overflow-x: hidden;
 }
 
 html.dark,

@@ -67,9 +67,5 @@ export const normalizeSession = (s) => ({
 });
 
 export const getInitialRange = () => {
-  if (typeof window === "undefined") return "all";
-  const w = window.innerWidth;
-  if (w < 800) return "3m";
-  if (w < 1280) return "6m";
-  return "all";
+  return "month";
 };

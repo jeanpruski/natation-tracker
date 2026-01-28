@@ -185,6 +185,11 @@ export default function App() {
   }, [range, mode]);
 
   useEffect(() => {
+    if (!showCardsPage) return;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [showCardsPage, cardsFilter]);
+
+  useEffect(() => {
     if (!selectedUser) return;
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [selectedUser]);

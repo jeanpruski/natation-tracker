@@ -95,6 +95,7 @@ export function UserCardsPage({
               minSpinnerMs={500}
               userRunningAvgKm={!u?.is_bot ? userRunningAvgById?.get(u.id) : null}
               showBackOnly={!isAdmin && u?.is_bot}
+              autoTiltVariant="soft"
               userRankInfo={{
                 index: u?.is_bot ? botRankById.get(u.id) : userRankById.get(u.id),
                 total: u?.is_bot ? botsOnlyByDate.length : usersOnlyByDate.length,
