@@ -23,11 +23,14 @@ export function UserHoloCard({
   const userDescription = user?.description || "";
   const botAvgDistance = user?.avg_distance_m;
   const isBot = Boolean(user?.is_bot);
+  const botCardType = user?.bot_card_type || "";
+  const botEventDate = user?.bot_event_date || "";
   const botColor = user?.bot_color || "";
   const botBorderColor = user?.bot_border_color || (isBot ? "#992929" : "");
   const showShoeDetails = Boolean(userShoeName);
   const showShoeTarget = !isBot && Number.isFinite(Number(userShoeTarget));
   const showDescription = Boolean(userDescription);
+  const showEventDate = isBot && botCardType === "evenement" && Boolean(botEventDate);
   const showBotAverageValue = showBotAverage && isBot && Number.isFinite(Number(botAvgDistance)) && Number(botAvgDistance) > 0;
   const showUserAverageValue = !isBot && Number.isFinite(Number(userRunningAvgKm)) && Number(userRunningAvgKm) > 0;
   const showAverage = showBotAverageValue || showUserAverageValue;
@@ -316,14 +319,32 @@ export function UserHoloCard({
             )}
             </div>
             <div className="mt-3 min-h-[10rem] rounded-2xl border border-emerald-200/30 bg-emerald-950/50 px-3 py-2 text-sm flex flex-col">
+            {showEventDate && (
+              <div className="">
+                <span className="text-xs uppercase tracking-wide text-emerald-200">Date</span>
+                <span className="ml-2 font-semibold break-words">
+                  {dayjs(botEventDate).isValid()
+                    ? (() => {
+                        const formatted = dayjs(botEventDate).locale("fr").format("dddd D MMMM YYYY");
+                        const parts = formatted.split(" ");
+                        if (parts.length < 4) return formatted;
+                        const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
+                        const day = cap(parts[0]);
+                        const month = cap(parts[2]);
+                        return `${day} ${parts[1]} ${month} ${parts.slice(3).join(" ")}`;
+                      })()
+                    : botEventDate}
+                </span>
+              </div>
+            )}
             {showShoeDetails && (
-              <div>
+              <div className={showEventDate ? "mt-1" : ""}>
                 <span className="text-xs uppercase tracking-wide text-emerald-200">Chaussures</span>
                 <span className="ml-2 font-semibold break-words">{userShoeName}</span>
               </div>
             )}
             {showAverage && (
-              <div className={showShoeDetails ? "mt-2" : ""}>
+              <div className={showShoeDetails ? "mt-1" : ""}>
                 <span className="text-xs uppercase tracking-wide text-emerald-200">{averageLabel}</span>
                 <span className="ml-2 text-[14px] font-semibold text-white">
                   {nfDecimal.format(averageValue)} km
