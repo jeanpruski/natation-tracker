@@ -1,7 +1,8 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ThemeToggle } from "../components/ThemeToggle";
-import { ArrowLeft, Lock, LockOpen } from "lucide-react";
+import { ArrowLeft, Flag, Layers, Lock, LockOpen } from "lucide-react";
 import { LayoutGroup, motion } from "framer-motion";
+import { InfoPopover } from "../components/InfoPopover";
 import { HEADER_SURFACE_CLASS, HEADER_TOP_PADDING_STYLE } from "../constants/layout";
 
 function TypeSwitch({ value, onChange }) {
@@ -106,12 +107,29 @@ export function AppHeader({
 }) {
   const didMountRef = useRef(false);
   const prevOnBackRef = useRef(false);
+  const [showLogoInfo, setShowLogoInfo] = useState(false);
+  const logoBtnRef = useRef(null);
+  const [logoRect, setLogoRect] = useState(null);
   useEffect(() => {
     didMountRef.current = true;
   }, []);
   useEffect(() => {
     prevOnBackRef.current = Boolean(onBack);
   }, [onBack]);
+  useEffect(() => {
+    if (!showLogoInfo) return;
+    const update = () => {
+      const rect = logoBtnRef.current?.getBoundingClientRect?.();
+      if (rect) setLogoRect(rect);
+    };
+    update();
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+    };
+  }, [showLogoInfo]);
 
   return (
     <header
@@ -149,10 +167,53 @@ export function AppHeader({
               </button>
             </motion.div>
           )}
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl text-slate-900 dark:text-slate-100 flex items-center gap-1 whitespace-nowrap">
-            <img src="/big-logo.png" alt="Logo" className="h-9" />
-            {/* {title && <span className="text-base sm:text-lg font-semibold">{title}</span>} */}
-          </h1>
+          <div className="relative">
+            <button
+              ref={logoBtnRef}
+              type="button"
+              onClick={() => setShowLogoInfo((v) => !v)}
+              className="rounded-xl transition hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
+              aria-label="Informations NaTrack"
+            >
+              <h1 className="text-2xl font-bold tracking-tight sm:text-3xl text-slate-900 dark:text-slate-100 flex items-center gap-1 whitespace-nowrap">
+                <img src="/big-logo.png" alt="NaTrack" className="h-9" />
+                {/* {title && <span className="text-base sm:text-lg font-semibold">{title}</span>} */}
+              </h1>
+            </button>
+            <InfoPopover
+              open={showLogoInfo}
+              onClose={() => setShowLogoInfo(false)}
+              headerImage="/big-logo.png"
+              title="Bienvenue sur NaTrack !"
+              actionLabel={null}
+              items={[
+                <strong>NaTrack est bien plus qu’un simple tracker sportif.</strong>,
+                <div className="mt-[40px]">
+                  <span className="inline-flex items-start gap-2">
+                    <Flag size={28} aria-hidden="true" />
+                    <strong>Progresse et accomplis tes objectifs</strong>
+                  </span>
+                  {"\n"}Enregistre tes séances de course, d’entraînement ou d’effort du jour en saisissant tes données manuellement (pour le moment), puis suis ta progression séance après séance pour améliorer tes performances, atteindre de nouveaux paliers, relever des défis et rester motivé grâce aux objectifs et classements intégrés.
+                </div>,
+                <div className="mt-[20px]">
+                  <span className="inline-flex items-start gap-2 ">
+                    <Layers size={28} aria-hidden="true" />
+                    <strong>Débloque et collectionne des cartes</strong>
+                  </span>
+                  {"\n"}Chaque effort compte : plus tu t’entraînes, plus tu débloques de cartes à collectionner et de récompenses à afficher fièrement.
+                </div>,
+                <div className="mt-[20px]">
+                  <strong className="underline">De nombreuses nouveautés et surprises arrivent bientôt avec en plus un tutoriel complet.</strong>
+                </div>,
+                <div className="mt-[60px] text-xs italic text-slate-500 dark:text-slate-400 text-right">
+                  Application réalisée en 2026 par la NaTrack Team
+                </div>,
+              ]}
+              fullWidth
+              anchorRect={logoRect}
+              maxWidth={1024}
+            />
+          </div>
 
           <div className="ml-2 flex items-center gap-2">
             <ThemeToggle />

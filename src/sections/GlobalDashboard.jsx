@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Bot, Swords, Trophy, User } from "lucide-react";
 import { Reveal } from "../components/Reveal";
+import { InfoPopover } from "../components/InfoPopover";
 
 function buildMonthKeys(sessions) {
   const set = new Set();
@@ -39,6 +40,8 @@ export function GlobalDashboard({
 }) {
   const [newsImageReady, setNewsImageReady] = useState(false);
   const [newsImageReady2, setNewsImageReady2] = useState(false);
+  const [showNotifInfo, setShowNotifInfo] = useState(false);
+  const [notifAnchorRect, setNotifAnchorRect] = useState(null);
   useEffect(() => {
     const img = new Image();
     const done = () => setNewsImageReady(true);
@@ -99,18 +102,39 @@ export function GlobalDashboard({
         {isAuth && onOpenCards && (
           <Reveal as="section">
             <div className="flex flex-col gap-3 lg:flex-row">
-              <button
-                type="button"
-                className="relative w-full overflow-hidden rounded-2xl border-0 bg-gradient-to-l from-rose-400/60 to-transparent px-4 py-3 text-left text-slate-900 shadow-sm transition-colors duration-200 hover:ring-1 hover:ring-rose-300/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 dark:text-slate-100"
-              >
-                <span className="pointer-events-none absolute inset-0 z-0 bg-rose-400/45 opacity-0 transition-opacity duration-300 hover:opacity-100" />
-                <div className="relative z-10 flex items-center justify-between">
-                  <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                    Notification
+              <div className="relative w-full">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    setNotifAnchorRect(rect);
+                    setShowNotifInfo((v) => !v);
+                  }}
+                  className="relative w-full overflow-hidden rounded-2xl border-0 bg-gradient-to-l from-rose-400/60 to-transparent px-4 py-3 text-left text-slate-900 shadow-sm transition-colors duration-200 hover:ring-1 hover:ring-rose-300/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 dark:text-slate-100"
+                >
+                  <span className="pointer-events-none absolute inset-0 z-0 bg-rose-400/45 opacity-0 transition-opacity duration-300 hover:opacity-100" />
+                  <div className="relative z-10 flex items-center justify-between">
+                    <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                      Notification
+                    </div>
+                    <Swords size={20} className="text-slate-900 dark:text-white" />
                   </div>
-                  <Swords size={20} className="text-slate-900 dark:text-white" />
-                </div>
-              </button>
+                </button>
+                <InfoPopover
+                  open={showNotifInfo}
+                  onClose={() => setShowNotifInfo(false)}
+                  title="Notifications"
+                  actionLabel={null}
+                  items={[
+                    "Nouveaux records et évolutions de podium.",
+                    "Récaps mensuels et objectifs atteints.",
+                    "Événements spéciaux à venir.",
+                  ]}
+                  align="left"
+                  maxWidth={360}
+                  anchorRect={notifAnchorRect}
+                />
+              </div>
 
               <button
                 onClick={onOpenCards}
