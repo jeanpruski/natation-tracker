@@ -1,6 +1,7 @@
-import React, { useMemo, useCallback, useState } from "react";
+import React, { useMemo, useCallback, useState, useEffect } from "react";
 import { UserHoloCard } from "../components/UserHoloCard";
 import { InfoPopover } from "../components/InfoPopover";
+import { apiGet } from "../utils/api";
 
 export function UserCardsPage({
   users,
@@ -12,9 +13,15 @@ export function UserCardsPage({
   isAdmin = false,
   currentUserId = null,
   showAllCardsFront = false,
+  isAuth = false,
+  authToken = null,
+  cardResults = [],
 }) {
   const [showResultsInfo, setShowResultsInfo] = useState(false);
   const [resultsUser, setResultsUser] = useState(null);
+  const [resultsItems, setResultsItems] = useState([]);
+  const [resultsLoading, setResultsLoading] = useState(false);
+  const [resultsError, setResultsError] = useState("");
   const sorted = useMemo(() => {
     return [...users].sort((a, b) => {
       const aTime = new Date(a.created_at || 0).getTime();
@@ -69,6 +76,15 @@ export function UserCardsPage({
     return [...withAvg.map((x) => x.u), ...withoutAvg];
   }, [usersOnlyByDate, getUserAvg]);
 
+  const unlockedBotIds = useMemo(() => {
+    const set = new Set();
+    (cardResults || []).forEach((r) => {
+      if (r?.bot_id !== undefined && r?.bot_id !== null) set.add(String(r.bot_id));
+      if (r?.bot_name) set.add(`name:${String(r.bot_name).toLowerCase()}`);
+    });
+    return set;
+  }, [cardResults]);
+
   const filteredUsers = useMemo(() => {
     if (filter === "users") {
       if (!currentUserId) return usersSortedByAvg;
@@ -76,9 +92,67 @@ export function UserCardsPage({
       if (!me) return usersSortedByAvg;
       return [me, ...usersSortedByAvg.filter((u) => u.id !== currentUserId)];
     }
-    if (filter === "bots") return botsOnlyByAvg;
+    if (filter === "bots") {
+      const unlocked = botsOnlyByAvg.filter(
+        (u) =>
+          unlockedBotIds.has(String(u.id)) ||
+          unlockedBotIds.has(`name:${String(u.name || "").toLowerCase()}`)
+      );
+      const locked = botsOnlyByAvg.filter(
+        (u) =>
+          !unlockedBotIds.has(String(u.id)) &&
+          !unlockedBotIds.has(`name:${String(u.name || "").toLowerCase()}`)
+      );
+      return [...unlocked, ...locked];
+    }
     return sorted;
-  }, [filter, usersSortedByAvg, botsOnlyByAvg, sorted, currentUserId]);
+  }, [filter, usersSortedByAvg, botsOnlyByAvg, sorted, currentUserId, unlockedBotIds]);
+
+  useEffect(() => {
+    if (!showResultsInfo || !resultsUser?.id) return;
+    if (!isAuth || !authToken) {
+      setResultsItems([<span key="auth">Connecte-toi pour voir les résultats.</span>]);
+      return;
+    }
+    let alive = true;
+    setResultsLoading(true);
+    setResultsError("");
+    (async () => {
+      try {
+        const data = await apiGet(`/me/card-results?bot_id=${encodeURIComponent(resultsUser.id)}`, authToken);
+        if (!alive) return;
+        const items = (Array.isArray(data) ? data : []).map((row, idx) => {
+          const km = Number(row.distance_m) / 1000;
+          const kmLabel = Number.isFinite(km) ? `${km.toFixed(3)} km` : "—";
+          const targetKm = Number(row.target_distance_m) / 1000;
+          const targetLabel = Number.isFinite(targetKm) ? `${targetKm.toFixed(3)} km` : null;
+          return (
+            <div key={row.id || idx} className="flex items-center justify-between gap-4">
+              <span className="text-sm text-slate-700 dark:text-slate-200">{row.achieved_at}</span>
+              <span className="text-right text-sm font-semibold text-slate-900 dark:text-slate-100">
+                {kmLabel}
+                {targetLabel ? (
+                  <span className="ml-2 text-xs font-normal text-slate-500 dark:text-slate-400">
+                    / {targetLabel}
+                  </span>
+                ) : null}
+              </span>
+            </div>
+          );
+        });
+        setResultsItems(items.length ? items : [<span key="empty">Aucun résultat pour le moment.</span>]);
+      } catch (e) {
+        if (!alive) return;
+        setResultsError(e?.message || "Erreur résultats");
+        setResultsItems([]);
+      } finally {
+        if (alive) setResultsLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [showResultsInfo, resultsUser, isAuth, authToken]);
 
   if (!users.length) {
     return (
@@ -100,6 +174,13 @@ export function UserCardsPage({
         }
         actionLabel={null}
         headerImage="/big-logo.png"
+        items={
+          resultsLoading
+            ? [<span key="loading">Chargement...</span>]
+            : resultsError
+              ? [<span key="error">Erreur résultats</span>]
+              : resultsItems
+        }
         fullWidth
         maxWidth={1024}
         anchorRect={null}
@@ -115,14 +196,19 @@ export function UserCardsPage({
               showBotAverage
               minSpinnerMs={500}
               userRunningAvgKm={!u?.is_bot ? userRunningAvgById?.get(u.id) : null}
-              showBackOnly={!showAllCardsFront && u?.is_bot}
+              showBackOnly={
+                !showAllCardsFront &&
+                u?.is_bot &&
+                !unlockedBotIds.has(String(u.id)) &&
+                !unlockedBotIds.has(`name:${String(u.name || "").toLowerCase()}`)
+              }
               autoTiltVariant="soft"
               userRankInfo={{
                 index: u?.is_bot ? botRankById.get(u.id) : userRankById.get(u.id),
                 total: u?.is_bot ? botsOnlyByDate.length : usersOnlyByDate.length,
               }}
             />
-            {!(u?.is_bot && !showAllCardsFront) ? (
+            {!(u?.is_bot && !showAllCardsFront && !unlockedBotIds.has(String(u.id))) ? (
               <div className="flex items-center gap-2">
                 {!!u?.is_bot && (
                   <button

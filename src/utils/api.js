@@ -12,8 +12,10 @@ async function parseJsonOrThrow(r) {
   return r.json();
 }
 
-export async function apiGet(path) {
-  const r = await fetch(`${API_BASE}${path}`, { credentials: "same-origin" });
+export async function apiGet(path, editToken) {
+  const headers = {};
+  if (editToken) headers["Authorization"] = `Bearer ${editToken}`;
+  const r = await fetch(`${API_BASE}${path}`, { credentials: "same-origin", headers });
   if (!r.ok) {
     const msg = await r.text().catch(() => r.statusText);
     throw new Error(`HTTP ${r.status} — ${msg?.slice?.(0, 120) || r.statusText}`);
@@ -43,4 +45,3 @@ export async function apiJson(method, path, body, editToken) {
   }
   return parseJsonOrThrow(r);
 }
-

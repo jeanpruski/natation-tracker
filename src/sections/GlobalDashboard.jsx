@@ -37,6 +37,11 @@ export function GlobalDashboard({
   onOpenCards,
   isAdmin,
   isAuth,
+  notifications = [],
+  notificationsLoading = false,
+  notificationsError = "",
+  onRefreshNotifications,
+  activeChallenge,
 }) {
   const [newsImageReady, setNewsImageReady] = useState(false);
   const [newsImageReady2, setNewsImageReady2] = useState(false);
@@ -54,6 +59,11 @@ export function GlobalDashboard({
       img.onerror = null;
     };
   }, []);
+
+  const unreadNotifications = (notifications || []).filter(
+    (n) => !n.read_at && (n.type === "challenge_start" || n.type === "event_start")
+  );
+  const hasUnreadNotif = unreadNotifications.length > 0;
 
   useEffect(() => {
     const img = new Image();
@@ -96,6 +106,13 @@ export function GlobalDashboard({
     return map;
   }, [sessions, users, monthKeys]);
 
+  const getRemainingDays = (dueDate) => {
+    if (!dueDate) return null;
+    const end = new Date(`${dueDate}T23:59:59`);
+    const diff = Math.ceil((end - new Date()) / (1000 * 60 * 60 * 24));
+    return Math.max(0, diff);
+  };
+
   return (
     <div className="grid gap-4 px-4 xl:px-8 pt-4 md:pt-4 xl:pt-0 pb-8">
       <div className="grid gap-4">
@@ -108,9 +125,17 @@ export function GlobalDashboard({
                   onClick={() => {
                     setShowNotifInfo((v) => !v);
                   }}
-                  className="relative w-full overflow-hidden rounded-2xl border-0 bg-gradient-to-l from-rose-400/60 to-transparent px-4 py-3 text-left text-slate-900 shadow-sm transition-colors duration-200 hover:ring-1 hover:ring-rose-300/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 dark:text-slate-100"
+                  className={`relative w-full overflow-hidden rounded-2xl border-0 px-4 py-3 text-left text-slate-900 shadow-sm transition-colors duration-200 focus:outline-none focus-visible:ring-2 dark:text-slate-100 ${
+                    hasUnreadNotif
+                      ? "bg-gradient-to-l from-rose-400/60 to-transparent hover:ring-1 hover:ring-rose-300/70 focus-visible:ring-rose-300"
+                      : "bg-gradient-to-l from-sky-400/60 to-transparent hover:ring-1 hover:ring-sky-300/70 focus-visible:ring-sky-300"
+                  }`}
                 >
-                  <span className="pointer-events-none absolute inset-0 z-0 bg-rose-400/45 opacity-0 transition-opacity duration-300 hover:opacity-100" />
+                  <span
+                    className={`pointer-events-none absolute inset-0 z-0 opacity-0 transition-opacity duration-300 hover:opacity-100 ${
+                      hasUnreadNotif ? "bg-rose-400/45" : "bg-sky-400/45"
+                    }`}
+                  />
                   <div className="relative z-10 flex items-center justify-between">
                     <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                       Notification
@@ -121,9 +146,38 @@ export function GlobalDashboard({
                 <InfoPopover
                   open={showNotifInfo}
                   onClose={() => setShowNotifInfo(false)}
-                  title={<span className="text-[26px] leading-tight">Pas de notification pour le moment</span>}
+                  title={
+                    unreadNotifications.length
+                      ? "Notifications"
+                      : <span className="text-[26px] leading-tight">Pas de notification</span>
+                  }
                   actionLabel={null}
                   headerImage="/big-logo.png"
+                  items={
+                    unreadNotifications.length
+                      ? unreadNotifications.map((n) => (
+                        <div key={n.id} className="flex flex-col gap-1">
+                          <div className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">
+                            {n.title || "Notification"}
+                          </div>
+                          {n.body && <div className="text-sm text-slate-700 dark:text-slate-200">{n.body}</div>}
+                          {activeChallenge?.id &&
+                            n?.meta?.challenge_id === activeChallenge.id &&
+                            activeChallenge?.due_date && (
+                              <div className="text-xs text-slate-500">
+                                Il te reste {getRemainingDays(activeChallenge.due_date)} jour
+                                {getRemainingDays(activeChallenge.due_date) > 1 ? "s" : ""}
+                              </div>
+                            )}
+                          <div className="text-xs text-slate-400">{n.created_at}</div>
+                        </div>
+                      ))
+                      : notificationsLoading
+                        ? [<span key="loading">Chargement...</span>]
+                        : notificationsError
+                          ? [<span key="error">Erreur notifications</span>]
+                          : []
+                  }
                   fullWidth
                   maxWidth={1024}
                   anchorRect={null}

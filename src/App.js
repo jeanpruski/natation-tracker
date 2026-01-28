@@ -12,6 +12,7 @@ import { LoadingScreen } from "./sections/LoadingScreen";
 import { BusyOverlay } from "./sections/BusyOverlay";
 import { UserCardsPage } from "./sections/UserCardsPage";
 import { Toast } from "./components/Toast";
+import { InfoPopover } from "./components/InfoPopover";
 import { useEditAuth } from "./hooks/useEditAuth";
 import { apiGet, apiJson } from "./utils/api";
 import { downloadCSV } from "./utils/downloadCSV";
@@ -65,6 +66,11 @@ export default function App() {
   const [showAllCardsFront, setShowAllCardsFront] = useState(false);
   const [toast, setToast] = useState("");
   const [isBusy, setIsBusy] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [notificationsError, setNotificationsError] = useState("");
+  const [activeChallenge, setActiveChallenge] = useState(null);
+  const [victoryInfo, setVictoryInfo] = useState(null);
   const toastTimerRef = useRef(null);
   const didInitScrollRef = useRef(false);
   const prevAuthRef = useRef(isAuth);
@@ -154,6 +160,52 @@ export default function App() {
     return () => { alive = false; };
   }, []);
 
+  const refreshNotifications = async () => {
+    if (!isAuth || !authToken) {
+      setNotifications([]);
+      setNotificationsError("");
+      return;
+    }
+    setNotificationsLoading(true);
+    setNotificationsError("");
+    try {
+      const data = await apiGet("/me/notifications?limit=50", authToken);
+      setNotifications(Array.isArray(data) ? data : []);
+    } catch (e) {
+      setNotifications([]);
+      setNotificationsError(e?.message || "Erreur notifications");
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
+  const [cardResults, setCardResults] = useState([]);
+  const refreshCardResults = async () => {
+    if (!isAuth || !authToken) {
+      setCardResults([]);
+      return;
+    }
+    try {
+      const data = await apiGet("/me/card-results", authToken);
+      setCardResults(Array.isArray(data) ? data : []);
+    } catch {
+      setCardResults([]);
+    }
+  };
+
+  const refreshChallenge = async () => {
+    if (!isAuth || !authToken) {
+      setActiveChallenge(null);
+      return;
+    }
+    try {
+      const data = await apiGet("/me/challenge", authToken);
+      setActiveChallenge(data?.challenge || null);
+    } catch {
+      setActiveChallenge(null);
+    }
+  };
+
   useEffect(() => {
     return () => {
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
@@ -183,6 +235,20 @@ export default function App() {
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, [isAuth]);
+
+  useEffect(() => {
+    if (!isAuth) {
+      setNotifications([]);
+      setNotificationsError("");
+    }
+  }, [isAuth]);
+
+  useEffect(() => {
+    if (!isAuth || !authToken) return;
+    refreshNotifications();
+    refreshChallenge();
+    refreshCardResults();
+  }, [isAuth, authToken]);
 
   useEffect(() => {
     if (didInitHistoryRef.current) return;
@@ -779,6 +845,16 @@ export default function App() {
       const created = await apiJson("POST", basePath, body, authToken);
       const createdWithName = { ...created, user_name: selectedUser?.name };
       setSessions((prev) => [...prev, normalizeSession(createdWithName)]);
+      if (created?.challenge_completed && created?.challenge) {
+        setVictoryInfo({
+          botName: created.challenge.bot_name || "un bot",
+          distanceKm: Number(created.challenge.target_distance_m) / 1000,
+          actualKm: Number(payload.distance) / 1000,
+        });
+      }
+      refreshNotifications();
+      refreshChallenge();
+      refreshCardResults();
     });
     setShowEditModal(false);
     showToast("Seance ajoutée");
@@ -1013,6 +1089,37 @@ export default function App() {
 
             <Toast message={toast} />
             <BusyOverlay open={isBusy} />
+            <InfoPopover
+              open={!!victoryInfo}
+              onClose={() => setVictoryInfo(null)}
+              title="Victoire !"
+              actionLabel={null}
+              headerImage="/big-logo.png"
+              items={
+                victoryInfo
+                  ? [
+                      <div key="victory" className="text-sm text-slate-700 dark:text-slate-200">
+                        Tu as battu <strong>{victoryInfo.botName}</strong> !
+                        <br />
+                        Distance réalisée :{" "}
+                        <strong>{Number.isFinite(victoryInfo.actualKm)
+                          ? `${victoryInfo.actualKm.toFixed(3)} km`
+                          : "—"}
+                        </strong>
+                        <br />
+                        Objectif :{" "}
+                        <strong>{Number.isFinite(victoryInfo.distanceKm)
+                          ? `${victoryInfo.distanceKm.toFixed(3)} km`
+                          : "—"}
+                        </strong>
+                      </div>,
+                    ]
+                  : []
+              }
+              fullWidth
+              maxWidth={720}
+              anchorRect={null}
+            />
 
             {isGlobalView ? (
               showCardsPage ? (
@@ -1024,6 +1131,9 @@ export default function App() {
                   isAdmin={isAdmin}
                   currentUserId={user?.id || null}
                   showAllCardsFront={showAllCardsFront}
+                  isAuth={isAuth}
+                  authToken={authToken}
+                  cardResults={cardResults}
                   onSelectUser={(u) => {
                     setShowCardsPage(false);
                     setUserCardOpen(false);
@@ -1048,6 +1158,11 @@ export default function App() {
                 }}
                 isAdmin={isAdmin}
                 isAuth={isAuth}
+                notifications={notifications}
+                notificationsLoading={notificationsLoading}
+                notificationsError={notificationsError}
+                onRefreshNotifications={refreshNotifications}
+                activeChallenge={activeChallenge}
               />
               )
             ) : (
@@ -1063,6 +1178,8 @@ export default function App() {
                   userRunningAvgById={userRunningAvgById}
                   userCardOpen={userCardOpen}
                   onUserCardOpenChange={setUserCardOpen}
+                  currentUserId={user?.id || null}
+                  activeChallenge={activeChallenge}
                   shownSessions={shownSessions}
                   stats={stats}
                   monthTotals={monthTotals}

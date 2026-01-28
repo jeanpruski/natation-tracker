@@ -69,6 +69,8 @@ export function Dashboard({
   userRunningAvgById,
   userCardOpen,
   onUserCardOpenChange,
+  currentUserId,
+  activeChallenge,
 }) {
   const showUserCard = Boolean(userCardOpen);
   const setShowUserCard = onUserCardOpenChange || (() => {});
@@ -78,6 +80,18 @@ export function Dashboard({
   const userRunningAvgKm = userInfo ? userRunningAvgById?.get(userInfo.id) : null;
   const isBotUser = Boolean(userInfo?.is_bot);
   const botBorderColor = userInfo?.bot_border_color || (isBotUser ? "#992929" : "");
+  const showChallenge = !!activeChallenge && userInfo?.id && userInfo?.id === currentUserId;
+
+  const remainingDays = (() => {
+    if (!activeChallenge?.due_date) return null;
+    const end = dayjs(activeChallenge.due_date).endOf("day");
+    const diff = Math.ceil(end.diff(dayjs(), "day", true));
+    return Math.max(0, diff);
+  })();
+
+  const challengeKm = activeChallenge?.target_distance_m
+    ? (Number(activeChallenge.target_distance_m) / 1000).toFixed(3)
+    : null;
 
   const toRgba = (hex, alpha) => {
     if (!hex) return "";
@@ -345,6 +359,27 @@ export function Dashboard({
     <>
       {heroBadge}
       {userCard}
+      {showChallenge && (
+        <div className="px-4 xl:px-8 pt-4">
+          <Reveal>
+            <div className="rounded-2xl border border-emerald-200/50 bg-emerald-50/50 px-4 py-3 text-sm text-emerald-900 shadow-sm dark:border-emerald-400/20 dark:bg-emerald-900/20 dark:text-emerald-100">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="font-semibold">
+                  Défi en cours contre {activeChallenge.bot_name || "un bot"}
+                </div>
+                <div className="text-xs text-emerald-700 dark:text-emerald-200">
+                  Il te reste {remainingDays} jour{remainingDays > 1 ? "s" : ""}
+                </div>
+              </div>
+              {challengeKm && (
+                <div className="mt-1 text-sm">
+                  Distance à atteindre : <span className="font-semibold">{challengeKm} km</span>
+                </div>
+              )}
+            </div>
+          </Reveal>
+        </div>
+      )}
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_3fr] gap-4 items-start px-4 xl:px-8 pt-4 pb-4 xl:pt-3 xl:pb-4">
         <Reveal as="aside" className="self-start">
           <div className="grid grid-cols-1 min-[800px]:grid-cols-2 xl:grid-cols-1 gap-4">
