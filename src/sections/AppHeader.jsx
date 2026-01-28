@@ -147,12 +147,19 @@ export function AppHeader({
           {showEditor && (
             <button
               onClick={onOpenEditor}
-            className={`ml-auto xl:ml-2 rounded-xl px-3 py-2 text-sm transition ${
-              isAuth ? "bg-emerald-300 text-slate-900 hover:bg-emerald-400" : "bg-amber-500 text-white hover:bg-amber-400"
-            }`}
+              className={`ml-auto xl:ml-2 rounded-xl px-3 py-2 text-sm transition relative overflow-hidden ${
+                isAuth
+                  ? "bg-emerald-300/60 text-slate-900 hover:bg-emerald-300/80"
+                  : "bg-amber-500/70 text-white hover:bg-amber-500/90"
+              }`}
               title={isAuth ? "Ouvrir l’éditeur" : "Déverrouiller l’édition"}
             >
-              <span className="inline-flex items-center gap-1.5">
+              <span
+                className={`pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 hover:opacity-100 ${
+                  isAuth ? "bg-emerald-300/45" : "bg-amber-400/40"
+                }`}
+              />
+              <span className="inline-flex items-center gap-1.5 relative z-10">
                 {isAuth ? "✏️" : "🔓"}
                 {isAuth && loggedUserName && <span className="sm:inline">{` ${loggedUserName}`}</span>}
               </span>

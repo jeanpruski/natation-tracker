@@ -902,7 +902,7 @@ export default function App() {
   return (
     <div
       className="
-        min-h-screen
+        min-h-[100%]
         relative
         bg-gradient-to-b
         from-slate-100 via-slate-50 to-slate-50
