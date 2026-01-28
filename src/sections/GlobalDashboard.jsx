@@ -105,7 +105,7 @@ export function GlobalDashboard({
               <span className="pointer-events-none absolute inset-0 z-0 bg-emerald-300/45 opacity-0 transition-opacity duration-300 hover:opacity-100" />
               <div className="relative z-10 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
-                  <Trophy size={20} className="text-slate-900 dark:text-slate-100" />
+                  <Trophy size={20} className="text-emerald-700 dark:text-sky-300" />
                 </div>
                 <img src="/nacards-logo.png" alt="NaCards" className="h-7 w-auto" />
               </div>

@@ -67,8 +67,11 @@ export function Dashboard({
   userInfo,
   userRankInfo,
   userRunningAvgById,
+  userCardOpen,
+  onUserCardOpenChange,
 }) {
-  const [showUserCard, setShowUserCard] = useState(false);
+  const showUserCard = Boolean(userCardOpen);
+  const setShowUserCard = onUserCardOpenChange || (() => {});
 
   const displayName = userName || userInfo?.name || "";
   const cardUser = userInfo || (userName ? { name: userName } : {});
@@ -166,9 +169,9 @@ export function Dashboard({
         <div className="relative flex items-center justify-between gap-2 text-xl sm:text-2xl font-black tracking-tight">
           <div className="flex items-center gap-2">
             {isBotUser ? (
-              <Bot size={18} className="text-white" />
+              <Bot size={18} className="text-emerald-700 dark:text-sky-300" />
             ) : (
-              <User size={18} className="text-white" />
+              <User size={18} className="text-emerald-700 dark:text-sky-300" />
             )}
             <span>{displayName}</span>
           </div>

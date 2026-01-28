@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useCallback } from "react";
 import { UserHoloCard } from "../components/UserHoloCard";
 
 export function UserCardsPage({
@@ -8,6 +8,7 @@ export function UserCardsPage({
   filter = "mixte",
   userRunningAvgById,
   isAdmin = false,
+  currentUserId = null,
 }) {
   const sorted = useMemo(() => {
     return [...users].sort((a, b) => {
@@ -43,11 +44,36 @@ export function UserCardsPage({
     return { userRankById: userRanks, botRankById: botRanks };
   }, [usersOnlyByDate, botsOnlyByDate]);
 
+  const getUserAvg = useCallback((u) => {
+    const byMap = userRunningAvgById?.get?.(u.id);
+    if (Number.isFinite(byMap)) return byMap;
+    const fallback = Number(u?.avg_distance_m);
+    return Number.isFinite(fallback) ? fallback / 1000 : null;
+  }, [userRunningAvgById]);
+
+  const usersSortedByAvg = useMemo(() => {
+    const list = [...usersOnlyByDate];
+    const withAvg = [];
+    const withoutAvg = [];
+    list.forEach((u) => {
+      const avg = getUserAvg(u);
+      if (avg === null) withoutAvg.push(u);
+      else withAvg.push({ u, avg });
+    });
+    withAvg.sort((a, b) => b.avg - a.avg);
+    return [...withAvg.map((x) => x.u), ...withoutAvg];
+  }, [usersOnlyByDate, getUserAvg]);
+
   const filteredUsers = useMemo(() => {
-    if (filter === "users") return usersOnlyByDate;
+    if (filter === "users") {
+      if (!currentUserId) return usersSortedByAvg;
+      const me = usersSortedByAvg.find((u) => u.id === currentUserId);
+      if (!me) return usersSortedByAvg;
+      return [me, ...usersSortedByAvg.filter((u) => u.id !== currentUserId)];
+    }
     if (filter === "bots") return botsOnlyByAvg;
     return sorted;
-  }, [filter, usersOnlyByDate, botsOnlyByAvg, sorted]);
+  }, [filter, usersSortedByAvg, botsOnlyByAvg, sorted, currentUserId]);
 
   if (!users.length) {
     return (

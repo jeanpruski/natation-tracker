@@ -34,14 +34,24 @@ const slugify = (value) => {
 
 const getUserSlug = (user) => slugify(user?.slug || user?.name || "");
 
-const readRouteSlug = () => {
-  if (typeof window === "undefined") return null;
+const readRouteState = () => {
+  if (typeof window === "undefined") return { type: "root", slug: null };
   const path = window.location.pathname || "/";
-  const match = path.match(/^\/user\/([^/]+)\/?$/);
-  return match ? decodeURIComponent(match[1]) : null;
+  const userMatch = path.match(/^\/user\/([^/]+)\/?$/);
+  if (userMatch) return { type: "user", slug: decodeURIComponent(userMatch[1]) };
+  if (path.match(/^\/cards\/?$/)) return { type: "cards", slug: null };
+  return { type: "root", slug: null };
 };
 
-const buildUserPath = (slug) => `/user/${encodeURIComponent(slug)}`;
+const readCardParam = () => {
+  if (typeof window === "undefined") return false;
+  const params = new URLSearchParams(window.location.search);
+  return params.get("card") === "open";
+};
+
+const buildUserPath = (slug, withCard = false) =>
+  `/user/${encodeURIComponent(slug)}${withCard ? "?card=open" : ""}`;
+const buildCardsPath = () => "/cards";
 
 /* =========================
    App principale
@@ -66,7 +76,8 @@ export default function App() {
   const [users, setUsers] = useState([]);
   const [mode, setMode] = useState("run");   // all | swim | run
   const [range, setRange] = useState(getInitialRange); // all | month | 6m | 3m | 2026 | 2025
-  const [routeSlug, setRouteSlug] = useState(readRouteSlug);
+  const [routeState, setRouteState] = useState(readRouteState);
+  const [userCardOpen, setUserCardOpen] = useState(readCardParam);
 
   const [loadingPhase, setLoadingPhase] = useState("loading"); // loading | fading | done
   const [error, setError] = useState("");
@@ -132,23 +143,34 @@ export default function App() {
 
   useEffect(() => {
     const onPop = () => {
-      const slug = readRouteSlug();
-      setRouteSlug(slug);
-      if (!slug) {
+      const next = readRouteState();
+      setRouteState(next);
+      setUserCardOpen(readCardParam());
+      if (next.type === "root") {
         setShowCardsPage(false);
         setSelectedUser(null);
+      }
+      if (next.type === "cards") {
+        if (!isAuth) {
+          setShowCardsPage(false);
+          setSelectedUser(null);
+        } else {
+          setShowCardsPage(true);
+          setSelectedUser(null);
+        }
       }
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
-  }, []);
+  }, [isAuth]);
 
   useEffect(() => {
     if (didInitHistoryRef.current) return;
     didInitHistoryRef.current = true;
     const path = window.location.pathname || "/";
-    const match = path.match(/^\/user\/([^/]+)\/?$/);
-    if (!match) return;
+    const isUser = path.match(/^\/user\/([^/]+)\/?$/);
+    const isCards = path.match(/^\/cards\/?$/);
+    if (!isUser && !isCards) return;
     if (window.history.length > 1) return;
     window.history.replaceState({}, "", "/");
     window.history.pushState({}, "", path);
@@ -310,43 +332,91 @@ export default function App() {
   }, [selectedUser, users]);
 
   useEffect(() => {
-    if (!routeSlug) {
-      if (selectedUser && (window.location.pathname || "/") === "/") {
+    if (routeState.type === "root" && selectedUser) {
+      const slug = getUserSlug(selectedUser);
+      if (slug) {
+        setRouteState({ type: "user", slug });
+        return;
+      }
+    }
+    if (routeState.type === "cards") {
+      if (!isAuth) {
+        setShowCardsPage(false);
         setSelectedUser(null);
+        setUserCardOpen(false);
+        if ((window.location.pathname || "/") !== "/") {
+          window.history.replaceState({}, "", "/");
+          setRouteState({ type: "root", slug: null });
+        }
+        return;
+      }
+      if (!showCardsPage) setShowCardsPage(true);
+      if (selectedUser) setSelectedUser(null);
+      if (userCardOpen) setUserCardOpen(false);
+      return;
+    }
+
+    if (routeState.type === "user") {
+      if (!usersForRouting.length) {
+        if (!selectedUser) {
+          setSelectedUser({ id: `slug:${routeState.slug}`, name: routeState.slug });
+        }
+        return;
+      }
+      const match = userBySlug.get(routeState.slug);
+      if (match) {
+        if (!selectedUser || selectedUser.id !== match.id) {
+          setSelectedUser(match);
+        }
+        if (showCardsPage) setShowCardsPage(false);
+        return;
+      }
+      setSelectedUser(null);
+      if (userCardOpen) setUserCardOpen(false);
+      if ((window.location.pathname || "/") !== "/") {
+        window.history.replaceState({}, "", "/");
+        setRouteState({ type: "root", slug: null });
       }
       return;
     }
-    if (!usersForRouting.length) return;
-    const match = userBySlug.get(routeSlug);
-    if (match) {
-      if (!selectedUser || selectedUser.id !== match.id) {
-        setSelectedUser(match);
-      }
-      return;
-    }
-    setSelectedUser(null);
-    if ((window.location.pathname || "/") !== "/") {
-      window.history.replaceState({}, "", "/");
-      setRouteSlug(null);
-    }
-  }, [routeSlug, userBySlug, usersForRouting.length, selectedUser]);
+
+    if (userCardOpen) setUserCardOpen(false);
+  }, [routeState, userBySlug, usersForRouting.length, selectedUser, showCardsPage, isAuth, userCardOpen]);
 
   useEffect(() => {
-    if (!selectedUser && routeSlug) return;
-    const slug = selectedUser ? getUserSlug(selectedUser) : "";
-    if (slug) {
-      const path = buildUserPath(slug);
-      if ((window.location.pathname || "/") !== path) {
-        window.history.pushState({}, "", path);
-        setRouteSlug(slug);
+    if (showCardsPage) {
+      if (!isAuth) {
+        setShowCardsPage(false);
+        return;
       }
+      const path = buildCardsPath();
+      const current = `${window.location.pathname || "/"}${window.location.search || ""}`;
+      if (current !== path) {
+        window.history.pushState({}, "", path);
+        setRouteState({ type: "cards", slug: null });
+      }
+      return;
+    }
+    if (selectedUser) {
+      const slug = getUserSlug(selectedUser);
+      if (slug) {
+        const path = buildUserPath(slug, userCardOpen);
+        const current = `${window.location.pathname || "/"}${window.location.search || ""}`;
+        if (current !== path) {
+          window.history.pushState({}, "", path);
+          setRouteState({ type: "user", slug });
+        }
+        return;
+      }
+    }
+    if (routeState.type === "user" && !selectedUser && !usersForRouting.length) {
       return;
     }
     if ((window.location.pathname || "/") !== "/") {
       window.history.pushState({}, "", "/");
-      setRouteSlug(null);
+      setRouteState({ type: "root", slug: null });
     }
-  }, [selectedUser, routeSlug]);
+  }, [showCardsPage, selectedUser, isAuth, userCardOpen, routeState.type, usersForRouting.length]);
 
   const userRankInfo = useMemo(() => {
     if (!selectedUserInfo || !users.length) return null;
@@ -774,15 +844,18 @@ export default function App() {
 
   const handleSelectUser = (u) => {
     setSelectedUser(u);
+    const slug = getUserSlug(u);
+    if (slug) setRouteState({ type: "user", slug });
   };
 
   const handleBack = () => {
     if (showCardsPage) {
       setShowCardsPage(false);
+      setRouteState({ type: "root", slug: null });
       return;
     }
     if (selectedUser) {
-      setRouteSlug(null);
+      setRouteState({ type: "root", slug: null });
       setSelectedUser(null);
     }
   };
@@ -901,8 +974,12 @@ export default function App() {
                   userRunningAvgById={userRunningAvgById}
                   filter={cardsFilter}
                   isAdmin={isAdmin}
+                  currentUserId={user?.id || null}
                   onSelectUser={(u) => {
                     setShowCardsPage(false);
+                    setUserCardOpen(false);
+                    const slug = getUserSlug(u);
+                    if (slug) setRouteState({ type: "user", slug });
                     handleSelectUser(u);
                   }}
                 />
@@ -916,7 +993,10 @@ export default function App() {
                 sessions={globalShownSessions}
                 nfDecimal={nfDecimal}
                 onSelectUser={handleSelectUser}
-                onOpenCards={() => setShowCardsPage(true)}
+                onOpenCards={() => {
+                  setShowCardsPage(true);
+                  setRouteState({ type: "cards", slug: null });
+                }}
                 isAdmin={isAdmin}
                 isAuth={isAuth}
               />
@@ -932,6 +1012,8 @@ export default function App() {
                   userInfo={selectedUserInfo}
                   userRankInfo={userRankInfo}
                   userRunningAvgById={userRunningAvgById}
+                  userCardOpen={userCardOpen}
+                  onUserCardOpenChange={setUserCardOpen}
                   shownSessions={shownSessions}
                   stats={stats}
                   monthTotals={monthTotals}
