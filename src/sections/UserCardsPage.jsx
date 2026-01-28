@@ -105,13 +105,15 @@ export function UserCardsPage({
             />
             {!(u?.is_bot && !showAllCardsFront) ? (
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => onOpenResults?.(u)}
-                  className="rounded-full border border-emerald-300/70 px-3 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 dark:border-emerald-400/50 dark:text-emerald-200 dark:hover:bg-emerald-400/10"
-                >
-                  Résultats
-                </button>
+                {!!u?.is_bot && (
+                  <button
+                    type="button"
+                    onClick={() => onOpenResults?.(u)}
+                    className="rounded-full border border-emerald-300/70 px-3 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 dark:border-emerald-400/50 dark:text-emerald-200 dark:hover:bg-emerald-400/10"
+                  >
+                    Résultats
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => onSelectUser?.(u)}

@@ -5,7 +5,7 @@ import { CalendarDays, Download, Plus, Upload, Waves, PersonStanding } from "luc
 
 export function AddSessionForm({ onAdd, onExport, onImport, readOnly, isAdmin }) {
   const [distance, setDistance] = useState("");
-  const [type, setType] = useState("swim"); // ✅ swim | run
+  const [type, setType] = useState("run"); // ✅ swim | run
   const [useCustomDate, setUseCustomDate] = useState(false);
   const [date, setDate] = useState(dayjs().format("YYYY-MM-DD"));
   const fileInputRef = useRef(null);
@@ -54,7 +54,7 @@ export function AddSessionForm({ onAdd, onExport, onImport, readOnly, isAdmin })
             Type de séance
           </span>
           <span className="text-xs text-slate-600 dark:text-slate-400">
-            Piscine ou running
+            Natation ou running
           </span>
         </div>
 
@@ -68,10 +68,10 @@ export function AddSessionForm({ onAdd, onExport, onImport, readOnly, isAdmin })
                 ? "bg-white text-slate-900 shadow dark:bg-slate-800 dark:text-slate-100"
                 : "text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100"
               }`}
-            title="Piscine"
+            title="Natation"
           >
             <Waves size={14} className="text-inherit" />
-            Piscine
+            Natation
           </button>
 
           <button
