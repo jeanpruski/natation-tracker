@@ -108,6 +108,14 @@ export function Dashboard({
     };
   }, [showUserCard]);
 
+  useEffect(() => {
+    const scrollTop = () => window.scrollTo({ top: 0, behavior: "auto" });
+    requestAnimationFrame(() => requestAnimationFrame(scrollTop));
+    setTimeout(scrollTop, 0);
+    setTimeout(scrollTop, 80);
+    setTimeout(scrollTop, 200);
+  }, [userInfo?.id]);
+
   const userCard = (
     <AnimatePresence>
       {showUserCard && (

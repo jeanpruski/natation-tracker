@@ -70,6 +70,24 @@ export default function App() {
   const prevUserIdRef = useRef(user?.id || null);
   const swipeRef = useRef({ x: 0, y: 0, t: 0, moved: false });
   const didInitHistoryRef = useRef(false);
+  const scrollTopSoonRef = useRef(null);
+  const mainRef = useRef(null);
+
+  useEffect(() => {
+    scrollTopSoonRef.current = () => {
+      const scrollTop = () => {
+        const scrollingEl = document.scrollingElement || document.documentElement;
+        if (scrollingEl) scrollingEl.scrollTop = 0;
+        document.body.scrollTop = 0;
+        if (mainRef.current) mainRef.current.scrollTop = 0;
+        window.scrollTo({ top: 0, behavior: "auto" });
+      };
+      requestAnimationFrame(() => requestAnimationFrame(scrollTop));
+      setTimeout(scrollTop, 0);
+      setTimeout(scrollTop, 80);
+      setTimeout(scrollTop, 200);
+    };
+  }, []);
 
   const [sessions, setSessions] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -146,6 +164,7 @@ export default function App() {
       const next = readRouteState();
       setRouteState(next);
       setUserCardOpen(readCardParam());
+      if (scrollTopSoonRef.current) scrollTopSoonRef.current();
       if (next.type === "root") {
         setShowCardsPage(false);
         setSelectedUser(null);
@@ -193,6 +212,16 @@ export default function App() {
     if (!selectedUser) return;
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [selectedUser]);
+
+  useEffect(() => {
+    const scrollTop = () => window.scrollTo({ top: 0, behavior: "auto" });
+    const raf1 = requestAnimationFrame(() => {
+      const raf2 = requestAnimationFrame(scrollTop);
+      setTimeout(scrollTop, 0);
+      return () => cancelAnimationFrame(raf2);
+    });
+    return () => cancelAnimationFrame(raf1);
+  }, [routeState.type, routeState.slug]);
 
   const nf = useMemo(() => new Intl.NumberFormat("fr-FR"), []);
   const nfDecimal = useMemo(
@@ -851,17 +880,20 @@ export default function App() {
     setSelectedUser(u);
     const slug = getUserSlug(u);
     if (slug) setRouteState({ type: "user", slug });
+    if (scrollTopSoonRef.current) scrollTopSoonRef.current();
   };
 
   const handleBack = () => {
     if (showCardsPage) {
       setShowCardsPage(false);
       setRouteState({ type: "root", slug: null });
+      if (scrollTopSoonRef.current) scrollTopSoonRef.current();
       return;
     }
     if (selectedUser) {
       setRouteState({ type: "root", slug: null });
       setSelectedUser(null);
+      if (scrollTopSoonRef.current) scrollTopSoonRef.current();
     }
   };
 
@@ -955,6 +987,7 @@ export default function App() {
         />
 
         <main
+          ref={mainRef}
           className="pb-6"
           style={{ paddingTop: "var(--main-top-padding)" }}
           onTouchStart={onSwipeStart}

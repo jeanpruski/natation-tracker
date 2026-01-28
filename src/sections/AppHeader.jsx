@@ -120,6 +120,7 @@ export function AppHeader({
           {onBack && (
             <motion.div
               layout
+              layoutScroll
               initial={{ width: 0, opacity: 0 }}
               animate={{ width: 44, opacity: 1 }}
               transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
@@ -134,13 +135,10 @@ export function AppHeader({
               </button>
             </motion.div>
           )}
-          <motion.h1
-            layout
-            className="text-2xl font-bold tracking-tight sm:text-3xl text-slate-900 dark:text-slate-100 flex items-center gap-2 whitespace-nowrap"
-          >
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl text-slate-900 dark:text-slate-100 flex items-center gap-2 whitespace-nowrap">
             <img src="/big-logo.png" alt="Logo" className="h-9" />
             {/* {title && <span className="text-base sm:text-lg font-semibold">{title}</span>} */}
-          </motion.h1>
+          </h1>
 
           <ThemeToggle />
 
