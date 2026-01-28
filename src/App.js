@@ -22,6 +22,27 @@ import { getInitialRange, normType, normalizeSession, parseDateValue } from "./u
 dayjs.locale("fr");
 dayjs.extend(customParseFormat);
 
+const slugify = (value) => {
+  const clean = String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Za-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .toLowerCase();
+  return clean || "";
+};
+
+const getUserSlug = (user) => slugify(user?.slug || user?.name || "");
+
+const readRouteSlug = () => {
+  if (typeof window === "undefined") return null;
+  const path = window.location.pathname || "/";
+  const match = path.match(/^\/user\/([^/]+)\/?$/);
+  return match ? decodeURIComponent(match[1]) : null;
+};
+
+const buildUserPath = (slug) => `/user/${encodeURIComponent(slug)}`;
+
 /* =========================
    App principale
    ========================= */
@@ -37,12 +58,14 @@ export default function App() {
   const didInitScrollRef = useRef(false);
   const prevAuthRef = useRef(isAuth);
   const prevUserIdRef = useRef(user?.id || null);
+  const swipeRef = useRef({ x: 0, y: 0, t: 0, moved: false });
 
   const [sessions, setSessions] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [users, setUsers] = useState([]);
   const [mode, setMode] = useState("run");   // all | swim | run
   const [range, setRange] = useState(getInitialRange); // all | month | 6m | 3m | 2026 | 2025
+  const [routeSlug, setRouteSlug] = useState(readRouteSlug);
 
   const [loadingPhase, setLoadingPhase] = useState("loading"); // loading | fading | done
   const [error, setError] = useState("");
@@ -104,6 +127,12 @@ export default function App() {
     return () => {
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     };
+  }, []);
+
+  useEffect(() => {
+    const onPop = () => setRouteSlug(readRouteSlug());
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
   }, []);
 
   useEffect(() => {
@@ -220,6 +249,17 @@ export default function App() {
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name, "fr"));
   }, [users, sessions]);
 
+  const usersForRouting = useMemo(() => (users.length ? users : derivedUsers), [users, derivedUsers]);
+
+  const userBySlug = useMemo(() => {
+    const map = new Map();
+    usersForRouting.forEach((u) => {
+      const slug = getUserSlug(u);
+      if (slug && !map.has(slug)) map.set(slug, u);
+    });
+    return map;
+  }, [usersForRouting]);
+
   const globalUsers = useMemo(() => {
     if (!derivedUsers.length) return derivedUsers;
     return derivedUsers.filter((u) => !u.is_bot || (monthTotalsByUser?.[u.id] || 0) > 0);
@@ -249,6 +289,45 @@ export default function App() {
     if (!selectedUser) return null;
     return users.find((u) => u.id === selectedUser.id) || selectedUser;
   }, [selectedUser, users]);
+
+  useEffect(() => {
+    if (!routeSlug) {
+      if (selectedUser && (window.location.pathname || "/") === "/") {
+        setSelectedUser(null);
+      }
+      return;
+    }
+    if (!usersForRouting.length) return;
+    const match = userBySlug.get(routeSlug);
+    if (match) {
+      if (!selectedUser || selectedUser.id !== match.id) {
+        setSelectedUser(match);
+      }
+      return;
+    }
+    setSelectedUser(null);
+    if ((window.location.pathname || "/") !== "/") {
+      window.history.replaceState({}, "", "/");
+      setRouteSlug(null);
+    }
+  }, [routeSlug, userBySlug, usersForRouting.length, selectedUser]);
+
+  useEffect(() => {
+    if (!selectedUser && routeSlug) return;
+    const slug = selectedUser ? getUserSlug(selectedUser) : "";
+    if (slug) {
+      const path = buildUserPath(slug);
+      if ((window.location.pathname || "/") !== path) {
+        window.history.pushState({}, "", path);
+        setRouteSlug(slug);
+      }
+      return;
+    }
+    if ((window.location.pathname || "/") !== "/") {
+      window.history.pushState({}, "", "/");
+      setRouteSlug(null);
+    }
+  }, [selectedUser, routeSlug]);
 
   const userRankInfo = useMemo(() => {
     if (!selectedUserInfo || !users.length) return null;
@@ -678,6 +757,56 @@ export default function App() {
     setSelectedUser(u);
   };
 
+  const handleBack = () => {
+    if (showCardsPage) {
+      setShowCardsPage(false);
+      return;
+    }
+    if (selectedUser) {
+      setRouteSlug(null);
+      setSelectedUser(null);
+    }
+  };
+
+  const onSwipeStart = (e) => {
+    if (!showCardsPage && !selectedUser) return;
+    const touch = e.touches?.[0];
+    if (!touch) return;
+    swipeRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      lastX: touch.clientX,
+      lastY: touch.clientY,
+      t: Date.now(),
+      moved: false,
+    };
+  };
+
+  const onSwipeMove = (e) => {
+    if (!showCardsPage && !selectedUser) return;
+    const touch = e.touches?.[0];
+    if (!touch) return;
+    const dx = touch.clientX - swipeRef.current.x;
+    const dy = touch.clientY - swipeRef.current.y;
+    swipeRef.current.lastX = touch.clientX;
+    swipeRef.current.lastY = touch.clientY;
+    if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
+      swipeRef.current.moved = true;
+    }
+  };
+
+  const onSwipeEnd = () => {
+    if (!showCardsPage && !selectedUser) return;
+    const { x, y, lastX, lastY, t, moved } = swipeRef.current || {};
+    if (!moved) return;
+    const dt = Date.now() - (t || 0);
+    if (!dt || dt > 700) return;
+    const dx = (lastX || 0) - (x || 0);
+    const dy = (lastY || 0) - (y || 0);
+    if (dx > 70 && Math.abs(dy) < 50) {
+      handleBack();
+    }
+  };
   return (
     <div
       className="
@@ -725,16 +854,16 @@ export default function App() {
           }}
           onModeChange={setMode}
           onRangeChange={setRange}
-          onBack={
-            showCardsPage
-              ? () => setShowCardsPage(false)
-              : isGlobalView
-                ? null
-                : () => setSelectedUser(null)
-          }
+          onBack={showCardsPage || !isGlobalView ? handleBack : null}
         />
 
-        <main className="pb-6" style={{ paddingTop: "var(--main-top-padding)" }}>
+        <main
+          className="pb-6"
+          style={{ paddingTop: "var(--main-top-padding)" }}
+          onTouchStart={onSwipeStart}
+          onTouchMove={onSwipeMove}
+          onTouchEnd={onSwipeEnd}
+        >
           <div className={showCardsPage ? "mx-auto" : "mx-auto max-w-[1550px]"}>
             {error && (
               <p className="mb-3 rounded-xl bg-rose-100 px-4 py-2 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200">

@@ -1,6 +1,7 @@
 import React from "react";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { ArrowLeft } from "lucide-react";
+import { LayoutGroup, motion } from "framer-motion";
 import { HEADER_SURFACE_CLASS, HEADER_TOP_PADDING_STYLE } from "../constants/layout";
 
 function TypeSwitch({ value, onChange }) {
@@ -114,38 +115,51 @@ export function AppHeader({
       `}
       style={HEADER_TOP_PADDING_STYLE}
     >
-      <div className="flex items-center gap-2 w-full xl:w-auto">
-        {onBack && (
-          <button
-            onClick={onBack}
-            className="rounded-xl bg-slate-200 px-2.5 py-2 text-sm text-slate-900 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
-            aria-label="Retour"
+      <LayoutGroup>
+        <div className="flex items-center gap-2 w-full xl:w-auto">
+          {onBack && (
+            <motion.div
+              layout
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 44, opacity: 1 }}
+              transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+              style={{ overflow: "hidden", willChange: "width, opacity" }}
+            >
+              <button
+                onClick={onBack}
+                className="flex h-9 w-10 items-center justify-center rounded-xl bg-slate-200 text-sm text-slate-900 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+                aria-label="Retour"
+              >
+                <ArrowLeft size={16} aria-hidden="true" />
+              </button>
+            </motion.div>
+          )}
+          <motion.h1
+            layout
+            className="text-2xl font-bold tracking-tight sm:text-3xl text-slate-900 dark:text-slate-100 flex items-center gap-2 whitespace-nowrap"
           >
-            <ArrowLeft size={16} aria-hidden="true" />
-          </button>
-        )}
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl text-slate-900 dark:text-slate-100 flex items-center gap-2 whitespace-nowrap">
-          <img src="/big-logo.png" alt="Logo" className="h-9" />
-          {/* {title && <span className="text-base sm:text-lg font-semibold">{title}</span>} */}
-        </h1>
+            <img src="/big-logo.png" alt="Logo" className="h-9" />
+            {/* {title && <span className="text-base sm:text-lg font-semibold">{title}</span>} */}
+          </motion.h1>
 
-        <ThemeToggle />
+          <ThemeToggle />
 
-        {showEditor && (
-          <button
-            onClick={onOpenEditor}
-            className={`ml-auto xl:ml-2 rounded-xl px-3 py-2 text-sm transition ${
-              isAuth ? "bg-emerald-600 text-white hover:bg-emerald-500" : "bg-amber-500 text-white hover:bg-amber-400"
-            }`}
-            title={isAuth ? "Ouvrir l’éditeur" : "Déverrouiller l’édition"}
-          >
-            <span className="inline-flex items-center gap-1.5">
-              {isAuth ? "✏️" : "🔓"}
-              {isAuth && loggedUserName && <span className="sm:inline">{` ${loggedUserName}`}</span>}
-            </span>
-          </button>
-        )}
-      </div>
+          {showEditor && (
+            <button
+              onClick={onOpenEditor}
+              className={`ml-auto xl:ml-2 rounded-xl px-3 py-2 text-sm transition ${
+                isAuth ? "bg-emerald-600 text-white hover:bg-emerald-500" : "bg-amber-500 text-white hover:bg-amber-400"
+              }`}
+              title={isAuth ? "Ouvrir l’éditeur" : "Déverrouiller l’édition"}
+            >
+              <span className="inline-flex items-center gap-1.5">
+                {isAuth ? "✏️" : "🔓"}
+                {isAuth && loggedUserName && <span className="sm:inline">{` ${loggedUserName}`}</span>}
+              </span>
+            </button>
+          )}
+        </div>
+      </LayoutGroup>
 
       {showFilters && (
         <div className="flex items-center justify-between gap-3 xl:hidden">
