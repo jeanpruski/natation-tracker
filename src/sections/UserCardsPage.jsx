@@ -84,7 +84,7 @@ export function UserCardsPage({
           </div>
         ))}
       </div>
-      <div className="fixed bottom-4 right-4 z-40 text-xs text-slate-500 dark:text-slate-400">
+      <div className="fixed bottom-8 right-8 z-40 text-xs text-slate-500 dark:text-slate-400">
         <span className="rounded-full bg-slate-200 px-2 py-1 shadow-sm dark:bg-slate-800">
           Users {usersOnlyByDate.length} · Bots {botsOnlyByDate.length}
         </span>
