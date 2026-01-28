@@ -252,6 +252,7 @@ export default function App() {
     refreshCardResults();
   }, [isAuth, authToken]);
 
+
   const activeChallengeDueAt = useMemo(() => {
     if (!activeChallenge?.id) return null;
     const startNotif = notifications.find(
