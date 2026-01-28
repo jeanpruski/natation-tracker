@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
+import dayjs from "dayjs";
 import { Bot, Swords, Trophy, User } from "lucide-react";
 import { Reveal } from "../components/Reveal";
 import { InfoPopover } from "../components/InfoPopover";
+import { UserHoloCard } from "../components/UserHoloCard";
 
 function buildMonthKeys(sessions) {
   const set = new Set();
@@ -30,6 +32,7 @@ export function GlobalDashboard({
   modeLabel,
   mode,
   users,
+  allUsers,
   totalsByUser,
   sessions,
   nfDecimal,
@@ -113,6 +116,31 @@ export function GlobalDashboard({
     return Math.max(0, diff);
   };
 
+  const cardNotification = unreadNotifications.find(
+    (n) => n.type === "event_start" || n.type === "challenge_start"
+  );
+  const fullUsers = allUsers && allUsers.length ? allUsers : users;
+  const cardBot =
+    cardNotification?.meta?.bot_id
+      ? fullUsers.find((u) => String(u.id) === String(cardNotification.meta.bot_id))
+      : null;
+  const showCardNotif = !!cardNotification && unreadNotifications.length === 1 && cardBot;
+  const botRankInfo = useMemo(() => {
+    if (!cardBot) return null;
+    const bots = fullUsers
+      .filter((u) => Boolean(u?.is_bot))
+      .slice()
+      .sort((a, b) => {
+        const aTime = new Date(a.created_at || 0).getTime();
+        const bTime = new Date(b.created_at || 0).getTime();
+        if (aTime !== bTime) return aTime - bTime;
+        return String(a.name || a.id || "").localeCompare(String(b.name || b.id || ""));
+      });
+    const index = bots.findIndex((u) => String(u.id) === String(cardBot.id));
+    if (index < 0) return null;
+    return { index: index + 1, total: bots.length };
+  }, [users, cardBot]);
+
   return (
     <div className="grid gap-4 px-4 xl:px-8 pt-4 md:pt-4 xl:pt-0 pb-8">
       <div className="grid gap-4">
@@ -123,22 +151,23 @@ export function GlobalDashboard({
                 <button
                   type="button"
                   onClick={() => {
+                    if (!unreadNotifications.length) return;
                     setShowNotifInfo((v) => !v);
                   }}
                   className={`relative w-full overflow-hidden rounded-2xl border-0 px-4 py-3 text-left text-slate-900 shadow-sm transition-colors duration-200 focus:outline-none focus-visible:ring-2 dark:text-slate-100 ${
                     hasUnreadNotif
                       ? "bg-gradient-to-l from-rose-400/60 to-transparent hover:ring-1 hover:ring-rose-300/70 focus-visible:ring-rose-300"
-                      : "bg-gradient-to-l from-sky-400/60 to-transparent hover:ring-1 hover:ring-sky-300/70 focus-visible:ring-sky-300"
+                      : "bg-gradient-to-l from-sky-400/60 to-transparent focus-visible:ring-sky-300 cursor-default"
                   }`}
                 >
                   <span
-                    className={`pointer-events-none absolute inset-0 z-0 opacity-0 transition-opacity duration-300 hover:opacity-100 ${
-                      hasUnreadNotif ? "bg-rose-400/45" : "bg-sky-400/45"
+                    className={`pointer-events-none absolute inset-0 z-0 opacity-0 transition-opacity duration-300 ${
+                      hasUnreadNotif ? "hover:opacity-100 bg-rose-400/45" : "bg-sky-400/45"
                     }`}
                   />
                   <div className="relative z-10 flex items-center justify-between">
                     <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                      Notification
+                      {hasUnreadNotif ? "Notification" : "Pas de notification"}
                     </div>
                     <Swords size={20} className="text-slate-900 dark:text-white" />
                   </div>
@@ -147,36 +176,98 @@ export function GlobalDashboard({
                   open={showNotifInfo}
                   onClose={() => setShowNotifInfo(false)}
                   title={
-                    unreadNotifications.length
-                      ? "Notifications"
-                      : <span className="text-[26px] leading-tight">Pas de notification</span>
+                    showCardNotif
+                      ? ""
+                      : unreadNotifications.length
+                        ? "Notifications"
+                        : <span className="text-[26px] leading-tight">Pas de notification</span>
                   }
                   actionLabel={null}
-                  headerImage="/big-logo.png"
+                  headerImage={showCardNotif ? null : "/big-logo.png"}
                   items={
-                    unreadNotifications.length
-                      ? unreadNotifications.map((n) => (
-                        <div key={n.id} className="flex flex-col gap-1">
-                          <div className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">
-                            {n.title || "Notification"}
-                          </div>
-                          {n.body && <div className="text-sm text-slate-700 dark:text-slate-200">{n.body}</div>}
-                          {activeChallenge?.id &&
-                            n?.meta?.challenge_id === activeChallenge.id &&
-                            activeChallenge?.due_date && (
-                              <div className="text-xs text-slate-500">
-                                Il te reste {getRemainingDays(activeChallenge.due_date)} jour
-                                {getRemainingDays(activeChallenge.due_date) > 1 ? "s" : ""}
+                    showCardNotif
+                        ? [
+                          <div key="card" className="grid gap-5">
+                            <div className="flex flex-col items-start gap-3">
+                              <div className="w-full text-left text-2xl leading-snug text-slate-900 dark:text-slate-100">
+                                {(() => {
+                                  const body = cardNotification?.body;
+                                  if (!body) return `${cardBot?.name || "Un bot"} te défie à la course !`;
+                                  const match = body.match(
+                                    /^\[([^\]]+)\] te défie à la course, cours ([0-9.,\s]+km) avant le (.+) pour gagner sa carte !$/i
+                                  );
+                                  if (!match) return body;
+                                  const botName = match[1];
+                                  const distance = match[2];
+                                  const dateLabel = match[3];
+                                  return (
+                                    <div>
+                                      <div className="flex items-center gap-2 text-[26px]">
+                                        <Swords size={22} className="text-slate-900 dark:text-slate-100" />
+                                        <span><span className="font-bold">{botName}</span> te défie à la course sur <span className="font-bold underline">{distance}</span> !</span>
+                                      </div>
+                                      <div className="text-[18px]">
+                                         Cours cette distance avant le{" "}
+                                        <span className="font-bold underline">{dateLabel}</span> pour gagner sa carte !
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
                               </div>
-                            )}
-                          <div className="text-xs text-slate-400">{n.created_at}</div>
-                        </div>
-                      ))
-                      : notificationsLoading
-                        ? [<span key="loading">Chargement...</span>]
-                        : notificationsError
-                          ? [<span key="error">Erreur notifications</span>]
-                          : []
+                            </div>
+                            <div className="grid gap-4">
+                              <div className="flex justify-center">
+                                <div className="w-full max-w-[360px]">
+                              <UserHoloCard
+                                user={cardBot}
+                                nfDecimal={nfDecimal}
+                                showBotAverage
+                                minSpinnerMs={500}
+                                userRankInfo={botRankInfo}
+                              />
+                                </div>
+                              </div>
+                              {cardNotification?.created_at && (
+                                <div className="text-right text-xs italic text-slate-400">
+                                  {(() => {
+                                    const formatted = dayjs(cardNotification.created_at)
+                                      .locale("fr")
+                                      .format("dddd D MMMM YYYY à HH:mm");
+                                    const parts = formatted.split(" ");
+                                    if (parts.length < 5) return formatted;
+                                    const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
+                                    const day = cap(parts[0]);
+                                    const month = cap(parts[2]);
+                                    return `${day} ${parts[1]} ${month} ${parts.slice(3).join(" ")}`;
+                                  })()}
+                                </div>
+                              )}
+                            </div>
+                          </div>,
+                        ]
+                      : unreadNotifications.length
+                        ? unreadNotifications.map((n) => (
+                          <div key={n.id} className="flex flex-col gap-1">
+                            <div className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">
+                              {n.title || "Notification"}
+                            </div>
+                            {n.body && <div className="text-sm text-slate-700 dark:text-slate-200">{n.body}</div>}
+                            {activeChallenge?.id &&
+                              n?.meta?.challenge_id === activeChallenge.id &&
+                              activeChallenge?.due_date && (
+                                <div className="text-xs text-slate-500">
+                                  Il te reste {getRemainingDays(activeChallenge.due_date)} jour
+                                  {getRemainingDays(activeChallenge.due_date) > 1 ? "s" : ""}
+                                </div>
+                              )}
+                            <div className="text-xs text-slate-400">{n.created_at}</div>
+                          </div>
+                        ))
+                        : notificationsLoading
+                          ? [<span key="loading">Chargement...</span>]
+                          : notificationsError
+                            ? [<span key="error">Erreur notifications</span>]
+                            : []
                   }
                   fullWidth
                   maxWidth={1024}

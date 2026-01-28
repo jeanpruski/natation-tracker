@@ -209,7 +209,7 @@ export function UserHoloCard({
 
   return (
     <div
-      className={`relative w-full max-w-[360px] ${cardTilt.active ? "z-30" : "z-0"}`}
+      className={`relative w-full max-w-[360px] min-w-[342px] ${cardTilt.active ? "z-30" : "z-0"}`}
       style={{ transformStyle: "preserve-3d", perspective: `${PERSPECTIVE}px` }}
     >
       <div

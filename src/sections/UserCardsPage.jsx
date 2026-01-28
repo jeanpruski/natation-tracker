@@ -189,7 +189,7 @@ export function UserCardsPage({
       />
       <div className="mx-auto flex w-full max-w-[1900px] flex-wrap justify-center gap-4">
         {filteredUsers.map((u) => (
-          <div key={u.id} className="flex w-[360px] flex-col items-center gap-2">
+          <div key={u.id} className="flex w-[360px] min-w-[342px] flex-col items-center gap-2">
             <UserHoloCard
               user={u}
               nfDecimal={nfDecimal}

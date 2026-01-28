@@ -135,7 +135,7 @@ export function AppHeader({
     <header
       className={`
         fixed top-0 left-0 right-0 z-40
-        flex flex-col gap-3
+        flex flex-col gap-2
         xl:flex-row xl:items-center xl:justify-between
         ${HEADER_SURFACE_CLASS}
         border-b border-slate-200 dark:border-slate-700
@@ -255,7 +255,7 @@ export function AppHeader({
       </LayoutGroup>
 
       {showFilters && (
-        <div className="flex items-center justify-between gap-3 xl:hidden">
+        <div className="flex items-center justify-between gap-2 xl:hidden">
           <RangeSelect value={range} onChange={onRangeChange} />
           <TypeSwitch value={mode} onChange={onModeChange} />
         </div>

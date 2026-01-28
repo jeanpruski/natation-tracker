@@ -71,6 +71,7 @@ export function Dashboard({
   onUserCardOpenChange,
   currentUserId,
   activeChallenge,
+  activeChallengeDueAt,
 }) {
   const showUserCard = Boolean(userCardOpen);
   const setShowUserCard = onUserCardOpenChange || (() => {});
@@ -80,13 +81,23 @@ export function Dashboard({
   const userRunningAvgKm = userInfo ? userRunningAvgById?.get(userInfo.id) : null;
   const isBotUser = Boolean(userInfo?.is_bot);
   const botBorderColor = userInfo?.bot_border_color || (isBotUser ? "#992929" : "");
-  const showChallenge = !!activeChallenge && userInfo?.id && userInfo?.id === currentUserId;
+  const showChallenge =
+    !!activeChallenge &&
+    currentUserId &&
+    (!userInfo?.id || String(userInfo.id) === String(currentUserId));
 
-  const remainingDays = (() => {
-    if (!activeChallenge?.due_date) return null;
-    const end = dayjs(activeChallenge.due_date).endOf("day");
-    const diff = Math.ceil(end.diff(dayjs(), "day", true));
-    return Math.max(0, diff);
+  const formattedDueDate = (() => {
+    if (!activeChallengeDueAt && !activeChallenge?.due_at && !activeChallenge?.due_date) return "";
+    const dateValue = activeChallengeDueAt || activeChallenge.due_at || activeChallenge.due_date;
+    const formatted = dayjs(dateValue)
+      .locale("fr")
+      .format("dddd D MMMM YYYY à HH:mm");
+    const parts = formatted.split(" ");
+    if (parts.length < 5) return formatted;
+    const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
+    const day = cap(parts[0]);
+    const month = cap(parts[2]);
+    return `${day} ${parts[1]} ${month} ${parts.slice(3).join(" ")}`;
   })();
 
   const challengeKm = activeChallenge?.target_distance_m
@@ -146,7 +157,7 @@ export function Dashboard({
             exit={{ opacity: 0 }}
           />
           <motion.div
-            className="relative w-full max-w-[360px]"
+            className="relative w-full max-w-[360px] mx-auto"
             initial={{ opacity: 0, scale: 0.9, rotateX: 18, y: -12 }}
             animate={{ opacity: 1, scale: 1, rotateX: 0, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, rotateX: -6 }}
@@ -226,6 +237,30 @@ export function Dashboard({
       <>
         {heroBadge}
         {userCard}
+        {showChallenge && (
+          <div className="px-4 xl:px-8 pt-4">
+            <Reveal>
+              <div className="rounded-2xl border border-rose-200/50 bg-rose-50/50 px-4 py-3 text-sm text-rose-900 shadow-sm dark:border-rose-400/20 dark:bg-rose-900/20 dark:text-rose-100">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="font-semibold">
+                    Défi en cours contre {activeChallenge.bot_name || "un bot"}
+                  </div>
+                  <div className="text-xs text-rose-700 dark:text-rose-200 sm:text-right">
+                    <span className="hidden sm:inline">À réaliser avant le {formattedDueDate}</span>
+                  </div>
+                </div>
+                {challengeKm && (
+                  <div className="mt-1 text-sm">
+                    Distance à atteindre : <span className="font-semibold">{challengeKm} km</span>
+                  </div>
+                )}
+                <div className="mt-2 text-xs text-rose-700 dark:text-rose-200 sm:hidden">
+                  À réaliser avant le {formattedDueDate}
+                </div>
+              </div>
+            </Reveal>
+          </div>
+        )}
         <Reveal as="section" className="px-4 xl:px-8 pt-4 pb-8">
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-8 text-center text-slate-700 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200">
             <div className="text-lg font-semibold">Aucune seance</div>
@@ -362,20 +397,23 @@ export function Dashboard({
       {showChallenge && (
         <div className="px-4 xl:px-8 pt-4">
           <Reveal>
-            <div className="rounded-2xl border border-emerald-200/50 bg-emerald-50/50 px-4 py-3 text-sm text-emerald-900 shadow-sm dark:border-emerald-400/20 dark:bg-emerald-900/20 dark:text-emerald-100">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="font-semibold">
-                  Défi en cours contre {activeChallenge.bot_name || "un bot"}
+            <div className="rounded-2xl border border-rose-200/50 bg-rose-50/50 px-4 py-3 text-sm text-rose-900 shadow-sm dark:border-rose-400/20 dark:bg-rose-900/20 dark:text-rose-100">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="font-semibold">
+                    Défi en cours contre {activeChallenge.bot_name || "un bot"}
+                  </div>
+                  <div className="text-xs text-rose-700 dark:text-rose-200 sm:text-right">
+                    <span className="hidden sm:inline">À réaliser avant le {formattedDueDate}</span>
+                  </div>
                 </div>
-                <div className="text-xs text-emerald-700 dark:text-emerald-200">
-                  Il te reste {remainingDays} jour{remainingDays > 1 ? "s" : ""}
+                {challengeKm && (
+                  <div className="mt-1 text-sm">
+                    Distance à atteindre : <span className="font-semibold">{challengeKm} km</span>
+                  </div>
+                )}
+                <div className="mt-2 text-xs text-rose-700 dark:text-rose-200 sm:hidden">
+                  À réaliser avant le {formattedDueDate}
                 </div>
-              </div>
-              {challengeKm && (
-                <div className="mt-1 text-sm">
-                  Distance à atteindre : <span className="font-semibold">{challengeKm} km</span>
-                </div>
-              )}
             </div>
           </Reveal>
         </div>

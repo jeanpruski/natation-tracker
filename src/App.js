@@ -4,6 +4,7 @@ import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import "dayjs/locale/fr";
 import { v4 as uuidv4 } from "uuid";
+import { Swords } from "lucide-react";
 import { AppHeader } from "./sections/AppHeader";
 import { EditModal } from "./sections/EditModal";
 import { Dashboard } from "./sections/Dashboard";
@@ -13,6 +14,7 @@ import { BusyOverlay } from "./sections/BusyOverlay";
 import { UserCardsPage } from "./sections/UserCardsPage";
 import { Toast } from "./components/Toast";
 import { InfoPopover } from "./components/InfoPopover";
+import { UserHoloCard } from "./components/UserHoloCard";
 import { useEditAuth } from "./hooks/useEditAuth";
 import { apiGet, apiJson } from "./utils/api";
 import { downloadCSV } from "./utils/downloadCSV";
@@ -249,6 +251,18 @@ export default function App() {
     refreshChallenge();
     refreshCardResults();
   }, [isAuth, authToken]);
+
+  const activeChallengeDueAt = useMemo(() => {
+    if (!activeChallenge?.id) return null;
+    const startNotif = notifications.find(
+      (n) => n.type === "challenge_start" && n?.meta?.challenge_id === activeChallenge.id
+    );
+    if (!startNotif?.created_at) return null;
+    const start = dayjs(startNotif.created_at);
+    if (!start.isValid()) return null;
+    const due = activeChallenge.type === "evenement" ? start : start.add(3, "day");
+    return due.toDate();
+  }, [activeChallenge, notifications]);
 
   useEffect(() => {
     if (didInitHistoryRef.current) return;
@@ -847,6 +861,7 @@ export default function App() {
       setSessions((prev) => [...prev, normalizeSession(createdWithName)]);
       if (created?.challenge_completed && created?.challenge) {
         setVictoryInfo({
+          botId: created.challenge.bot_id,
           botName: created.challenge.bot_name || "un bot",
           distanceKm: Number(created.challenge.target_distance_m) / 1000,
           actualKm: Number(payload.distance) / 1000,
@@ -1092,32 +1107,44 @@ export default function App() {
             <InfoPopover
               open={!!victoryInfo}
               onClose={() => setVictoryInfo(null)}
-              title="Victoire !"
+              title=""
               actionLabel={null}
-              headerImage="/big-logo.png"
+              headerImage={null}
               items={
                 victoryInfo
                   ? [
-                      <div key="victory" className="text-sm text-slate-700 dark:text-slate-200">
-                        Tu as battu <strong>{victoryInfo.botName}</strong> !
-                        <br />
-                        Distance réalisée :{" "}
-                        <strong>{Number.isFinite(victoryInfo.actualKm)
-                          ? `${victoryInfo.actualKm.toFixed(3)} km`
-                          : "—"}
-                        </strong>
-                        <br />
-                        Objectif :{" "}
-                        <strong>{Number.isFinite(victoryInfo.distanceKm)
-                          ? `${victoryInfo.distanceKm.toFixed(3)} km`
-                          : "—"}
-                        </strong>
+                      <div key="victory" className="grid gap-5">
+                        <div className="flex items-center gap-2 text-[26px] font-semibold text-slate-900 dark:text-slate-100">
+                          <Swords size={22} className="text-slate-900 dark:text-slate-100" />
+                          Victoire !
+                        </div>
+                        <div className="text-lg text-slate-700 dark:text-slate-200">
+                          Tu as battu <strong>{victoryInfo.botName}</strong>
+                          {" "}•{" "}
+                          <span className="font-semibold text-slate-900 dark:text-slate-100">
+                            {Number.isFinite(victoryInfo.actualKm) ? `${victoryInfo.actualKm.toFixed(3)} km` : "—"}
+                          </span>
+                          {" "}vs{" "}
+                          <span className="font-semibold text-slate-900 dark:text-slate-100">
+                            {Number.isFinite(victoryInfo.distanceKm) ? `${victoryInfo.distanceKm.toFixed(3)} km` : "—"}
+                          </span>
+                        </div>
+                        <div className="flex justify-center">
+                          <div className="w-full max-w-[360px]">
+                            <UserHoloCard
+                              user={users.find((u) => String(u.id) === String(victoryInfo.botId)) || { name: victoryInfo.botName }}
+                              nfDecimal={nfDecimal}
+                              showBotAverage
+                              minSpinnerMs={500}
+                            />
+                          </div>
+                        </div>
                       </div>,
                     ]
                   : []
               }
               fullWidth
-              maxWidth={720}
+              maxWidth={1024}
               anchorRect={null}
             />
 
@@ -1148,6 +1175,7 @@ export default function App() {
                 modeLabel={modeLabel}
                 mode={mode}
                 users={globalUsers}
+                allUsers={usersForRouting}
                 totalsByUser={monthTotalsByUser}
                 sessions={globalShownSessions}
                 nfDecimal={nfDecimal}
@@ -1180,6 +1208,7 @@ export default function App() {
                   onUserCardOpenChange={setUserCardOpen}
                   currentUserId={user?.id || null}
                   activeChallenge={activeChallenge}
+                  activeChallengeDueAt={activeChallengeDueAt}
                   shownSessions={shownSessions}
                   stats={stats}
                   monthTotals={monthTotals}
