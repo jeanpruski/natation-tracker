@@ -154,7 +154,7 @@ export function GlobalDashboard({
                 )}
                 <div className="absolute inset-0 bg-slate-950/30" aria-hidden="true" />
                 <div className="relative text-slate-100">
-                  <div className="text-sm font-semibold uppercase tracking-wide text-slate-100/80">Adidas 10k Paris</div>
+                  <div className="text-sm font-semibold uppercase tracking-wide text-slate-100/80">10k Paris Adidas</div>
                   <div className="mt-1 text-xl font-semibold">
                     Dimanche 7 Juin 2026 <span className="italic font-normal">(Paris)</span>
                   </div>
@@ -192,7 +192,7 @@ export function GlobalDashboard({
           <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white/50 dark:ring-slate-700 dark:bg-slate-900/60">
             <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                🌍 Global - {subtitle}
+                🏆 Podium - {subtitle}
               </h2>
             </div>
             <div className="p-4">

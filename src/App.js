@@ -62,6 +62,7 @@ export default function App() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCardsPage, setShowCardsPage] = useState(false);
   const [cardsFilter, setCardsFilter] = useState("mixte");
+  const [showAllCardsFront, setShowAllCardsFront] = useState(false);
   const [toast, setToast] = useState("");
   const [isBusy, setIsBusy] = useState(false);
   const toastTimerRef = useRef(null);
@@ -971,6 +972,15 @@ export default function App() {
                 }
               : null
           }
+          cardsExtraAction={
+            showCardsPage && isAdmin
+              ? {
+                  label: showAllCardsFront ? "Masquer" : "Tout afficher",
+                  active: showAllCardsFront,
+                  onClick: () => setShowAllCardsFront((prev) => !prev),
+                }
+              : null
+          }
           title={headerTitle}
           editorTargetName={headerTitle}
           loggedUserName={user?.name}
@@ -1013,6 +1023,7 @@ export default function App() {
                   filter={cardsFilter}
                   isAdmin={isAdmin}
                   currentUserId={user?.id || null}
+                  showAllCardsFront={showAllCardsFront}
                   onSelectUser={(u) => {
                     setShowCardsPage(false);
                     setUserCardOpen(false);

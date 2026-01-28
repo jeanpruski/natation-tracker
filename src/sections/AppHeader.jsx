@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { ThemeToggle } from "../components/ThemeToggle";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Lock, LockOpen } from "lucide-react";
 import { LayoutGroup, motion } from "framer-motion";
 import { HEADER_SURFACE_CLASS, HEADER_TOP_PADDING_STYLE } from "../constants/layout";
 
@@ -102,6 +102,7 @@ export function AppHeader({
   onRangeChange,
   onBack,
   cardsFilter,
+  cardsExtraAction,
 }) {
   const didMountRef = useRef(false);
   const prevOnBackRef = useRef(false);
@@ -125,7 +126,7 @@ export function AppHeader({
       style={HEADER_TOP_PADDING_STYLE}
     >
       <LayoutGroup>
-        <div className="flex items-center gap-2 w-full xl:w-auto">
+        <div className="flex items-center gap-0 w-full xl:w-auto">
           {onBack && (
             <motion.div
               initial={
@@ -141,26 +142,38 @@ export function AppHeader({
             >
               <button
                 onClick={onBack}
-                className="flex h-9 w-10 items-center justify-center rounded-xl bg-slate-200 text-sm text-slate-900 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+                className="inline-flex items-center justify-center rounded-xl bg-slate-200 p-2 text-slate-900 shadow hover:bg-slate-300 dark:bg-slate-700/70 dark:text-slate-100 dark:hover:bg-slate-700"
                 aria-label="Retour"
               >
                 <ArrowLeft size={16} aria-hidden="true" />
               </button>
             </motion.div>
           )}
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl text-slate-900 dark:text-slate-100 flex items-center gap-2 whitespace-nowrap">
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl text-slate-900 dark:text-slate-100 flex items-center gap-1 whitespace-nowrap">
             <img src="/big-logo.png" alt="Logo" className="h-9" />
             {/* {title && <span className="text-base sm:text-lg font-semibold">{title}</span>} */}
           </h1>
 
-          <ThemeToggle />
+          <div className="ml-2 flex items-center gap-2">
+            <ThemeToggle />
+            {cardsExtraAction && !showFilters && (
+              <button
+                type="button"
+                onClick={cardsExtraAction.onClick}
+                aria-label={cardsExtraAction.active ? "Verrou ouvert" : "Verrou fermé"}
+                className="inline-flex items-center justify-center rounded-xl bg-slate-200 p-2 text-slate-900 shadow hover:bg-slate-300 dark:bg-slate-700/70 dark:text-slate-100 dark:hover:bg-slate-700"
+              >
+                {cardsExtraAction.active ? <LockOpen size={16} /> : <Lock size={16} />}
+              </button>
+            )}
+          </div>
 
           {showEditor && (
             <button
               onClick={onOpenEditor}
               className={`ml-auto xl:ml-2 rounded-xl px-3 py-2 text-sm transition relative overflow-hidden ${
                 isAuth
-                  ? "bg-emerald-300/60 text-slate-900 hover:bg-emerald-300/80"
+                  ? "bg-emerald-300/60 text-slate-900 dark:text-white hover:bg-emerald-300/80"
                   : "bg-amber-500/70 text-white hover:bg-amber-500/90"
               }`}
               title={isAuth ? "Ouvrir l’éditeur" : "Déverrouiller l’édition"}
@@ -176,6 +189,7 @@ export function AppHeader({
               </span>
             </button>
           )}
+
         </div>
       </LayoutGroup>
 
@@ -194,7 +208,7 @@ export function AppHeader({
       )}
 
       {!showFilters && cardsFilter && (
-        <div className="flex items-center justify-center gap-3 xl:hidden">
+        <div className="flex items-center justify-end gap-2 xl:hidden">
           <CardsFilterSwitch value={cardsFilter.value} onChange={cardsFilter.onChange} />
         </div>
       )}

@@ -5,10 +5,12 @@ export function UserCardsPage({
   users,
   nfDecimal,
   onSelectUser,
+  onOpenResults,
   filter = "mixte",
   userRunningAvgById,
   isAdmin = false,
   currentUserId = null,
+  showAllCardsFront = false,
 }) {
   const sorted = useMemo(() => {
     return [...users].sort((a, b) => {
@@ -94,20 +96,33 @@ export function UserCardsPage({
               showBotAverage
               minSpinnerMs={500}
               userRunningAvgKm={!u?.is_bot ? userRunningAvgById?.get(u.id) : null}
-              showBackOnly={!isAdmin && u?.is_bot}
+              showBackOnly={!showAllCardsFront && u?.is_bot}
               autoTiltVariant="soft"
               userRankInfo={{
                 index: u?.is_bot ? botRankById.get(u.id) : userRankById.get(u.id),
                 total: u?.is_bot ? botsOnlyByDate.length : usersOnlyByDate.length,
               }}
             />
-            <button
-              type="button"
-              onClick={() => onSelectUser?.(u)}
-              className="rounded-full border border-emerald-300/70 px-3 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 dark:border-emerald-400/50 dark:text-emerald-200 dark:hover:bg-emerald-400/10"
-            >
-              Ouvrir le dashboard de {u.name}
-            </button>
+            {!(u?.is_bot && !showAllCardsFront) ? (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => onOpenResults?.(u)}
+                  className="rounded-full border border-emerald-300/70 px-3 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 dark:border-emerald-400/50 dark:text-emerald-200 dark:hover:bg-emerald-400/10"
+                >
+                  Résultats
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onSelectUser?.(u)}
+                  className="rounded-full border border-emerald-300/70 px-3 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 dark:border-emerald-400/50 dark:text-emerald-200 dark:hover:bg-emerald-400/10"
+                >
+                  Ouvrir le dashboard de {u.name}
+                </button>
+              </div>
+            ) : (
+              <div className="h-[24px]" aria-hidden="true" />
+            )}
           </div>
         ))}
       </div>

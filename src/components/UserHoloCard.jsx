@@ -14,6 +14,7 @@ export function UserHoloCard({
   autoTiltOnMobile = true,
   autoTiltVariant = "default",
 }) {
+  const showBackOnlySafe = Boolean(showBackOnly);
   const displayName = user?.name || "Utilisateur";
   const userShoeName = user?.shoe_name || "";
   const userShoeStart = user?.shoe_start_date || "";
@@ -27,8 +28,8 @@ export function UserHoloCard({
   const showShoeDetails = Boolean(userShoeName);
   const showShoeTarget = !isBot && Number.isFinite(Number(userShoeTarget));
   const showDescription = Boolean(userDescription);
-  const showBotAverageValue = showBotAverage && isBot && Number.isFinite(Number(botAvgDistance));
-  const showUserAverageValue = !isBot && Number.isFinite(Number(userRunningAvgKm));
+  const showBotAverageValue = showBotAverage && isBot && Number.isFinite(Number(botAvgDistance)) && Number(botAvgDistance) > 0;
+  const showUserAverageValue = !isBot && Number.isFinite(Number(userRunningAvgKm)) && Number(userRunningAvgKm) > 0;
   const showAverage = showBotAverageValue || showUserAverageValue;
   const averageLabel = "Moyenne";
   const averageValue = showBotAverageValue ? Number(botAvgDistance) : Number(userRunningAvgKm);
@@ -82,7 +83,7 @@ export function UserHoloCard({
     isBot && botBorderColor ? `linear-gradient(135deg, ${botBorderColor}, #000000)` : "";
 
   useEffect(() => {
-    if (showBackOnly) {
+    if (showBackOnlySafe) {
       setCardImageReady(true);
       setShowCardSpinner(false);
       return;
@@ -130,7 +131,7 @@ export function UserHoloCard({
       img.onload = null;
       img.onerror = null;
     };
-  }, [userCardImage, minSpinnerMs, showBackOnly]);
+  }, [userCardImage, minSpinnerMs, showBackOnlySafe]);
 
   useEffect(() => {
     if (!cardImageReady) return;
@@ -149,7 +150,7 @@ export function UserHoloCard({
         spinnerTimerRef.current = null;
       }
     };
-  }, [cardImageReady, userCardImage, minSpinnerMs, showBackOnly]);
+  }, [cardImageReady, userCardImage, minSpinnerMs, showBackOnlySafe]);
 
   const handleTiltMove = (evt) => {
     const rect = cardRef.current?.getBoundingClientRect();
@@ -200,8 +201,8 @@ export function UserHoloCard({
   };
 
   const showShadow = elevated || cardTilt.active;
-  const showContent = !isCardLoading && !showBackOnly;
-  const hideBrandMarks = isCardLoading || showBackOnly;
+  const showContent = !isCardLoading && !showBackOnlySafe;
+  const hideBrandMarks = isCardLoading || showBackOnlySafe;
 
   return (
     <div
@@ -267,16 +268,16 @@ export function UserHoloCard({
         />
         <div
           ref={holoRef}
-          className="user-card-holo relative overflow-hidden rounded-[26px] bg-slate-950/95 p-3 text-white"
+          className="user-card-holo relative min-h-[500px] overflow-hidden rounded-[26px] bg-slate-950/95 p-3 text-white"
           style={{
             backgroundImage: botGradient || undefined,
             backgroundColor: isBot && botColor ? toRgba(botColor, 0.5) : undefined,
           }}
         >
-          <div className={`transition-opacity duration-300 ${showContent ? "opacity-100" : "opacity-0"}`}>
-            <div className="mt-2 flex items-center justify-end gap-2 text-right text-2xl font-black tracking-tight">
+            <div className={`transition-opacity duration-300 ${showContent ? "opacity-100" : "opacity-0"}`}>
+            <div className="mt-2 flex items-center justify-end gap-1 text-right text-2xl font-black tracking-tight">
             {isBot ? (
-              <Bot size={18} className="text-emerald-200" />
+              <Bot size={18} className="text-rose-300" />
             ) : (
               <User size={18} className="text-emerald-200" />
             )}
@@ -343,12 +344,18 @@ export function UserHoloCard({
               NaTrack™ {dayjs().format("YYYY")}
             </div>
             <span className="ml-auto inline-flex items-center gap-1 text-[10px] opacity-70">
-              {isBot ? (
-                <Diamond size={10} className="text-emerald-200" aria-hidden="true" />
-              ) : (
-                <span aria-hidden="true">★</span>
+              {!showBackOnlySafe && (
+                <>
+                  {isBot ? (
+                    <Diamond size={10} className="text-emerald-200" aria-hidden="true" />
+                  ) : (
+                    <span aria-hidden="true">★</span>
+                  )}
+                  {userRankInfo && userRankInfo.index > 0 && userRankInfo.total > 0
+                    ? `${userRankInfo.index}/${userRankInfo.total}`
+                    : "—"}
+                </>
               )}
-              {userRankInfo ? `${userRankInfo.index}/${userRankInfo.total}` : "—"}
             </span>
             </div>
           </div>
@@ -365,7 +372,7 @@ export function UserHoloCard({
               </div>
             </div>
           )}
-          {showBackOnly && (
+          {showBackOnlySafe && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="absolute inset-4 rounded-[22px] border border-emerald-200/30" aria-hidden="true" />
               <img
