@@ -41,7 +41,7 @@ export function GlobalDashboard({
   const [newsImageReady, setNewsImageReady] = useState(false);
   const [newsImageReady2, setNewsImageReady2] = useState(false);
   const [showNotifInfo, setShowNotifInfo] = useState(false);
-  const [notifAnchorRect, setNotifAnchorRect] = useState(null);
+  const [notifAnchorRect] = useState(null);
   useEffect(() => {
     const img = new Image();
     const done = () => setNewsImageReady(true);
@@ -105,9 +105,7 @@ export function GlobalDashboard({
               <div className="relative w-full">
                 <button
                   type="button"
-                  onClick={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    setNotifAnchorRect(rect);
+                  onClick={() => {
                     setShowNotifInfo((v) => !v);
                   }}
                   className="relative w-full overflow-hidden rounded-2xl border-0 bg-gradient-to-l from-rose-400/60 to-transparent px-4 py-3 text-left text-slate-900 shadow-sm transition-colors duration-200 hover:ring-1 hover:ring-rose-300/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 dark:text-slate-100"
@@ -123,16 +121,14 @@ export function GlobalDashboard({
                 <InfoPopover
                   open={showNotifInfo}
                   onClose={() => setShowNotifInfo(false)}
-                  title="Notifications"
+                  title={<span className="text-[26px] leading-tight">Pas de notification pour le moment</span>}
                   actionLabel={null}
-                  items={[
-                    "Nouveaux records et évolutions de podium.",
-                    "Récaps mensuels et objectifs atteints.",
-                    "Événements spéciaux à venir.",
-                  ]}
-                  align="left"
-                  maxWidth={360}
-                  anchorRect={notifAnchorRect}
+                  headerImage="/big-logo.png"
+                  fullWidth
+                  maxWidth={1024}
+                  anchorRect={null}
+                  offsetY={-15}
+                  offsetYMobile={0}
                 />
               </div>
 

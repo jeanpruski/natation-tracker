@@ -13,6 +13,8 @@ export function InfoPopover({
   anchorRect,
   maxWidth = 520,
   headerImage,
+  offsetY = 0,
+  offsetYMobile,
 }) {
   const ref = useRef(null);
   const [computedWidth, setComputedWidth] = useState(null);
@@ -22,8 +24,10 @@ export function InfoPopover({
   useEffect(() => {
     if (!open) return;
     const isMobile = window.innerWidth < 640;
+    const yOffset = isMobile ? offsetYMobile ?? offsetY : offsetY;
     if (fullWidth) {
-      const top = isMobile ? 12 : Math.round((anchorRect?.bottom || 64) + 8);
+      const baseTop = isMobile ? 12 : Math.round((anchorRect?.bottom || 64) + 8);
+      const top = Math.max(0, baseTop + yOffset);
       setComputedWidth(null);
       setComputedLeft(null);
       setComputedTop(top);
@@ -34,11 +38,11 @@ export function InfoPopover({
       const left = Math.min(Math.max(anchorRect.left, padding), maxLeft);
       setComputedWidth(width);
       setComputedLeft(left);
-      setComputedTop(Math.round((anchorRect?.bottom || 64) + 8));
+      setComputedTop(Math.max(0, Math.round((anchorRect?.bottom || 64) + 8) + yOffset));
     } else {
       setComputedWidth(null);
       setComputedLeft(null);
-      setComputedTop(Math.round((anchorRect?.bottom || 64) + 8));
+      setComputedTop(Math.max(0, Math.round((anchorRect?.bottom || 64) + 8) + yOffset));
     }
     const onDocClick = (evt) => {
       if (!ref.current) return;
@@ -93,30 +97,30 @@ export function InfoPopover({
                 <div className="h-2 w-full rounded-t-2xl bg-gradient-to-r from-emerald-300/70 via-lime-300/60 to-sky-400/50" />
                 <div className="p-6 text-sm text-slate-700 dark:text-slate-200">
                   {headerImage && (
-                <div className="flex flex-col items-start gap-2">
-                  <img src={headerImage} alt="" className="h-10 w-auto" />
-                  <div className="text-[26px] font-semibold text-slate-900 dark:text-slate-100 mt-[50px]">
-                    {title}
-                  </div>
-                </div>
-              )}
-              {!headerImage && (
-                <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                  {title}
-                </div>
-              )}
-              {!!items.length && (
-                <ul className="mt-2 space-y-3">
-                  {items.map((item, idx) => (
-                    <li
-                      key={typeof item === "string" ? item : idx}
-                      className={`leading-relaxed whitespace-pre-line [&_strong]:text-[18px] ${idx === 0 ? "" : "mt-[25px]"}`}
-                    >
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              )}
+                    <div className="flex flex-col items-start gap-2">
+                      <img src={headerImage} alt="" className="h-10 w-auto" />
+                      <div className="text-[26px] font-semibold text-slate-900 dark:text-slate-100 mt-[50px]">
+                        {title}
+                      </div>
+                    </div>
+                  )}
+                  {!headerImage && title && (
+                    <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                      {title}
+                    </div>
+                  )}
+                  {!!items.length && (
+                    <ul className="mt-2 space-y-3">
+                      {items.map((item, idx) => (
+                        <li
+                          key={typeof item === "string" ? item : idx}
+                          className={`leading-relaxed whitespace-pre-line [&_strong]:text-[18px] ${idx === 0 ? "" : "mt-[25px]"}`}
+                        >
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
               <button
                 type="button"
                 onClick={onClose}
@@ -153,7 +157,7 @@ export function InfoPopover({
                     </div>
                   </div>
                 )}
-                {!headerImage && (
+                {!headerImage && title && (
                   <div className="text-[26px] font-semibold text-slate-900 dark:text-slate-100">
                     {title}
                   </div>
