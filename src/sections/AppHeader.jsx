@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { ArrowLeft } from "lucide-react";
 import { LayoutGroup, motion } from "framer-motion";
@@ -103,6 +103,15 @@ export function AppHeader({
   onBack,
   cardsFilter,
 }) {
+  const didMountRef = useRef(false);
+  const prevOnBackRef = useRef(false);
+  useEffect(() => {
+    didMountRef.current = true;
+  }, []);
+  useEffect(() => {
+    prevOnBackRef.current = Boolean(onBack);
+  }, [onBack]);
+
   return (
     <header
       className={`
@@ -119,9 +128,13 @@ export function AppHeader({
         <div className="flex items-center gap-2 w-full xl:w-auto">
           {onBack && (
             <motion.div
-              layout
-              layoutScroll
-              initial={{ width: 0, opacity: 0 }}
+              initial={
+                !didMountRef.current
+                  ? { width: 0, opacity: 0 }
+                  : prevOnBackRef.current
+                    ? false
+                    : { width: 0, opacity: 0 }
+              }
               animate={{ width: 44, opacity: 1 }}
               transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
               style={{ overflow: "hidden", willChange: "width, opacity" }}

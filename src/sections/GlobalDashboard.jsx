@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Bot, User, Trophy } from "lucide-react";
+import { Bot, Swords, Trophy, User } from "lucide-react";
 import { Reveal } from "../components/Reveal";
 
 function buildMonthKeys(sessions) {
@@ -98,18 +98,33 @@ export function GlobalDashboard({
       <div className="grid gap-4">
         {isAuth && onOpenCards && (
           <Reveal as="section">
-            <button
-              onClick={onOpenCards}
-              className="relative w-full overflow-hidden rounded-2xl border border-transparent border-r-0 bg-gradient-to-r from-emerald-300/60 to-transparent px-4 py-3 text-left text-slate-900 shadow-sm transition-colors duration-200 hover:border-emerald-400 hover:ring-1 hover:ring-emerald-300/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 dark:text-slate-100"
-            >
-              <span className="pointer-events-none absolute inset-0 z-0 bg-emerald-300/45 opacity-0 transition-opacity duration-300 hover:opacity-100" />
-              <div className="relative z-10 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
-                  <Trophy size={20} className="text-emerald-700 dark:text-sky-300" />
+            <div className="flex flex-col gap-3 lg:flex-row">
+              <button
+                type="button"
+                className="relative w-full overflow-hidden rounded-2xl border-0 bg-gradient-to-l from-rose-400/60 to-transparent px-4 py-3 text-left text-slate-900 shadow-sm transition-colors duration-200 hover:ring-1 hover:ring-rose-300/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 dark:text-slate-100"
+              >
+                <span className="pointer-events-none absolute inset-0 z-0 bg-rose-400/45 opacity-0 transition-opacity duration-300 hover:opacity-100" />
+                <div className="relative z-10 flex items-center justify-between">
+                  <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                    Notification
+                  </div>
+                  <Swords size={20} className="text-slate-900 dark:text-white" />
                 </div>
-                <img src="/nacards-logo.png" alt="NaCards" className="h-7 w-auto" />
-              </div>
-            </button>
+              </button>
+
+              <button
+                onClick={onOpenCards}
+                className="relative w-full overflow-hidden rounded-2xl border-0 bg-gradient-to-r from-emerald-300/60 to-transparent px-4 py-3 text-left text-slate-900 shadow-sm transition-colors duration-200 hover:ring-1 hover:ring-emerald-300/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 dark:text-slate-100"
+              >
+                <span className="pointer-events-none absolute inset-0 z-0 bg-emerald-300/45 opacity-0 transition-opacity duration-300 hover:opacity-100" />
+                <div className="relative z-10 flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    <Trophy size={20} className="text-slate-900 dark:text-white" />
+                  </div>
+                  <img src="/nacards-logo.png" alt="NaCards" className="h-7 w-auto" />
+                </div>
+              </button>
+            </div>
           </Reveal>
         )}
         <Reveal as="section">

@@ -162,24 +162,38 @@ export function Dashboard({
         onClick={() => setShowUserCard(true)}
         onMouseEnter={() => setHeroHover(true)}
         onMouseLeave={() => setHeroHover(false)}
-        className="relative w-full overflow-hidden text-left rounded-2xl border border-transparent border-r-0 bg-gradient-to-r from-emerald-300/60 to-transparent px-4 py-3 text-slate-900 shadow-sm transition-colors duration-200 hover:border-emerald-400 hover:ring-1 hover:ring-emerald-300/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 dark:text-slate-100"
+        className={`relative w-full overflow-hidden text-left rounded-2xl border-0 ${
+          isBotUser ? "bg-gradient-to-r from-rose-400/60 to-transparent" : "bg-gradient-to-r from-emerald-300/60 to-transparent"
+        } px-4 py-3 text-slate-900 shadow-sm transition-colors duration-200 ${
+          isBotUser
+            ? "hover:border-rose-400 hover:ring-1 hover:ring-rose-300/70 focus-visible:ring-rose-300"
+            : "hover:border-emerald-400 hover:ring-1 hover:ring-emerald-300/70 focus-visible:ring-emerald-300"
+        } focus:outline-none dark:text-slate-100`}
         style={
           botBorderColor
             ? {
-                borderColor: botBorderColor,
-                backgroundColor: heroHover ? toRgba(botBorderColor, 0.18) : toRgba(botBorderColor, 0.08),
-                backgroundImage: "none",
+                borderColor: undefined,
+                backgroundColor: isBotUser
+                  ? undefined
+                  : heroHover
+                    ? toRgba(botBorderColor, 0.18)
+                    : toRgba(botBorderColor, 0.08),
+                backgroundImage: isBotUser ? undefined : "none",
               }
             : undefined
         }
       >
-        <span className="pointer-events-none absolute inset-0 z-0 bg-emerald-300/45 opacity-0 transition-opacity duration-300 hover:opacity-100" />
+        <span
+          className={`pointer-events-none absolute inset-0 z-0 opacity-0 transition-opacity duration-300 hover:opacity-100 ${
+            isBotUser ? "bg-rose-400/45" : "bg-emerald-300/45"
+          }`}
+        />
         <div className="relative flex items-center justify-between gap-2 text-xl sm:text-2xl font-black tracking-tight">
           <div className="flex items-center gap-2">
             {isBotUser ? (
-              <Bot size={18} className="text-emerald-700 dark:text-sky-300" />
+              <Bot size={18} className="text-slate-900 dark:text-white" />
             ) : (
-              <User size={18} className="text-emerald-700 dark:text-sky-300" />
+              <User size={18} className="text-slate-900 dark:text-white" />
             )}
             <span>{displayName}</span>
           </div>
