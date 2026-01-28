@@ -268,7 +268,7 @@ export function UserHoloCard({
         />
         <div
           ref={holoRef}
-          className="user-card-holo relative min-h-[500px] overflow-hidden rounded-[26px] bg-slate-950/95 p-3 text-white"
+          className="user-card-holo relative min-h-[500px] overflow-hidden rounded-[22px] bg-slate-950/95 p-3 text-white"
           style={{
             backgroundImage: botGradient || undefined,
             backgroundColor: isBot && botColor ? toRgba(botColor, 0.5) : undefined,
