@@ -59,6 +59,7 @@ export default function App() {
   const prevAuthRef = useRef(isAuth);
   const prevUserIdRef = useRef(user?.id || null);
   const swipeRef = useRef({ x: 0, y: 0, t: 0, moved: false });
+  const didInitHistoryRef = useRef(false);
 
   const [sessions, setSessions] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -130,9 +131,27 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const onPop = () => setRouteSlug(readRouteSlug());
+    const onPop = () => {
+      const slug = readRouteSlug();
+      setRouteSlug(slug);
+      if (!slug) {
+        setShowCardsPage(false);
+        setSelectedUser(null);
+      }
+    };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  useEffect(() => {
+    if (didInitHistoryRef.current) return;
+    didInitHistoryRef.current = true;
+    const path = window.location.pathname || "/";
+    const match = path.match(/^\/user\/([^/]+)\/?$/);
+    if (!match) return;
+    if (window.history.length > 1) return;
+    window.history.replaceState({}, "", "/");
+    window.history.pushState({}, "", path);
   }, []);
 
   useEffect(() => {
