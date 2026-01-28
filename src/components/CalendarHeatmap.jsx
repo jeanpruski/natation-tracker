@@ -3,18 +3,18 @@ import dayjs from "dayjs";
 import { capFirst } from "../utils/strings";
 
 const SWIM_COLORS = [
-  "#E0E7FF",
-  "#C7D2FE",
-  "#A5B4FC",
-  "#818CF8",
-  "#6366F1",
+  "#e0f2fe",
+  "#bae6fd",
+  "#7dd3fc",
+  "#38bdf8",
+  "#0ea5e9",
 ];
 const RUN_COLORS = [
-  "rgb(226 232 240)",
-  "rgb(167 243 208)",
-  "rgb(110 231 183)",
-  "rgb(52 211 153)",
-  "rgb(16 185 129)",
+  "#d1fae5",
+  "#a7f3d0",
+  "#6ee7b7",
+  "#34d399",
+  "#10b981",
 ];
 const OUTSIDE_RANGE_CLASS = "bg-transparent";
 const INACTIVE_CLASS = "bg-slate-200/60 dark:bg-slate-800/60";

@@ -147,9 +147,9 @@ export function AppHeader({
           {showEditor && (
             <button
               onClick={onOpenEditor}
-              className={`ml-auto xl:ml-2 rounded-xl px-3 py-2 text-sm transition ${
-                isAuth ? "bg-emerald-600 text-white hover:bg-emerald-500" : "bg-amber-500 text-white hover:bg-amber-400"
-              }`}
+            className={`ml-auto xl:ml-2 rounded-xl px-3 py-2 text-sm transition ${
+              isAuth ? "bg-emerald-300 text-slate-900 hover:bg-emerald-400" : "bg-amber-500 text-white hover:bg-amber-400"
+            }`}
               title={isAuth ? "Ouvrir l’éditeur" : "Déverrouiller l’édition"}
             >
               <span className="inline-flex items-center gap-1.5">

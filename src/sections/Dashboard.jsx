@@ -151,22 +151,24 @@ export function Dashboard({
         onClick={() => setShowUserCard(true)}
         onMouseEnter={() => setHeroHover(true)}
         onMouseLeave={() => setHeroHover(false)}
-        className="relative w-full overflow-hidden text-left rounded-2xl border border-emerald-300/70 bg-white/90 px-4 py-3 text-slate-900 shadow-sm transition hover:bg-emerald-50/60 hover:border-emerald-400/80 dark:border-emerald-400/30 dark:bg-slate-900/70 dark:text-slate-100 dark:hover:bg-emerald-400/10 dark:hover:border-emerald-300/50"
+        className="relative w-full overflow-hidden text-left rounded-2xl border border-transparent border-r-0 bg-gradient-to-r from-emerald-300/60 to-transparent px-4 py-3 text-slate-900 shadow-sm transition-colors duration-200 hover:border-emerald-400 hover:ring-1 hover:ring-emerald-300/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 dark:text-slate-100"
         style={
           botBorderColor
             ? {
                 borderColor: botBorderColor,
                 backgroundColor: heroHover ? toRgba(botBorderColor, 0.18) : toRgba(botBorderColor, 0.08),
+                backgroundImage: "none",
               }
             : undefined
         }
       >
+        <span className="pointer-events-none absolute inset-0 z-0 bg-emerald-300/45 opacity-0 transition-opacity duration-300 hover:opacity-100" />
         <div className="relative flex items-center justify-between gap-2 text-xl sm:text-2xl font-black tracking-tight">
           <div className="flex items-center gap-2">
             {isBotUser ? (
-              <Bot size={18} className="text-slate-500 dark:text-slate-400" />
+              <Bot size={18} className="text-white" />
             ) : (
-              <User size={18} className="text-slate-500 dark:text-slate-400" />
+              <User size={18} className="text-white" />
             )}
             <span>{displayName}</span>
           </div>
@@ -237,14 +239,21 @@ export function Dashboard({
                   </div>
                   <div
                     className={`relative h-2 w-full rounded-full overflow-hidden ${
-                      totalDenom > 0 ? "bg-indigo-500" : "bg-slate-200 dark:bg-slate-700"
+                      totalDenom > 0 ? "bg-sky-400" : "bg-slate-200 dark:bg-slate-700"
                     }`}
                   >
                     {totalDenom > 0 && (
-                      <div
-                        className="absolute inset-y-0 left-0 rounded-full bg-emerald-500"
-                        style={{ width: `${totalMarker}%` }}
-                      />
+                      <>
+                        <div
+                          className="absolute inset-y-0 left-0 rounded-full bg-emerald-400"
+                          style={{ width: `${totalMarker}%` }}
+                        />
+                        <div
+                          className="absolute inset-y-0 w-[2px] bg-white/80 dark:bg-slate-900/70"
+                          style={{ left: `calc(${totalMarker}% - 1px)` }}
+                          aria-hidden="true"
+                        />
+                      </>
                     )}
                   </div>
                   <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">
@@ -275,14 +284,21 @@ export function Dashboard({
                   </div>
                   <div
                     className={`relative h-2 w-full rounded-full overflow-hidden ${
-                      toDayDenom > 0 ? "bg-indigo-500" : "bg-slate-200 dark:bg-slate-700"
+                      toDayDenom > 0 ? "bg-sky-400" : "bg-slate-200 dark:bg-slate-700"
                     }`}
                   >
                     {toDayDenom > 0 && (
-                      <div
-                        className="absolute inset-y-0 left-0 rounded-full bg-emerald-500"
-                        style={{ width: `${toDayMarker}%` }}
-                      />
+                      <>
+                        <div
+                          className="absolute inset-y-0 left-0 rounded-full bg-emerald-400"
+                          style={{ width: `${toDayMarker}%` }}
+                        />
+                        <div
+                          className="absolute inset-y-0 w-[2px] bg-white/80 dark:bg-slate-900/70"
+                          style={{ left: `calc(${toDayMarker}% - 1px)` }}
+                          aria-hidden="true"
+                        />
+                      </>
                     )}
                   </div>
                   <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">
@@ -442,7 +458,7 @@ export function Dashboard({
                       <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
                         <motion.div
                           className={`h-full rounded-full ${
-                            shoesLifeByRange.remaining <= 0 ? "bg-rose-500" : "bg-emerald-500"
+                          shoesLifeByRange.remaining <= 0 ? "bg-rose-500" : "bg-emerald-400"
                           }`}
                           initial={{ width: 0 }}
                           whileInView={{ width: `${shoesLifeByRange.percent}%` }}
@@ -514,19 +530,28 @@ export function Dashboard({
                         </span>
                       </div>
                       <div
-                        className={`h-2 w-full rounded-full overflow-hidden ${
+                        className={`relative h-2 w-full rounded-full overflow-hidden ${
                           compareTotalWinner === "tie" && monthCompare.currentTotal === 0
                             ? "bg-slate-200 dark:bg-slate-700"
-                            : "bg-indigo-500"
+                            : "bg-sky-400"
                         }`}
                       >
                         {monthCompare.currentTotal + monthCompare.lastTotal > 0 && (
-                          <div
-                            className="h-full rounded-full bg-emerald-500"
-                            style={{
-                              width: `${(monthCompare.currentTotal / (monthCompare.currentTotal + monthCompare.lastTotal)) * 100}%`,
-                            }}
-                          />
+                          <>
+                            <div
+                              className="h-full rounded-full bg-emerald-400"
+                              style={{
+                                width: `${(monthCompare.currentTotal / (monthCompare.currentTotal + monthCompare.lastTotal)) * 100}%`,
+                              }}
+                            />
+                            <div
+                              className="absolute inset-y-0 w-[2px] bg-white/80 dark:bg-slate-900/70"
+                              style={{
+                                left: `calc(${(monthCompare.currentTotal / (monthCompare.currentTotal + monthCompare.lastTotal)) * 100}% - 1px)`,
+                              }}
+                              aria-hidden="true"
+                            />
+                          </>
                         )}
                       </div>
                       <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
@@ -562,19 +587,28 @@ export function Dashboard({
                         </span>
                       </div>
                       <div
-                        className={`h-2 w-full rounded-full overflow-hidden ${
+                        className={`relative h-2 w-full rounded-full overflow-hidden ${
                           compareToDayWinner === "tie" && monthCompare.currentToDay === 0
                             ? "bg-slate-200 dark:bg-slate-700"
-                            : "bg-indigo-500"
+                            : "bg-sky-400"
                         }`}
                       >
                         {monthCompare.currentToDay + monthCompare.lastToDay > 0 && (
-                          <div
-                            className="h-full rounded-full bg-emerald-500"
-                            style={{
-                              width: `${(monthCompare.currentToDay / (monthCompare.currentToDay + monthCompare.lastToDay)) * 100}%`,
-                            }}
-                          />
+                          <>
+                            <div
+                              className="h-full rounded-full bg-emerald-400"
+                              style={{
+                                width: `${(monthCompare.currentToDay / (monthCompare.currentToDay + monthCompare.lastToDay)) * 100}%`,
+                              }}
+                            />
+                            <div
+                              className="absolute inset-y-0 w-[2px] bg-white/80 dark:bg-slate-900/70"
+                              style={{
+                                left: `calc(${(monthCompare.currentToDay / (monthCompare.currentToDay + monthCompare.lastToDay)) * 100}% - 1px)`,
+                              }}
+                              aria-hidden="true"
+                            />
+                          </>
                         )}
                       </div>
                       <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
@@ -662,7 +696,7 @@ export function Dashboard({
                   </div>
                   <div className="mt-2 h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
                     <motion.div
-                      className="h-full rounded-full bg-indigo-500"
+                      className="h-full rounded-full bg-sky-400"
                       initial={{ width: 0 }}
                       whileInView={{ width: `${barPercent}%` }}
                       transition={{ duration: 0.9, ease: "easeOut" }}

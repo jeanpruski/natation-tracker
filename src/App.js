@@ -959,6 +959,11 @@ export default function App() {
         </main>
       </div>
 
+      <div
+        className="pointer-events-none fixed bottom-0 left-0 right-0 z-30 h-[6px] bg-gradient-to-r from-sky-400 via-lime-300 to-emerald-300"
+        aria-hidden="true"
+      />
+
       <EditModal
         open={showEditModal}
         onClose={() => setShowEditModal(false)}

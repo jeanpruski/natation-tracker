@@ -14,6 +14,8 @@ import { useIsDark } from "../hooks/useTheme";
 
 export function SwimChart({ sessions, mode = "all" }) {
   const isDark = useIsDark();
+  const SWIM_COLOR = "#38bdf8";
+  const RUN_COLOR = "#6ee7b7";
 
   const normType = (t) => ((t || "swim").toLowerCase() === "run" ? "run" : "swim");
 
@@ -81,7 +83,7 @@ export function SwimChart({ sessions, mode = "all" }) {
           {(mode === "all" || mode === "swim") && avgSwim > 0 && (
             <ReferenceLine
               y={avgSwim}
-              stroke="rgb(99 102 241)" // bleu
+              stroke={SWIM_COLOR} // bleu
               strokeDasharray="4 4"
               label={{ value: `${avgSwim} m (moy. nat.)`, position: "right", fill: "currentColor", fontSize: 12 }}
             />
@@ -90,7 +92,7 @@ export function SwimChart({ sessions, mode = "all" }) {
           {(mode === "all" || mode === "run") && avgRun > 0 && (
             <ReferenceLine
               y={avgRun}
-              stroke="rgb(16 185 129)" // vert
+              stroke={RUN_COLOR} // vert
               strokeDasharray="4 4"
               label={{ value: `${avgRun} m (moy. run)`, position: "right", fill: "currentColor", fontSize: 12 }}
             />
@@ -117,7 +119,7 @@ export function SwimChart({ sessions, mode = "all" }) {
             <Line
               type="monotone"
               dataKey="swimDistance"
-              stroke="rgb(99 102 241)"
+              stroke={SWIM_COLOR}
               strokeWidth={3}
               dot={{ r: 3 }}
               activeDot={{ r: 5 }}
@@ -129,7 +131,7 @@ export function SwimChart({ sessions, mode = "all" }) {
             <Line
               type="monotone"
               dataKey="runDistance"
-              stroke="rgb(16 185 129)"
+              stroke={RUN_COLOR}
               strokeWidth={3}
               dot={{ r: 3 }}
               activeDot={{ r: 5 }}

@@ -12,6 +12,8 @@ export function SportSharePie({
   outerRadius = "70%",
 }) {
   const isDark = useIsDark();
+  const SWIM_COLOR = "#38bdf8";
+  const RUN_COLOR = "#6ee7b7";
   const total = (swimValue || 0) + (runValue || 0);
 
   if (!total) {
@@ -41,7 +43,7 @@ export function SportSharePie({
               {data.map((entry) => (
                 <Cell
                   key={entry.name}
-                  fill={entry.name === "Piscine" ? "rgb(99 102 241)" : "rgb(16 185 129)"}
+                  fill={entry.name === "Piscine" ? SWIM_COLOR : RUN_COLOR}
                 />
               ))}
             </Pie>
@@ -66,7 +68,7 @@ export function SportSharePie({
                 className="h-2.5 w-2.5 rounded-full"
                 style={{
                   backgroundColor:
-                    entry.name === "Piscine" ? "rgb(99 102 241)" : "rgb(16 185 129)",
+                    entry.name === "Piscine" ? SWIM_COLOR : RUN_COLOR,
                 }}
               />
               <span>{entry.name}</span>

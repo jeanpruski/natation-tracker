@@ -13,6 +13,8 @@ import { useIsDark } from "../hooks/useTheme";
 
 export function MonthlyBarChart({ sessions }) {
   const isDark = useIsDark();
+  const SWIM_COLOR = "#38bdf8";
+  const RUN_COLOR = "#6ee7b7";
 
   const monthly = useMemo(() => {
     const map = new Map();
@@ -90,7 +92,7 @@ export function MonthlyBarChart({ sessions }) {
           <Bar
             dataKey="swimTotal"
             stackId="total"
-            fill="rgb(99 102 241)"
+            fill={SWIM_COLOR}
             radius={[0, 0, 0, 0]}
           />
 
@@ -98,7 +100,7 @@ export function MonthlyBarChart({ sessions }) {
           <Bar
             dataKey="runTotal"
             stackId="total"
-            fill="rgb(16 185 129)"
+            fill={RUN_COLOR}
             radius={[0, 0, 0, 0]}
           />
         </BarChart>
