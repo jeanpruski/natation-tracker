@@ -1,5 +1,6 @@
-import React, { useMemo, useCallback } from "react";
+import React, { useMemo, useCallback, useState } from "react";
 import { UserHoloCard } from "../components/UserHoloCard";
+import { InfoPopover } from "../components/InfoPopover";
 
 export function UserCardsPage({
   users,
@@ -12,6 +13,8 @@ export function UserCardsPage({
   currentUserId = null,
   showAllCardsFront = false,
 }) {
+  const [showResultsInfo, setShowResultsInfo] = useState(false);
+  const [resultsUser, setResultsUser] = useState(null);
   const sorted = useMemo(() => {
     return [...users].sort((a, b) => {
       const aTime = new Date(a.created_at || 0).getTime();
@@ -87,6 +90,22 @@ export function UserCardsPage({
 
   return (
     <div className="px-4 xl:px-8 pt-4 pb-8">
+      <InfoPopover
+        open={showResultsInfo}
+        onClose={() => setShowResultsInfo(false)}
+        title={
+          <span className="text-[26px] leading-tight">
+            Résultat contre {resultsUser?.name || ""}
+          </span>
+        }
+        actionLabel={null}
+        headerImage="/big-logo.png"
+        fullWidth
+        maxWidth={1024}
+        anchorRect={null}
+        offsetY={-15}
+        offsetYMobile={0}
+      />
       <div className="mx-auto flex w-full max-w-[1900px] flex-wrap justify-center gap-4">
         {filteredUsers.map((u) => (
           <div key={u.id} className="flex w-[360px] flex-col items-center gap-2">
@@ -108,7 +127,11 @@ export function UserCardsPage({
                 {!!u?.is_bot && (
                   <button
                     type="button"
-                    onClick={() => onOpenResults?.(u)}
+                    onClick={() => {
+                      setResultsUser(u);
+                      setShowResultsInfo(true);
+                      onOpenResults?.(u);
+                    }}
                     className="rounded-full border border-emerald-300/70 px-3 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 dark:border-emerald-400/50 dark:text-emerald-200 dark:hover:bg-emerald-400/10"
                   >
                     Résultats
